@@ -49,7 +49,7 @@
   height: 23px;
   margin: -11.5px 0 0 -18px;
   border-radius: 5px;
-  background: linear-gradient(135deg, var(--accent-strong), #5d1128);
+  background: linear-gradient(135deg, var(--accent-strong), #4d0c1d);
   border: 1px solid rgba(255, 255, 255, 0.22);
   box-shadow: 0 0 20px rgba(225, 139, 161, 0.55);
   pointer-events: none;

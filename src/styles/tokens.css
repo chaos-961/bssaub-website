@@ -1,8 +1,9 @@
 /* ------------------------------------------------------------------
    Design tokens — the one file the site recolors/retypes from (§7).
-   PALETTE = PLACEHOLDER: sampled from assets/logo.png and
-   assets/membership_card.png (brand maroon on warm white).
-   Final hexes pending (§13.4) — swap here only.
+   PALETTE: accent maroon EXTRACTED from assets/logo.png (programmatic
+   sample, 2026-07-22 — #881532, the logo's true ink); tints/grounds
+   derived on that hue. §13.4 stands closed unless the user supplies
+   different official hexes — swap here only.
    ------------------------------------------------------------------ */
 :root {
   /* color */
@@ -12,8 +13,8 @@
   --ink: #f4efeb;
   --ink-soft: #b6a6ad;
   --line: rgba(244, 239, 235, 0.14);
-  --accent: #8e1e3f;
-  --accent-strong: #a72649;
+  --accent: #881532;
+  --accent-strong: #a31a3c;
   --accent-2: #e18ba1;
 
   /* type */

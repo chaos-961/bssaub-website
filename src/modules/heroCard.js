@@ -110,7 +110,9 @@ export function initHeroCard(scroll) {
       })
       .to(eyebrow, { autoAlpha: 1, y: 0, duration: 0.6 }, 0.05)
       .to(lines, { yPercent: 0, duration: 0.9, stagger: 0.1 }, 0.1)
-      .to(root, { autoAlpha: 1, y: 0, scale: 1, rotation: 0, duration: 1.15 }, 0.22)
+      // 0.14 not 0.22: the card is the LCP element and its paint clock starts
+      // at first nonzero opacity — still fully behind the curtain either way
+      .to(root, { autoAlpha: 1, y: 0, scale: 1, rotation: 0, duration: 1.15 }, 0.14)
       .to(soft, { autoAlpha: 1, y: 0, duration: 0.6, stagger: 0.08 }, 0.42);
   };
 
