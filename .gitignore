@@ -1,5 +1,13 @@
 node_modules/
 dist/
-chrome-headless-profile/
-live-reference.png
-live-source.html
+.vite/
+*.log
+.DS_Store
+Thumbs.db
+
+# Raw source uploads — converted/renamed into public/assets/ during build sessions (§4).
+# Kept local on purpose; raw screenshots and full-size PNGs never ship.
+/assets/
+
+# Local tooling
+.claude/

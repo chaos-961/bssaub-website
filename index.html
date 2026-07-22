@@ -3,23 +3,394 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Business Student Society at the American University of Beirut — member discounts and sponsors." />
-    <title>BSS AUB | Sponsors & Discounts</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+    <title>BSS — AUB Business Student Society</title>
+    <meta
+      name="description"
+      content="The Business Student Society at AUB. One membership card, student discounts across restaurants, clothing, health &amp; beauty, fitness and services."
+    />
+    <meta name="theme-color" content="#120b0f" />
+    <!-- the hero card is the LCP element; pull it ahead of the JS/font queue -->
+    <link rel="preload" as="image" href="assets/card/card-front.webp" fetchpriority="high" />
+    <link rel="canonical" href="https://chaos-961.github.io/bssaub-website/" />
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/favicon-16.png" />
+    <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Business Student Society — AUB" />
+    <meta property="og:title" content="BSS — One card. A campus of perks." />
+    <meta
+      property="og:description"
+      content="The AUB Business Student Society membership card: student discounts across restaurants, clothing, health &amp; beauty, fitness and services."
+    />
+    <meta property="og:url" content="https://chaos-961.github.io/bssaub-website/" />
+    <meta property="og:image" content="https://chaos-961.github.io/bssaub-website/assets/brand/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
     <script>
-      // Root paths work on a web server; relative paths keep a direct file preview working too.
-      const previewFile = location.protocol === 'file:';
-      document.write('<link rel="stylesheet" href="./style.css">');
+      document.documentElement.classList.add('js');
     </script>
+    <style>
+      /* Preloader critical styles — inline so the brand screen paints before the
+         bundle arrives (§6.1). Colors mirror tokens.css. No-JS never sees it. */
+      .preloader {
+        display: none;
+      }
+      html.js .preloader {
+        position: fixed;
+        inset: 0;
+        z-index: 300;
+        display: grid;
+        place-content: center;
+        justify-items: center;
+        gap: 18px;
+        background: #2a0f1b;
+      }
+      .preloader__wordmark {
+        margin: 0;
+        color: #f4efeb;
+        font-family: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+        font-size: clamp(1.05rem, 2.5vw, 1.5rem);
+        letter-spacing: 0.04em;
+      }
+      .preloader__track {
+        width: min(46vw, 240px);
+        height: 2px;
+        border-radius: 999px;
+        background: rgba(244, 239, 235, 0.18);
+        overflow: hidden;
+      }
+      .preloader__bar {
+        height: 100%;
+        width: 100%;
+        border-radius: inherit;
+        background: #e18ba1;
+        transform: scaleX(0);
+        transform-origin: left center;
+        transition: transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
+      }
+    </style>
+    <script type="module" src="/src/main.js"></script>
   </head>
   <body>
-    <div id="app"></div>
-    <script>
-      const appScript = document.createElement('script');
-      appScript.src = './main.js';
-      document.body.append(appScript);
-    </script>
+    <div class="preloader" data-preloader aria-hidden="true">
+      <p class="preloader__wordmark">Business Student Society</p>
+      <div class="preloader__track"><div class="preloader__bar" data-preloader-bar></div></div>
+    </div>
+
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-nav" data-nav>
+      <a class="site-nav__wordmark" href="./" aria-label="Business Student Society — home">Business Student Society</a>
+      <div class="site-nav__right">
+        <a class="site-nav__account" href="account.html">Account</a>
+        <button
+          class="site-nav__burger"
+          type="button"
+          data-nav-toggle
+          aria-expanded="false"
+          aria-controls="nav-overlay"
+          aria-label="Open menu"
+        >
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </header>
+
+    <div class="nav-overlay" id="nav-overlay" data-nav-overlay aria-hidden="true">
+      <nav aria-label="Site menu">
+        <ul class="nav-overlay__list">
+          <li class="nav-overlay__item">
+            <a class="nav-overlay__link" data-overlay-link href="#top">
+              <span class="nav-overlay__index">01</span><span class="nav-overlay__label">Home</span>
+            </a>
+          </li>
+          <li class="nav-overlay__item">
+            <a class="nav-overlay__link" data-overlay-link href="#sponsors">
+              <span class="nav-overlay__index">02</span><span class="nav-overlay__label">Sponsors</span>
+            </a>
+          </li>
+          <li class="nav-overlay__item">
+            <a class="nav-overlay__link" data-overlay-link href="#journey">
+              <span class="nav-overlay__index">03</span><span class="nav-overlay__label">Our Journey</span>
+            </a>
+          </li>
+          <li class="nav-overlay__item">
+            <a class="nav-overlay__link" data-overlay-link href="#become-a-sponsor">
+              <span class="nav-overlay__index">04</span><span class="nav-overlay__label">Become a Sponsor</span>
+            </a>
+          </li>
+          <li class="nav-overlay__item">
+            <a class="nav-overlay__link" href="account.html">
+              <span class="nav-overlay__index">05</span><span class="nav-overlay__label">Account</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+
+    <main id="main">
+      <section class="hero" id="top">
+        <div class="hero__copy">
+          <p class="eyebrow hero__eyebrow">AUB Business Student Society</p>
+          <!-- Headline: §6.3 option 1, locked in-session per the user's no-questions directive (§15) -->
+          <h1 class="hero__headline">
+            <span class="line"><span class="line__inner">One card.</span></span>
+            <span class="line"><span class="line__inner">A campus of perks.</span></span>
+          </h1>
+          <p class="hero__sub">Student discounts across restaurants, clothing, health &amp; beauty, fitness and services.</p>
+          <div class="hero__ctas">
+            <a class="btn btn--primary" href="https://forms.cloud.microsoft/r/d5fFFxbKKN" target="_blank" rel="noopener">
+              Get the membership card
+            </a>
+            <a class="btn btn--ghost" href="#sponsors">See the perks</a>
+          </div>
+        </div>
+        <div class="hero-card" data-hero-card>
+          <div class="hero-card__floater">
+            <div class="hero-card__shadow" aria-hidden="true"></div>
+            <div class="hero-card__tilt">
+              <img
+                src="assets/card/card-front.webp"
+                alt="BSS membership card"
+                width="663"
+                height="478"
+                fetchpriority="high"
+                decoding="async"
+                data-preload
+              />
+              <div class="hero-card__glare" aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="perk-field" id="sponsors" aria-labelledby="sponsors-title" data-perk-field>
+        <div class="perk-field__intro">
+          <p class="eyebrow section__eyebrow">The Perk Field</p>
+          <h2 class="section__title" id="sponsors-title">Sponsors</h2>
+          <p class="section__note">Tap a bubble for the deal — or straight to the sponsor's Instagram.</p>
+        </div>
+        <div class="perk-field__layout">
+          <aside class="perk-ruler" aria-hidden="true" data-ruler>
+            <div class="perk-ruler__track">
+              <div class="perk-ruler__line"></div>
+              <div class="perk-ruler__marker" data-ruler-marker></div>
+              <ul class="perk-ruler__labels">
+                <li data-ruler-label="restaurants">Restaurants</li>
+                <li data-ruler-label="clothing">Clothing</li>
+                <li data-ruler-label="health-beauty">Health &amp; Beauty</li>
+                <li data-ruler-label="fitness">Fitness</li>
+                <li data-ruler-label="services">Services</li>
+              </ul>
+            </div>
+          </aside>
+          <div class="perk-field__zones">
+            <div class="perk-zone" data-zone="restaurants">
+              <h3 class="perk-zone__title">Restaurants</h3>
+              <div class="perk-zone__canvas" data-zone-canvas="restaurants"></div>
+            </div>
+            <div class="perk-zone" data-zone="clothing">
+              <h3 class="perk-zone__title">Clothing</h3>
+              <div class="perk-zone__canvas" data-zone-canvas="clothing"></div>
+            </div>
+            <div class="perk-zone" data-zone="health-beauty">
+              <h3 class="perk-zone__title">Health &amp; Beauty</h3>
+              <div class="perk-zone__canvas" data-zone-canvas="health-beauty"></div>
+            </div>
+            <div class="perk-zone" data-zone="fitness">
+              <h3 class="perk-zone__title">Fitness</h3>
+              <div class="perk-zone__canvas" data-zone-canvas="fitness"></div>
+            </div>
+            <div class="perk-zone" data-zone="services">
+              <h3 class="perk-zone__title">Services</h3>
+              <div class="perk-zone__canvas" data-zone-canvas="services"></div>
+            </div>
+          </div>
+        </div>
+        <div class="perk-chip" data-perk-chip aria-hidden="true"><span data-chip-text>Restaurants</span></div>
+      </section>
+
+      <section class="journey" id="journey" aria-labelledby="journey-title" data-journey>
+        <div class="journey__intro">
+          <p class="eyebrow section__eyebrow">Story · Mission · Vision</p>
+          <h2 class="section__title" id="journey-title">Our Journey</h2>
+        </div>
+        <div class="journey__track" data-journey-track>
+          <svg class="journey__svg" data-journey-svg aria-hidden="true" focusable="false">
+            <path class="journey__path journey__path--base" data-path-base d="" fill="none" />
+            <path class="journey__path journey__path--draw" data-path-draw d="" fill="none" />
+          </svg>
+          <div class="journey__marker" data-journey-marker aria-hidden="true"></div>
+          <ol class="journey__nodes">
+            <li class="journey-node" data-node>
+              <span class="journey-node__dot" aria-hidden="true"></span>
+              <article class="journey-node__card">
+                <div class="journey-node__media">
+                  <img
+                    src="assets/journey/story.webp"
+                    alt="Members of the Commerce Students' Society seated around a meeting table — black-and-white archive photograph"
+                    width="960"
+                    height="455"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+                <h3>Our Story</h3>
+                <!-- BLOCKED (§1.5): the society's actual Story text — assets/our_story.png is a photo, not copy -->
+                <p class="journey-node__pending">Text coming soon.</p>
+              </article>
+            </li>
+            <li class="journey-node" data-node>
+              <span class="journey-node__dot" aria-hidden="true"></span>
+              <article class="journey-node__card">
+                <div class="journey-node__media">
+                  <img
+                    src="assets/journey/mission.webp"
+                    alt="BSS members in maroon vests handing a membership card to a student on campus"
+                    width="960"
+                    height="640"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+                <h3>Our Mission</h3>
+                <!-- BLOCKED (§1.5): actual Mission text pending -->
+                <p class="journey-node__pending">Text coming soon.</p>
+              </article>
+            </li>
+            <li class="journey-node" data-node>
+              <span class="journey-node__dot" aria-hidden="true"></span>
+              <article class="journey-node__card">
+                <div class="journey-node__media">
+                  <img
+                    src="assets/journey/vision.webp"
+                    alt="BSS members at the Suliman S. Olayan School of Business — 125 Years of Business Education celebration"
+                    width="960"
+                    height="720"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+                <h3>Our Vision</h3>
+                <!-- BLOCKED (§1.5): actual Vision text pending -->
+                <p class="journey-node__pending">Text coming soon.</p>
+              </article>
+            </li>
+            <li class="journey-node journey-node--join" data-node>
+              <span class="journey-node__dot" aria-hidden="true"></span>
+              <div class="journey-node__card journey-node__card--join">
+                <h3>Join us</h3>
+                <a class="btn btn--primary" href="https://forms.cloud.microsoft/r/d5fFFxbKKN" target="_blank" rel="noopener">
+                  Get the membership card
+                </a>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="sponsor-cta" id="become-a-sponsor" aria-labelledby="sponsor-cta-title" data-sponsor-cta>
+        <div class="sponsor-cta__inner">
+          <p class="eyebrow section__eyebrow">Partners</p>
+          <h2 class="section__title" id="sponsor-cta-title">Have your own business? Become&nbsp;a&nbsp;sponsor.</h2>
+          <dl class="sponsor-cta__stats">
+            <div class="sponsor-cta__stat">
+              <dt>Sponsors on the card</dt>
+              <dd data-stat-count>—</dd>
+            </div>
+            <div class="sponsor-cta__stat">
+              <dt>Top discount</dt>
+              <dd data-stat-top>—</dd>
+            </div>
+            <div class="sponsor-cta__stat">
+              <dt>Categories</dt>
+              <dd data-stat-cats>—</dd>
+            </div>
+          </dl>
+          <!-- CTA interim target: verified society email (§14 key links). Swaps to the
+               Become-a-Sponsor Google Form URL the moment it's supplied (§0 blockers). -->
+          <a class="btn btn--primary" href="mailto:aubbusinesssociety@gmail.com?subject=Sponsorship">Become a sponsor</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="site-footer__inner">
+        <div>
+          <p class="site-footer__wordmark">Business Student Society</p>
+          <p class="site-footer__tag">American University of Beirut</p>
+          <a
+            class="btn btn--primary btn--sm site-footer__cta"
+            href="https://forms.cloud.microsoft/r/d5fFFxbKKN"
+            target="_blank"
+            rel="noopener"
+          >
+            Get the membership card
+          </a>
+        </div>
+        <nav aria-label="Footer">
+          <p class="site-footer__heading">Explore</p>
+          <ul class="site-footer__links">
+            <li><a href="#top">Home</a></li>
+            <li><a href="#sponsors">Sponsors</a></li>
+            <li><a href="#journey">Our Journey</a></li>
+            <li><a href="#become-a-sponsor">Become a Sponsor</a></li>
+            <li><a href="account.html">Account</a></li>
+          </ul>
+        </nav>
+        <div>
+          <p class="site-footer__heading">Connect</p>
+          <div class="site-footer__social">
+            <a href="https://www.instagram.com/businessstudentsociety/" target="_blank" rel="noopener" aria-label="BSS on Instagram">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="5" />
+                <circle cx="12" cy="12" r="4.2" />
+                <circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none" />
+              </svg>
+            </a>
+            <a href="mailto:aubbusinesssociety@gmail.com" aria-label="Email the Business Student Society">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="14" rx="3" />
+                <path d="M3.5 7l8.5 6 8.5-6" />
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+      <div class="site-footer__bottom">
+        <div class="site-footer__bottom-inner">
+          <p>© Business Student Society, AUB</p>
+          <span class="version-badge" data-version-badge>v0.0.1</span>
+        </div>
+      </div>
+    </footer>
+
+    <div class="sponsor-modal" data-sponsor-modal aria-hidden="true">
+      <div class="sponsor-modal__backdrop" data-modal-backdrop></div>
+      <div class="sponsor-modal__panel" role="dialog" aria-modal="true" aria-labelledby="sponsor-modal-title">
+        <button class="sponsor-modal__close" type="button" data-modal-close aria-label="Close dialog">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M2 2l12 12M14 2L2 14" />
+          </svg>
+        </button>
+        <img class="sponsor-modal__logo" data-modal-image alt="" width="96" height="96" />
+        <p class="sponsor-modal__discount" data-modal-discount></p>
+        <h3 class="sponsor-modal__name" id="sponsor-modal-title" data-modal-name></h3>
+        <p class="sponsor-modal__summary" data-modal-summary></p>
+        <p class="sponsor-modal__notes" data-modal-notes></p>
+        <ol class="sponsor-modal__steps" data-modal-steps></ol>
+        <div class="sponsor-modal__links" data-modal-links></div>
+        <a
+          class="sponsor-modal__ig"
+          data-modal-ig
+          href="https://www.instagram.com/businessstudentsociety/"
+          target="_blank"
+          rel="noopener"
+        >View on Instagram</a>
+      </div>
+    </div>
   </body>
 </html>

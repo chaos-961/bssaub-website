@@ -1,0 +1,132 @@
+/* hero */
+.hero {
+  min-height: 100svh;
+  display: grid;
+  align-items: center;
+  gap: clamp(2.5rem, 6vw, 5rem);
+  max-width: var(--container);
+  margin-inline: auto;
+  padding: calc(var(--nav-h) + 3rem) var(--gutter) var(--section-pad);
+}
+
+@media (min-width: 60rem) {
+  .hero {
+    grid-template-columns: 1.05fr 0.95fr;
+  }
+}
+
+.hero__eyebrow {
+  margin-bottom: 1.2rem;
+}
+
+.hero__headline {
+  font-size: var(--step-5);
+  font-weight: 590;
+  font-variation-settings: 'opsz' 144, 'WONK' 1;
+  letter-spacing: -0.03em;
+}
+
+.hero__sub {
+  margin-top: 1.5rem;
+  color: var(--ink-soft);
+  font-size: var(--step-1);
+  max-width: 38ch;
+}
+
+.hero__ctas {
+  margin-top: 2.4rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+}
+
+/* masked headline lines (§6.3 entrance) — padding/margin pair keeps Fraunces
+   descenders out of the overflow clip */
+.hero__headline .line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+
+.hero__headline .line__inner {
+  display: inline-block;
+  will-change: transform;
+}
+
+/* hero membership card (§6.3) */
+.hero-card {
+  width: min(100%, 520px);
+  justify-self: center;
+  perspective: 1000px;
+}
+
+.hero-card__floater {
+  position: relative;
+  will-change: transform;
+}
+
+.hero-card__tilt {
+  position: relative;
+  border-radius: var(--radius);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.hero-card__tilt img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  box-shadow: 0 30px 70px -25px rgba(0, 0, 0, 0.65);
+}
+
+.hero-card__glare {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    circle at var(--gx, 50%) var(--gy, 50%),
+    rgba(255, 255, 255, 0.4),
+    rgba(255, 255, 255, 0.12) 30%,
+    transparent 62%
+  );
+}
+
+.hero-card__shadow {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: -26px;
+  height: 46px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.55), transparent);
+  filter: blur(14px);
+  transform: translate3d(var(--sx, 0px), var(--sy, 0px), 0);
+  will-change: transform;
+}
+
+/* generic sections */
+.section {
+  max-width: var(--container);
+  margin-inline: auto;
+  padding: var(--section-pad) var(--gutter);
+  border-top: 1px solid var(--line);
+}
+
+.section--placeholder {
+  min-height: 55vh;
+  display: grid;
+  align-content: center;
+  gap: 1.1rem;
+}
+
+.section__title {
+  font-size: var(--step-4);
+}
+
+.section__note {
+  color: var(--ink-soft);
+  max-width: 52ch;
+}

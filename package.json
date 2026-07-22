@@ -1,12 +1,22 @@
 {
-  "name": "bssaub",
-  "version": "1.0.0",
+  "name": "bssaub-website",
   "private": true,
+  "version": "0.0.1",
+  "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fontsource-variable/fraunces": "^5.2.0",
+    "@fontsource-variable/instrument-sans": "^5.2.0",
+    "gsap": "^3.12.5",
+    "lenis": "^1.1.20",
+    "matter-js": "^0.20.0"
   },
   "devDependencies": {
-    "vite": "^5.4.14"
+    "sharp": "^0.35.3",
+    "vite": "^6.1.0"
   }
 }

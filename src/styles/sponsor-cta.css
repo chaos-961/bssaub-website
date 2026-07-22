@@ -1,0 +1,80 @@
+/* Become a Sponsor (§6.6): quiet CTA + stat row computed from sponsors.js */
+.sponsor-cta {
+  border-top: 1px solid var(--line);
+  padding-block: var(--section-pad);
+}
+
+.sponsor-cta__inner {
+  max-width: min(var(--container), 880px);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: 1.4rem;
+}
+
+.sponsor-cta__inner > * {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
+}
+
+.sponsor-cta.is-in .sponsor-cta__inner > * {
+  opacity: 1;
+  transform: none;
+}
+
+.sponsor-cta.is-in .sponsor-cta__inner > :nth-child(2) {
+  transition-delay: 0.08s;
+}
+
+.sponsor-cta.is-in .sponsor-cta__inner > :nth-child(3) {
+  transition-delay: 0.16s;
+}
+
+.sponsor-cta.is-in .sponsor-cta__inner > :nth-child(4) {
+  transition-delay: 0.24s;
+}
+
+.sponsor-cta__stats {
+  margin: 1.2rem 0 0.6rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.2rem, 5vw, 3.5rem);
+  width: 100%;
+  max-width: 640px;
+}
+
+.sponsor-cta__stat {
+  display: flex;
+  flex-direction: column-reverse; /* semantic dt→dd, visual number-over-label */
+  gap: 0.35rem;
+}
+
+.sponsor-cta__stat dd {
+  margin: 0;
+  font-family: var(--font-display);
+  font-variation-settings: 'opsz' 144;
+  font-size: var(--step-3);
+  font-weight: 590;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.sponsor-cta__stat dt {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 30rem) {
+  .sponsor-cta__stats {
+    gap: 0.9rem;
+  }
+
+  .sponsor-cta__stat dd {
+    font-size: var(--step-2);
+  }
+}

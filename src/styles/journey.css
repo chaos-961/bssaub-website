@@ -1,0 +1,248 @@
+/* Our Journey (§6.5): serpentine path, riding marker, igniting nodes */
+.journey {
+  border-top: 1px solid var(--line);
+  padding-block: var(--section-pad);
+  overflow: hidden; /* path glow must never widen the page */
+}
+
+.journey__intro {
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+  display: grid;
+  gap: 1.1rem;
+  margin-bottom: clamp(3rem, 7vw, 5rem);
+}
+
+.journey__track {
+  position: relative;
+  max-width: min(var(--container), 1080px);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.journey__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.journey__path--base {
+  stroke: var(--line);
+  stroke-width: 1.5;
+}
+
+.journey__path--draw {
+  stroke: var(--accent-2);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 7px rgba(225, 139, 161, 0.45));
+}
+
+/* the glowing mini-card marker — "you are here" (§6.5) */
+.journey__marker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 36px;
+  height: 23px;
+  margin: -11.5px 0 0 -18px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, var(--accent-strong), #5d1128);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 0 20px rgba(225, 139, 161, 0.55);
+  pointer-events: none;
+  z-index: 3;
+  will-change: transform;
+}
+
+.journey__marker::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  right: 14px;
+  bottom: 5px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.journey__nodes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.journey-node {
+  position: relative;
+  padding-block: clamp(3.2rem, 9vh, 5.5rem);
+  --dot-x: 18px; /* mobile rail default; desktop alternation below */
+}
+
+@media (min-width: 60rem) {
+  .journey-node:nth-child(odd) {
+    --dot-x: 66%;
+  }
+
+  .journey-node:nth-child(even) {
+    --dot-x: 34%;
+  }
+
+  .journey-node.journey-node--join {
+    --dot-x: 50%;
+  }
+}
+
+.journey-node__dot {
+  position: absolute;
+  left: var(--dot-x, 50%);
+  top: 50%;
+  width: 15px;
+  height: 15px;
+  margin: -7.5px 0 0 -7.5px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1.5px solid var(--ink-soft);
+  z-index: 2;
+  transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+
+.journey-node.is-lit .journey-node__dot {
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+  box-shadow: 0 0 16px rgba(225, 139, 161, 0.6);
+}
+
+.journey-node__dot::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent-2);
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+.journey-node.is-lit .journey-node__dot::after {
+  animation: node-ring 0.9s var(--ease-out) forwards;
+}
+
+@keyframes node-ring {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.6);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.8);
+  }
+}
+
+/* cards slide in from their side once lit (§6.5) */
+.journey-node__card {
+  width: min(46%, 470px);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(-36px);
+  transition:
+    opacity 0.65s var(--ease-out) 0.08s,
+    transform 0.65s var(--ease-out) 0.08s;
+}
+
+.journey-node:nth-child(even) .journey-node__card {
+  margin-left: auto;
+  transform: translateX(36px);
+}
+
+.journey-node.is-lit .journey-node__card {
+  opacity: 1;
+  transform: none;
+}
+
+.journey-node__media img {
+  width: 100%;
+  height: auto;
+}
+
+.journey-node__card h3 {
+  font-size: var(--step-2);
+  margin: 1.1rem 1.4rem 0.35rem;
+}
+
+.journey-node__pending {
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+  margin: 0 1.4rem 1.3rem;
+}
+
+/* Join node: the path ends at the conversion point (§6.5) */
+.journey-node--join {
+  text-align: center;
+  padding-top: clamp(4rem, 10vh, 6rem);
+}
+
+.journey-node--join .journey-node__dot {
+  top: 24%;
+}
+
+.journey-node__card--join {
+  width: min(100%, 470px);
+  margin-inline: auto;
+  background: none;
+  border: 0;
+  overflow: visible;
+  padding-top: 2.4rem;
+  transform: translateY(26px);
+}
+
+.journey-node--join.is-lit .journey-node__card--join {
+  transform: none;
+}
+
+.journey-node__card--join h3 {
+  font-size: var(--step-3);
+  margin: 0 0 1.4rem;
+}
+
+@media (max-width: 59.99rem) {
+  .journey-node {
+    padding-left: 46px;
+    padding-block: clamp(2.2rem, 6vh, 3.4rem);
+  }
+
+  .journey-node__dot {
+    top: 34px;
+    margin-top: 0;
+  }
+
+  .journey-node__card,
+  .journey-node:nth-child(even) .journey-node__card {
+    width: 100%;
+    margin-left: 0;
+    transform: translateY(24px);
+  }
+
+  .journey-node.is-lit .journey-node__card {
+    transform: none;
+  }
+
+  .journey-node--join {
+    padding-left: 46px;
+    text-align: left;
+  }
+
+  .journey-node--join .journey-node__dot {
+    top: 12px;
+  }
+
+  .journey-node__card--join {
+    margin-inline: 0;
+    padding-top: 0;
+  }
+}

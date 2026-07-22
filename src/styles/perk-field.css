@@ -1,0 +1,226 @@
+/* The Perk Field (§6.4) — zones, bubbles, category ruler, mobile chip */
+.perk-field {
+  position: relative;
+  border-top: 1px solid var(--line);
+  padding-block: var(--section-pad);
+}
+
+.perk-field__intro {
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+  display: grid;
+  gap: 1.1rem;
+  margin-bottom: clamp(2.5rem, 6vw, 4.5rem);
+}
+
+.perk-field__layout {
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: clamp(1rem, 3vw, 2.5rem);
+  align-items: start;
+}
+
+/* ---- category ruler (desktop) ---- */
+.perk-ruler {
+  position: relative;
+  height: 100%;
+}
+
+.perk-ruler__track {
+  position: sticky;
+  top: calc(var(--nav-h) + 6vh);
+  height: min(68vh, 540px);
+}
+
+.perk-ruler__line {
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
+}
+
+.perk-ruler__marker {
+  position: absolute;
+  left: 7px;
+  top: 0;
+  width: 3px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--accent-2);
+  box-shadow: 0 0 12px rgba(225, 139, 161, 0.55);
+  will-change: transform;
+}
+
+.perk-ruler__labels {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  left: 24px;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.perk-ruler__labels li {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+  transform-origin: left center;
+  transition: color 0.3s, transform 0.3s var(--ease-out);
+}
+
+.perk-ruler__labels li.is-active {
+  color: var(--accent-2);
+  transform: scale(1.12);
+}
+
+/* ---- zones ---- */
+.perk-zone + .perk-zone {
+  margin-top: clamp(1.5rem, 4vw, 3rem);
+}
+
+.perk-zone__title {
+  font-family: var(--font-body);
+  font-variation-settings: normal;
+  font-size: var(--step--1);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--ink-soft);
+  margin-bottom: 0.9rem;
+}
+
+.perk-zone__canvas {
+  position: relative;
+}
+
+/* ---- bubbles: real links/buttons, physics writes translate3d (§6.4) ---- */
+.perk-bubble {
+  position: absolute;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: 50%;
+  cursor: pointer;
+  will-change: transform;
+}
+
+.perk-bubble__scale {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  transition:
+    transform var(--dur-quick) var(--ease-out),
+    border-color var(--dur-quick),
+    box-shadow var(--dur-quick);
+}
+
+.perk-bubble:hover .perk-bubble__scale,
+.perk-bubble:focus-visible .perk-bubble__scale {
+  transform: scale(1.05);
+  border-color: var(--accent-2);
+  box-shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.6);
+}
+
+.perk-bubble img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.perk-bubble__badge {
+  position: absolute;
+  top: -5px;
+  left: -12px;
+  z-index: 1;
+  transform: rotate(-12deg); /* oblique badge (§6.4) */
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.32em 0.7em;
+  border-radius: 999px;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.5);
+}
+
+/* ---- mobile: no ruler column; thin edge rail + floating chip (§6.4) ---- */
+.perk-chip {
+  position: fixed;
+  left: 16px;
+  bottom: 18px;
+  z-index: 80;
+  padding: 0.55em 1em;
+  border-radius: 999px;
+  background: var(--surface-glass);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 0.3s, transform 0.3s var(--ease-out);
+}
+
+.perk-chip.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.perk-chip span {
+  display: inline-block;
+}
+
+@media (min-width: 48rem) {
+  .perk-chip {
+    display: none;
+  }
+}
+
+@media (max-width: 47.99rem) {
+  .perk-field__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .perk-ruler {
+    display: none;
+  }
+
+  .perk-field__zones {
+    position: relative;
+    padding-left: 14px;
+  }
+
+  .perk-field__zones::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--line);
+  }
+}

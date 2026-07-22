@@ -1,0 +1,118 @@
+/* Sponsor detail modal (§6.4 popups) */
+.sponsor-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: grid;
+  place-items: center;
+  padding: var(--gutter);
+  visibility: hidden;
+}
+
+.sponsor-modal.is-open {
+  visibility: visible;
+}
+
+.sponsor-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 5, 8, 0.62);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.sponsor-modal__panel {
+  position: relative;
+  width: min(100%, 430px);
+  max-height: min(84vh, 640px);
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: clamp(1.5rem, 5vw, 2.25rem);
+  display: grid;
+  gap: 0.85rem;
+  justify-items: start;
+}
+
+.sponsor-modal__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: color 0.25s, border-color 0.25s;
+}
+
+.sponsor-modal__close:hover {
+  color: var(--ink);
+  border-color: var(--accent-2);
+}
+
+.sponsor-modal__logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--line);
+}
+
+.sponsor-modal__discount {
+  font-size: var(--step--1);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--accent-2);
+  font-weight: 600;
+}
+
+.sponsor-modal__name {
+  font-size: var(--step-2);
+}
+
+.sponsor-modal__summary {
+  color: var(--ink);
+}
+
+.sponsor-modal__notes {
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+}
+
+.sponsor-modal__steps {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.45rem;
+  color: var(--ink-soft);
+}
+
+.sponsor-modal__steps li::marker {
+  color: var(--accent-2);
+  font-weight: 600;
+}
+
+.sponsor-modal__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.3rem;
+}
+
+.sponsor-modal__ig {
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  transition: color 0.25s;
+}
+
+.sponsor-modal__ig:hover {
+  color: var(--accent-2);
+}

@@ -1,0 +1,61 @@
+/* account.html + 404.html placeholder pages */
+body.stub {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+.stub__main {
+  flex: 1;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  text-align: center;
+  gap: 1.3rem;
+  padding: 4rem var(--gutter);
+  max-width: 46rem;
+  margin-inline: auto;
+}
+
+/* account.html carries the fixed site nav (§6.8) */
+body.stub--nav .stub__main {
+  padding-top: calc(var(--nav-h) + 3rem);
+  padding-bottom: 5rem;
+}
+
+.stub__card {
+  width: min(360px, 78vw);
+  height: auto;
+  border-radius: var(--radius);
+  box-shadow: 0 26px 60px -22px rgba(0, 0, 0, 0.6);
+  margin-block: 0.6rem;
+}
+
+.stub__title {
+  font-size: var(--step-4);
+  font-variation-settings: 'opsz' 144, 'WONK' 1;
+}
+
+.stub__note {
+  color: var(--ink-soft);
+}
+
+.stub__actions {
+  display: flex;
+  gap: 0.9rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.stub__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1.1rem var(--gutter);
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+}
