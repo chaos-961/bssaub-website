@@ -7,7 +7,6 @@ import '@fontsource-variable/instrument-sans';
 
 import './styles/tokens.css';
 import './styles/base.css';
-import './styles/aurora.css';
 import './styles/nav.css';
 import './styles/sections.css';
 import './styles/perk-field.css';
@@ -22,7 +21,6 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 import { initScroll } from './modules/scroll.js';
 import { initNav } from './modules/nav.js';
-import { initAuroraSky } from './modules/auroraSky.js';
 import { initHeroCard } from './modules/heroCard.js';
 import { initSponsorModal } from './modules/sponsorModal.js';
 import { initPerkField } from './modules/perkField.js';
@@ -34,7 +32,6 @@ import { initFooterVersion } from './modules/footerVersion.js';
 
 const scroll = initScroll();
 initNav(scroll);
-initAuroraSky();
 const heroCard = initHeroCard(scroll);
 const modal = initSponsorModal(scroll);
 const perkField = initPerkField(scroll, modal);

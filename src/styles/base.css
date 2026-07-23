@@ -10,8 +10,8 @@
 
 html {
   height: 100%;
-  /* warm off-white ground; the fixed div.site-bg layer (aurora.css,
-     ray-line rebuild 2026-07-24) paints the color lines on top of this */
+  /* plain white ground (v0.1.9, 2026-07-24 user call — the aurora
+     background layer was deleted site wide) */
   background-color: var(--bg);
   scrollbar-color: #c9a6b2 #f3edf0;
 }
