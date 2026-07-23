@@ -23,10 +23,6 @@
   border-bottom-color: var(--line);
 }
 
-.site-nav.is-hidden {
-  transform: translateY(-100%);
-}
-
 /* top left is the real logo lockup (user call 2026-07-23) — the name lives
    inside the art, already in brand maroon */
 .site-nav__wordmark {

@@ -1,4 +1,5 @@
-// Navbar behavior: glass after 80px, hide down / show up, active-section
+// Navbar behavior: glass after 80px, always visible (v0.1.4 user call:
+// the old hide-down/show-up is gone), active-section
 // indicator, and a compact dropdown menu anchored under the hamburger
 // (user call 2026-07-23 — replaced the §6.2 full-screen overlay). Dropdown
 // closes on ESC, outside press, scroll movement, link click, or focus leaving.
@@ -17,17 +18,12 @@ export function initNav(scroll) {
   let isOpen = false;
   let lastY = window.scrollY;
 
-  /* --- scrolled state + hide-down/show-up (+ close the menu on scroll) --- */
+  /* --- scrolled state (+ close the menu on scroll); the nav never hides --- */
   const onScroll = (y) => {
     const delta = y - lastY;
     lastY = y;
     header.classList.toggle('is-scrolled', y > 80);
-    if (isOpen) {
-      if (Math.abs(delta) > 12) close({ returnFocus: false });
-      return;
-    }
-    if (y > 160 && delta > 6) header.classList.add('is-hidden');
-    else if (delta < -6 || y <= 160) header.classList.remove('is-hidden');
+    if (isOpen && Math.abs(delta) > 12) close({ returnFocus: false });
   };
   if (scroll.lenis) scroll.lenis.on('scroll', ({ scroll: y }) => onScroll(y));
   else window.addEventListener('scroll', () => onScroll(window.scrollY), { passive: true });
@@ -58,7 +54,6 @@ export function initNav(scroll) {
     menu.setAttribute('aria-hidden', 'false');
     toggle.setAttribute('aria-expanded', 'true');
     toggle.setAttribute('aria-label', 'Close menu');
-    header.classList.remove('is-hidden');
     // GSAP flips visibility on its first tick, one frame after play() — force
     // it now so the focus move below lands (hidden elements refuse focus).
     menu.style.visibility = 'visible';

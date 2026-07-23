@@ -36,8 +36,9 @@ const TUNING = {
   throwRange: { d: 190, m: 120 }, // hard travel ceiling past clampRadius — a thrown
                             //    bubble stays in its neighborhood (2026-07-23 fix:
                             //    flings could sail under later sections = "disappeared")
-  returnGlide: { d: 7, m: 5 },    // homeward speed cap beyond clampRadius — the
-                            //    throw sails out fast, the comeback glides (was snapping)
+  returnGlide: { d: 3.5, m: 2.5 }, // homeward speed cap beyond clampRadius — the
+                            //    throw sails out fast, the comeback glides (was snapping;
+                            //    halved at v0.1.4, user call: return 50% slower)
   clampSpringMax: 1.4,      // cap on the clamp spring's distance multiplier
   hitSpeed: 2.4,            // min relative speed for an impact flash
   jellyK: 0.012,            // speed → squash-stretch amount
