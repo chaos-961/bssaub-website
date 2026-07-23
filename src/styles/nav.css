@@ -75,36 +75,94 @@
   }
 }
 
+/* hamburger — a real button, not two floating hairlines: circular glass chip
+   so it reads as tappable even over the transparent hero nav; hover squeezes
+   the lines together (teasing the X), open spins the chip a quarter turn and
+   fills it brand maroon with a white X */
 .site-nav__burger {
   width: 44px;
   height: 44px;
   display: grid;
   place-content: center;
-  background: none;
-  border: 0;
+  row-gap: 6px;
+  background: color-mix(in srgb, var(--bg) 62%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+  border-radius: 999px;
   cursor: pointer;
   position: relative;
   z-index: calc(var(--z-nav) + 1);
+  transition:
+    background-color 0.3s,
+    border-color 0.3s,
+    transform 0.45s var(--ease-out);
+}
+
+.site-nav__burger:hover {
+  background: color-mix(in srgb, var(--accent) 9%, var(--bg));
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.site-nav__burger:active {
+  scale: 0.9;
 }
 
 .site-nav__burger span {
   display: block;
-  width: 24px;
-  height: 1.5px;
+  width: 20px;
+  height: 2px;
+  border-radius: 2px;
   background: var(--ink);
-  transition: transform 0.35s var(--ease-out);
+  transition:
+    transform 0.45s cubic-bezier(0.34, 1.35, 0.4, 1),
+    background-color 0.3s;
 }
 
-.site-nav__burger span + span {
-  margin-top: 7px;
+.site-nav__burger:hover span {
+  background: var(--accent);
+}
+
+/* closed + hover: the two lines lean toward each other, hinting the X */
+.site-nav__burger:hover:not([aria-expanded='true']) span:first-child {
+  transform: translateY(1.5px);
+}
+
+.site-nav__burger:hover:not([aria-expanded='true']) span:last-child {
+  transform: translateY(-1.5px);
+}
+
+.site-nav__burger[aria-expanded='true'] {
+  background: var(--accent);
+  border-color: transparent;
+  transform: rotate(90deg);
+}
+
+.site-nav__burger[aria-expanded='true']:hover {
+  background: var(--accent-strong);
+}
+
+.site-nav__burger[aria-expanded='true'] span {
+  background: #fff;
 }
 
 .site-nav__burger[aria-expanded='true'] span:first-child {
-  transform: translateY(4.25px) rotate(45deg);
+  transform: translateY(4px) rotate(45deg);
 }
 
 .site-nav__burger[aria-expanded='true'] span:last-child {
-  transform: translateY(-4.25px) rotate(-45deg);
+  transform: translateY(-4px) rotate(-45deg);
+}
+
+/* the OS asked for calm: no spin, no springy line easing */
+html.reduced-motion .site-nav__burger,
+html.reduced-motion .site-nav__burger span {
+  transition-duration: 0.15s;
+  transition-timing-function: ease-out;
+}
+
+html.reduced-motion .site-nav__burger[aria-expanded='true'] {
+  transform: none;
 }
 
 /* dropdown menu — anchors under the hamburger, not a full panel (user call,
