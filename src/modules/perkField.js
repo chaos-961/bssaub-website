@@ -2,12 +2,15 @@
 // DOM links/buttons. Zones lay out as packed circles with jitter; bodies get
 // home springs, soft repulsion, Lenis scroll impulses with per-body bias, a
 // displacement clamp ("mixed, but not too much") and a pointer repulsor.
+// v0.0.4 juice: grab-and-throw, velocity squash-and-stretch ("jelly"), impact
+// rim-flashes with contact sparks, stir currents off pointer velocity, idle
+// breathing + random shivers, hover make-room.
 // Reduced motion: physics off, same packed cluster rendered statically.
 import Matter from 'matter-js';
 import gsap from 'gsap';
 import { sponsors, categories } from '../data/sponsors.js';
 
-const { Engine, Bodies, Body, Composite } = Matter;
+const { Engine, Bodies, Body, Composite, Events } = Matter;
 
 const STEP = 1000 / 60; // fixed timestep, accumulator-driven (§6.4)
 
@@ -22,6 +25,19 @@ const TUNING = {
   maxSpeed: { d: 15, m: 9 },
   pointerRadius: 150,
   pointerPush: 0.85,        // gentle repulsor strength (velocity nudge)
+  stirPush: 1.2,            // pointer velocity (px/ms) → directional current
+  hoverRadius: 84,          // make-room reach beyond touching (px)
+  hoverPush: 0.4,
+  holdMs: 160,              // touch: hold this long (without scrolling) to grab
+  grabFollow: 0.34,         // fraction of the pointer gap closed per step
+  grabMaxSpeed: 27,         // grabbed body tracks faster than the free cap
+  flingCap: { d: 30, m: 20 },
+  flingScale: 0.95,         // release velocity → body velocity factor
+  hitSpeed: 2.4,            // min relative speed for an impact flash
+  jellyK: 0.012,            // speed → squash-stretch amount
+  jellyMax: 0.085,
+  breatheAmp: 0.008,        // idle life: ±0.8% scale
+  shiverKick: 1.5,          // occasional random nudge (fish-in-a-tank)
 };
 
 const isMobile = () =>
@@ -48,6 +64,7 @@ export function initPerkField(scroll, modal) {
 
   /* ---------------- DOM build from sponsors.js ---------------- */
   const zones = [];
+  const byEl = new Map();
   categories.forEach((cat) => {
     const canvas = section.querySelector(`[data-zone-canvas="${cat.id}"]`);
     if (!canvas) return;
@@ -81,9 +98,11 @@ export function initPerkField(scroll, modal) {
           </span>`;
         if (hasDetails) el.addEventListener('click', () => modal.open(s, el));
         canvas.appendChild(el);
-        return { sponsor: s, el, i, d: 0, r: 0, home: { x: 0, y: 0 }, body: null };
+        const it = { sponsor: s, el, i, d: 0, r: 0, home: { x: 0, y: 0 }, body: null };
+        byEl.set(el, it);
+        return it;
       });
-    zones.push({ id: cat.id, canvas, items, active: true, offsetY: 0 });
+    zones.push({ id: cat.id, canvas, items, active: true, offsetX: 0, offsetY: 0 });
   });
 
   const allItems = zones.flatMap((z) => z.items);
@@ -161,10 +180,14 @@ export function initPerkField(scroll, modal) {
       zone.canvas.style.height = `${Math.max(isMobile() ? 190 : 250, maxY + 26)}px`;
     });
 
-    // zone offsets in section space + element home placement
-    const secTop = section.getBoundingClientRect().top;
+    // zone offsets in section space + element home placement. Bodies live in
+    // (canvas-local x, section-local y); offsetX maps pointer events into the
+    // body X frame — the repulsor reads the cursor where it actually is.
+    const secRect = section.getBoundingClientRect();
     zones.forEach((zone) => {
-      zone.offsetY = zone.canvas.getBoundingClientRect().top - secTop;
+      const cRect = zone.canvas.getBoundingClientRect();
+      zone.offsetX = cRect.left - secRect.left;
+      zone.offsetY = cRect.top - secRect.top;
       zone.items.forEach((it) => {
         it.el.style.width = `${it.d}px`;
         it.el.style.height = `${it.d}px`;
@@ -187,50 +210,320 @@ export function initPerkField(scroll, modal) {
   engine.gravity.x = 0;
   engine.gravity.y = 0;
 
+  const byBody = new Map();
   allItems.forEach((it) => {
     const zone = zones.find((z) => z.items.includes(it));
+    it.zone = zone;
     it.bias = 0.7 + hash01(it.i * 3 + 1) * 0.6;         // per-body impulse bias
     it.biasX = (hash01(it.i * 5 + 2) - 0.5) * 0.5;      // slight lateral flavor
+    it.deform = { k: 0, dx: 1, dy: 0 };                 // smoothed jelly state
+    it.breathePhase = hash01(it.i * 17 + 3) * Math.PI * 2;
+    it.breatheSpeed = 0.9 + hash01(it.i * 13 + 5) * 0.5;
+    it.capBoost = 0;                                    // elevated cap after a fling
+    it.hitAt = 0;
+    it.grabbed = false;
     it.body = Bodies.circle(it.home.x, it.home.y + zone.offsetY, it.r, {
       restitution: 0.2,
       frictionAir: 0.09,
       friction: 0,
       inertia: Infinity, // rotation locked — position moves, rotation never
     });
+    byBody.set(it.body, it);
     Composite.add(engine.world, it.body);
   });
 
-  /* ---------------- forces ---------------- */
-  let pointer = null;
-  if (window.matchMedia('(pointer: fine)').matches) {
+  /* ---------------- pointer state: repulsor + stir + hover -------------- */
+  const finePointer = window.matchMedia('(pointer: fine)').matches;
+  let pointer = null;                 // section-relative
+  const pointerVel = { x: 0, y: 0 }; // smoothed px/ms — drives stir currents
+  let lastPointerEv = null;
+  let hoverIt = null;
+
+  const sectionPoint = (e) => {
+    const r = section.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  };
+
+  if (finePointer) {
     section.addEventListener('pointermove', (e) => {
-      const r = section.getBoundingClientRect();
-      pointer = { x: e.clientX - r.left, y: e.clientY - r.top };
+      if (lastPointerEv) {
+        const dt = Math.max(e.timeStamp - lastPointerEv.t, 1);
+        pointerVel.x += ((e.clientX - lastPointerEv.x) / dt - pointerVel.x) * 0.35;
+        pointerVel.y += ((e.clientY - lastPointerEv.y) / dt - pointerVel.y) * 0.35;
+      }
+      lastPointerEv = { x: e.clientX, y: e.clientY, t: e.timeStamp };
+      pointer = sectionPoint(e);
     });
     section.addEventListener('pointerleave', () => {
       pointer = null;
+      lastPointerEv = null;
+    });
+    section.addEventListener('pointerover', (e) => {
+      const el = e.target.closest('.perk-bubble');
+      hoverIt = (el && byEl.get(el)) || null;
+    });
+    section.addEventListener('pointerout', (e) => {
+      if (e.target.closest('.perk-bubble')) hoverIt = null;
     });
   }
 
+  /* ---------------- grab-and-throw ---------------- */
+  let grab = null;         // { it, pointerId, target, samples, dist, lastClient }
+  let pendingTouch = null; // touch waiting for the hold timer (scroll wins on move)
+  let suppressEl = null;   // swallow the click that follows a real drag
+  let suppressUntil = 0;
+
+  const blockTouch = (ev) => ev.preventDefault();
+
+  function setTarget(e) {
+    const p = sectionPoint(e);
+    grab.target = { x: p.x - grab.it.zone.offsetX, y: p.y };
+  }
+  function pushSample(e) {
+    grab.samples.push({ x: e.clientX, y: e.clientY, t: performance.now() });
+    if (grab.samples.length > 6) grab.samples.shift();
+  }
+
+  function engageGrab(it, e) {
+    hoverIt = null;
+    it.grabbed = true;
+    grab = { it, pointerId: e.pointerId, target: null, samples: [], dist: 0, lastClient: { x: e.clientX, y: e.clientY } };
+    setTarget(e);
+    pushSample(e);
+    try {
+      it.el.setPointerCapture(e.pointerId);
+    } catch {
+      /* capture unsupported — window listeners still track the pointer */
+    }
+    it.el.classList.add('is-grabbed');
+    document.documentElement.classList.add('is-grabbing');
+    if (e.pointerType === 'touch') {
+      window.addEventListener('touchmove', blockTouch, { passive: false });
+      navigator.vibrate?.(8);
+    }
+  }
+
+  function release(fling) {
+    if (!grab) return;
+    const it = grab.it;
+    it.grabbed = false;
+    if (fling && grab.samples.length >= 2) {
+      const now = performance.now();
+      const recent = grab.samples.filter((s) => now - s.t < 110);
+      const a = recent[0] || grab.samples[0];
+      const b = grab.samples[grab.samples.length - 1];
+      const dt = Math.max(b.t - a.t, 8);
+      let vx = ((b.x - a.x) / dt) * STEP * TUNING.flingScale;
+      let vy = ((b.y - a.y) / dt) * STEP * TUNING.flingScale;
+      const cap = isMobile() ? TUNING.flingCap.m : TUNING.flingCap.d;
+      const sp = Math.hypot(vx, vy);
+      if (sp > cap) {
+        vx = (vx / sp) * cap;
+        vy = (vy / sp) * cap;
+      }
+      Body.setVelocity(it.body, { x: vx, y: vy });
+      if (sp > 2) it.capBoost = 1; // let a real throw sail before the cap reels it in
+    }
+    if (grab.dist > 6) {
+      suppressEl = it.el;
+      suppressUntil = performance.now() + 420;
+    }
+    try {
+      it.el.releasePointerCapture(grab.pointerId);
+    } catch {
+      /* already released */
+    }
+    it.el.classList.remove('is-grabbed');
+    document.documentElement.classList.remove('is-grabbing');
+    window.removeEventListener('touchmove', blockTouch);
+    grab = null;
+  }
+
+  section.addEventListener('pointerdown', (e) => {
+    if (e.button > 0) return;
+    const el = e.target.closest('.perk-bubble');
+    const it = el && byEl.get(el);
+    if (!it) return;
+    if (e.pointerType === 'touch') {
+      // hold to grab; moving first hands the gesture to native scroll
+      pendingTouch = {
+        it,
+        id: e.pointerId,
+        x0: e.clientX,
+        y0: e.clientY,
+        ev: e,
+        timer: setTimeout(() => {
+          if (pendingTouch && pendingTouch.id === e.pointerId) {
+            engageGrab(pendingTouch.it, pendingTouch.ev);
+            pendingTouch = null;
+          }
+        }, TUNING.holdMs),
+      };
+    } else {
+      engageGrab(it, e);
+    }
+  });
+
+  window.addEventListener('pointermove', (e) => {
+    if (pendingTouch && e.pointerId === pendingTouch.id) {
+      pendingTouch.ev = e;
+      if (Math.hypot(e.clientX - pendingTouch.x0, e.clientY - pendingTouch.y0) > 9) {
+        clearTimeout(pendingTouch.timer);
+        pendingTouch = null;
+      }
+    }
+    if (grab && e.pointerId === grab.pointerId) {
+      setTarget(e);
+      pushSample(e);
+      grab.dist += Math.hypot(e.clientX - grab.lastClient.x, e.clientY - grab.lastClient.y);
+      grab.lastClient = { x: e.clientX, y: e.clientY };
+    }
+  });
+  window.addEventListener('pointerup', (e) => {
+    if (pendingTouch && e.pointerId === pendingTouch.id) {
+      clearTimeout(pendingTouch.timer);
+      pendingTouch = null;
+    }
+    if (grab && e.pointerId === grab.pointerId) release(true);
+  });
+  window.addEventListener('pointercancel', (e) => {
+    if (pendingTouch && e.pointerId === pendingTouch.id) {
+      clearTimeout(pendingTouch.timer);
+      pendingTouch = null;
+    }
+    if (grab && e.pointerId === grab.pointerId) release(false);
+  });
+  window.addEventListener('blur', () => release(false));
+
+  // a drag must not fire the tap action (link/modal) on release
+  section.addEventListener(
+    'click',
+    (e) => {
+      if (suppressEl && e.target.closest('.perk-bubble') === suppressEl && performance.now() < suppressUntil) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      suppressEl = null;
+    },
+    true,
+  );
+  section.addEventListener('dragstart', (e) => e.preventDefault());
+
+  /* ---------------- impact flashes: rim ring + contact spark ------------ */
+  const sparkLayer = document.createElement('div');
+  sparkLayer.className = 'perk-sparks';
+  sparkLayer.setAttribute('aria-hidden', 'true');
+  section.appendChild(sparkLayer);
+  const sparkPool = Array.from({ length: 6 }, () => {
+    const s = document.createElement('span');
+    s.className = 'perk-spark';
+    s.addEventListener('animationend', () => s.classList.remove('is-on'));
+    sparkLayer.appendChild(s);
+    return s;
+  });
+
+  function flash(it) {
+    const el = it.el;
+    el.classList.remove('is-hit');
+    void el.offsetWidth; // restart the animation
+    el.classList.add('is-hit');
+  }
+  allItems.forEach((it) =>
+    it.el.addEventListener('animationend', (e) => {
+      if (e.animationName === 'perk-hit') it.el.classList.remove('is-hit');
+    }),
+  );
+
+  function spark(a, b) {
+    const s = sparkPool.find((el) => !el.classList.contains('is-on'));
+    if (!s) return;
+    const A = a.body.position;
+    const B = b.body.position;
+    const w = a.r / (a.r + b.r);
+    s.style.left = `${(A.x + (B.x - A.x) * w + a.zone.offsetX).toFixed(1)}px`;
+    s.style.top = `${(A.y + (B.y - A.y) * w).toFixed(1)}px`;
+    s.classList.add('is-on');
+  }
+
+  let lastFlashAt = 0;
+  Events.on(engine, 'collisionStart', (ev) => {
+    const now = performance.now();
+    if (now - lastFlashAt < 90) return; // big shoves must not strobe
+    for (const pair of ev.pairs) {
+      const a = byBody.get(pair.bodyA);
+      const b = byBody.get(pair.bodyB);
+      if (!a || !b) continue;
+      const rel = Math.hypot(
+        pair.bodyA.velocity.x - pair.bodyB.velocity.x,
+        pair.bodyA.velocity.y - pair.bodyB.velocity.y,
+      );
+      if (rel < TUNING.hitSpeed) continue;
+      if (now - a.hitAt < 260 || now - b.hitAt < 260) continue;
+      a.hitAt = b.hitAt = lastFlashAt = now;
+      flash(a);
+      flash(b);
+      spark(a, b);
+      break;
+    }
+  });
+
+  /* ---------------- forces ---------------- */
   let lenisVel = 0;
   scroll.lenis?.on('scroll', ({ velocity }) => {
     lenisVel = velocity;
   });
 
-  const activeItems = () => zones.filter((z) => z.active).flatMap((z) => z.items);
+  const activeItems = () => {
+    const act = zones.filter((z) => z.active).flatMap((z) => z.items);
+    if (grab && !grab.it.zone.active) act.push(grab.it);
+    return act;
+  };
+
+  let simT = 0;        // deterministic sim clock (breathing, shivers)
+  let shiverAt = 3200;
 
   function applyForces() {
     const mobile = isMobile();
     const clampR = mobile ? TUNING.clampRadius.m : TUNING.clampRadius.d;
     const impulseK = mobile ? TUNING.impulse.m : TUNING.impulse.d;
     const maxSpeed = mobile ? TUNING.maxSpeed.m : TUNING.maxSpeed.d;
+    const flingCap = mobile ? TUNING.flingCap.m : TUNING.flingCap.d;
     const act = activeItems();
 
+    simT += STEP;
+    if (simT >= shiverAt) {
+      shiverAt = simT + 2200 + Math.random() * 2400;
+      const pool = act.filter((x) => !x.grabbed);
+      if (pool.length) {
+        const s = pool[(Math.random() * pool.length) | 0];
+        const ang = Math.random() * Math.PI * 2;
+        const k = TUNING.shiverKick * (0.7 + Math.random() * 0.6);
+        Body.setVelocity(s.body, {
+          x: s.body.velocity.x + Math.cos(ang) * k,
+          y: s.body.velocity.y + Math.sin(ang) * k,
+        });
+      }
+    }
+
     act.forEach((it) => {
-      const zone = zones.find((z) => z.items.includes(it));
       const b = it.body;
+
+      // grabbed body: velocity-follow the pointer (collisions still resolve,
+      // so a dragged bubble plows through neighbors instead of teleporting)
+      if (it.grabbed && grab) {
+        let vx = (grab.target.x - b.position.x) * TUNING.grabFollow;
+        let vy = (grab.target.y - b.position.y) * TUNING.grabFollow;
+        const gsp = Math.hypot(vx, vy);
+        if (gsp > TUNING.grabMaxSpeed) {
+          vx = (vx / gsp) * TUNING.grabMaxSpeed;
+          vy = (vy / gsp) * TUNING.grabMaxSpeed;
+        }
+        Body.setVelocity(b, { x: vx, y: vy });
+        return;
+      }
+
       const hx = it.home.x;
-      const hy = it.home.y + zone.offsetY;
+      const hy = it.home.y + it.zone.offsetY;
       const dx = hx - b.position.x;
       const dy = hy - b.position.y;
       const dist = Math.hypot(dx, dy);
@@ -249,29 +542,56 @@ export function initPerkField(scroll, modal) {
         });
       }
 
-      // pointer as gentle repulsor (desktop, §6.4)
-      if (pointer && !mobile) {
-        const px = b.position.x - pointer.x;
+      // pointer repulsor + stir current: radial push away from the cursor,
+      // plus a directional shove from pointer velocity (stirring water)
+      if (pointer && !mobile && !grab) {
+        const px = b.position.x - (pointer.x - it.zone.offsetX);
         const py = b.position.y - pointer.y;
         const pd = Math.hypot(px, py);
-        if (pd > 0.5 && pd < TUNING.pointerRadius + it.r) {
-          const f = (1 - pd / (TUNING.pointerRadius + it.r)) ** 2 * TUNING.pointerPush;
+        const reach = TUNING.pointerRadius + it.r;
+        if (pd > 0.5 && pd < reach) {
+          const t = (1 - pd / reach) ** 2;
+          const f = t * TUNING.pointerPush;
           Body.setVelocity(b, {
-            x: b.velocity.x + (px / pd) * f,
-            y: b.velocity.y + (py / pd) * f,
+            x: b.velocity.x + (px / pd) * f + pointerVel.x * t * TUNING.stirPush,
+            y: b.velocity.y + (py / pd) * f + pointerVel.y * t * TUNING.stirPush,
           });
         }
       }
 
-      // speed cap
+      // speed cap — briefly elevated after a fling so throws can sail
+      let cap = maxSpeed;
+      if (it.capBoost > 0.01) {
+        cap = maxSpeed + (flingCap - maxSpeed) * it.capBoost;
+        it.capBoost *= 0.95;
+      }
       const sp = Math.hypot(b.velocity.x, b.velocity.y);
-      if (sp > maxSpeed) {
+      if (sp > cap) {
         Body.setVelocity(b, {
-          x: (b.velocity.x / sp) * maxSpeed,
-          y: (b.velocity.y / sp) * maxSpeed,
+          x: (b.velocity.x / sp) * cap,
+          y: (b.velocity.y / sp) * cap,
         });
       }
     });
+
+    // hover make-room: neighbors politely part around the hovered bubble
+    if (hoverIt && !grab && hoverIt.body) {
+      const H = hoverIt.body.position;
+      act.forEach((o) => {
+        if (o === hoverIt) return;
+        const dx = o.body.position.x - H.x;
+        const dy = o.body.position.y - H.y;
+        const d = Math.hypot(dx, dy);
+        const reach = hoverIt.r + o.r + TUNING.hoverRadius;
+        if (d > 0.5 && d < reach) {
+          const f = (1 - d / reach) ** 2 * TUNING.hoverPush;
+          Body.setVelocity(o.body, {
+            x: o.body.velocity.x + (dx / d) * f,
+            y: o.body.velocity.y + (dy / d) * f,
+          });
+        }
+      });
+    }
 
     // soft radial push on personal-space overlap — marbles, jelly (§6.4)
     for (let a = 0; a < act.length; a++) {
@@ -294,17 +614,46 @@ export function initPerkField(scroll, modal) {
 
     // scroll impulse decays if lenis goes quiet between events
     lenisVel *= 0.9;
+    // stir current dies when the pointer rests
+    pointerVel.x *= 0.88;
+    pointerVel.y *= 0.88;
+  }
+
+  /* ---------------- render: position + jelly + breathing ---------------- */
+  function renderItem(it) {
+    const b = it.body;
+    const x = b.position.x - it.home.x;
+    const y = b.position.y - (it.home.y + it.zone.offsetY);
+
+    // jelly: stretch along the (smoothed) velocity direction, squash across it
+    const sp = Math.hypot(b.velocity.x, b.velocity.y);
+    const kT = gsap.utils.clamp(0, TUNING.jellyMax, (sp - 1.1) * TUNING.jellyK);
+    const D = it.deform;
+    D.k += (kT - D.k) * 0.22;
+    if (sp > 0.6) {
+      D.dx += (b.velocity.x / sp - D.dx) * 0.3;
+      D.dy += (b.velocity.y / sp - D.dy) * 0.3;
+    }
+    const breathe = 1 + TUNING.breatheAmp * Math.sin(simT * 0.00115 * it.breatheSpeed + it.breathePhase);
+
+    let tf = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
+    if (D.k > 0.003) {
+      const ang = Math.atan2(D.dy, D.dx);
+      const sx = (breathe * (1 + D.k)).toFixed(4);
+      const sy = (breathe * (1 - D.k * 0.85)).toFixed(4);
+      tf += ` rotate(${ang.toFixed(3)}rad) scale(${sx}, ${sy}) rotate(${(-ang).toFixed(3)}rad)`;
+    } else {
+      tf += ` scale(${breathe.toFixed(4)})`;
+    }
+    it.el.style.transform = tf;
   }
 
   function render() {
     zones.forEach((zone) => {
       if (!zone.active) return;
-      zone.items.forEach((it) => {
-        const x = it.body.position.x - it.home.x;
-        const y = it.body.position.y - (it.home.y + zone.offsetY);
-        it.el.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
-      });
+      zone.items.forEach(renderItem);
     });
+    if (grab && !grab.it.zone.active) renderItem(grab.it);
   }
 
   /* ---------------- stepping: fixed timestep + accumulator -------------- */
@@ -353,6 +702,7 @@ export function initPerkField(scroll, modal) {
   window.addEventListener(
     'resize',
     debounce(() => {
+      release(false);
       layout();
       zones.forEach((zone) => {
         zone.items.forEach((it) => {
@@ -371,5 +721,31 @@ export function initPerkField(scroll, modal) {
     Engine.update(engine, STEP);
   };
 
-  return { zones, layout, engine, applyForces, render, stepOnce, reduced: false };
+  return {
+    zones,
+    layout,
+    engine,
+    applyForces,
+    render,
+    stepOnce,
+    reduced: false,
+    _qa: {
+      items: allItems,
+      byEl,
+      get grab() {
+        return grab;
+      },
+      get hover() {
+        return hoverIt;
+      },
+      get pointerVel() {
+        return pointerVel;
+      },
+      shiverNow() {
+        shiverAt = 0;
+      },
+      flash,
+      spark,
+    },
+  };
 }

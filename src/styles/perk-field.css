@@ -101,6 +101,109 @@
   box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.5);
 }
 
+/* ---- v0.0.4 juice: grab-and-throw, impact flashes, hover life ---- */
+.perk-bubble {
+  touch-action: pan-y pinch-zoom; /* scroll still starts on a bubble; hold grabs */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+}
+
+.perk-bubble img,
+.perk-bubble__badge {
+  pointer-events: none;
+}
+
+.perk-bubble:hover {
+  z-index: 3;
+}
+
+/* badge tick-tock while hovered */
+.perk-bubble:hover .perk-bubble__badge {
+  animation: badge-tick 0.9s var(--ease-out);
+}
+
+@keyframes badge-tick {
+  0% {
+    transform: rotate(-12deg);
+  }
+  30% {
+    transform: rotate(-20deg) scale(1.06);
+  }
+  62% {
+    transform: rotate(-6deg);
+  }
+  100% {
+    transform: rotate(-12deg);
+  }
+}
+
+.perk-bubble.is-grabbed {
+  z-index: 5;
+}
+
+.perk-bubble.is-grabbed .perk-bubble__scale {
+  transform: scale(1.09);
+  border-color: var(--accent-2);
+  box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.72);
+}
+
+html.is-grabbing,
+html.is-grabbing .perk-bubble {
+  cursor: grabbing;
+}
+
+/* impact flash: rim ring + border tick on hard collisions */
+.perk-bubble.is-hit .perk-bubble__scale {
+  animation: perk-hit 0.42s var(--ease-out);
+}
+
+@keyframes perk-hit {
+  0% {
+    box-shadow: 0 0 0 0 rgba(225, 139, 161, 0.5);
+    border-color: var(--accent-2);
+  }
+  100% {
+    box-shadow: 0 0 0 16px rgba(225, 139, 161, 0);
+    border-color: var(--line);
+  }
+}
+
+/* contact sparks — pooled, decorative */
+.perk-sparks {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.perk-spark {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  opacity: 0;
+  background: radial-gradient(circle, rgba(244, 239, 235, 0.9), rgba(225, 139, 161, 0.5) 45%, transparent 72%);
+}
+
+.perk-spark.is-on {
+  animation: spark-pop 0.45s var(--ease-out);
+}
+
+@keyframes spark-pop {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.4);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.1);
+  }
+}
+
 /* ---- mobile: thin edge rail keeps the zones anchored ---- */
 @media (max-width: 47.99rem) {
   .perk-field__zones {
