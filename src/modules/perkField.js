@@ -28,7 +28,8 @@ const TUNING = {
   stirPush: 1.2,            // pointer velocity (px/ms) → directional current
   hoverRadius: 84,          // make-room reach beyond touching (px)
   hoverPush: 0.4,
-  holdMs: 160,              // touch: hold this long (without scrolling) to grab
+  holdMs: 140,              // touch: hold this long (without scrolling) to grab
+                            //    (160 → 140, 2026-07-24: grab should feel immediate)
   grabFollow: 0.34,         // fraction of the pointer gap closed per step
   grabMaxSpeed: 27,         // grabbed body tracks faster than the free cap
   flingCap: { d: 30, m: 20 },
@@ -36,9 +37,20 @@ const TUNING = {
   throwRange: { d: 190, m: 120 }, // hard travel ceiling past clampRadius — a thrown
                             //    bubble stays in its neighborhood (2026-07-23 fix:
                             //    flings could sail under later sections = "disappeared")
-  returnGlide: { d: 3.5, m: 2.5 }, // homeward speed cap beyond clampRadius — the
-                            //    throw sails out fast, the comeback glides (was snapping;
-                            //    halved at v0.1.4, user call: return 50% slower)
+  returnGlide: { d: 3.5, m: 2.5 }, // homeward speed ceiling beyond clampRadius — the
+                            //    throw sails out fast, the comeback glides (halved at
+                            //    v0.1.4; distance-eased below, user call 2026-07-24:
+                            //    the constant-speed return read as a snap)
+  glideEase: 0.15,          // glide fraction left at the home seat — the return
+                            //    runs near full glide far out and eases down the
+                            //    whole way in, so it lands instead of snapping
+  settleSoft: 0.8,          // how much of the clamp spring a fresh release mutes
+  settleDecay: 0.972,       // per-step settle fade (~1.5s) — the spring eases back
+                            //    in instead of yanking the moment fingers let go
+  springKickMax: { d: 2.4, m: 1.8 }, // ceiling on the spring's PER-STEP impulse
+                            //    (Matter integrates force as k*dist*dt², ~17px/step
+                            //    at a long stretch — one frame of that is a visible
+                            //    hop; the spring may press, never punch)
   clampSpringMax: 1.4,      // cap on the clamp spring's distance multiplier
   hitSpeed: 2.4,            // min relative speed for an impact flash
   jellyK: 0.012,            // speed → squash-stretch amount
@@ -227,6 +239,7 @@ export function initPerkField(scroll, modal) {
     it.breathePhase = hash01(it.i * 17 + 3) * Math.PI * 2;
     it.breatheSpeed = 0.9 + hash01(it.i * 13 + 5) * 0.5;
     it.capBoost = 0;                                    // elevated cap after a fling
+    it.settle = 0;                                      // fresh-release spring mute
     it.hitAt = 0;
     it.grabbed = false;
     it.body = Bodies.circle(it.home.x, it.home.y + zone.offsetY, it.r, {
@@ -234,6 +247,9 @@ export function initPerkField(scroll, modal) {
       frictionAir: 0.09,
       friction: 0,
       inertia: Infinity, // rotation locked — position moves, rotation never
+      slop: 5, // tolerate a few px of squeeze: a bubble easing into a crowded
+               // seat should squish in, not get position-solver EJECTED 40px
+               // (the pop the old snap-springs used to hide, 2026-07-24)
     });
     byBody.set(it.body, it);
     Composite.add(engine.world, it.body);
@@ -294,6 +310,7 @@ export function initPerkField(scroll, modal) {
   function engageGrab(it, e) {
     hoverIt = null;
     it.grabbed = true;
+    it.settle = 0;
     grab = { it, pointerId: e.pointerId, target: null, samples: [], dist: 0, lastClient: { x: e.clientX, y: e.clientY } };
     setTarget(e);
     pushSample(e);
@@ -314,6 +331,7 @@ export function initPerkField(scroll, modal) {
     if (!grab) return;
     const it = grab.it;
     it.grabbed = false;
+    let thrown = false;
     if (fling && grab.samples.length >= 2) {
       const now = performance.now();
       const recent = grab.samples.filter((s) => now - s.t < 110);
@@ -329,8 +347,15 @@ export function initPerkField(scroll, modal) {
         vy = (vy / sp) * cap;
       }
       Body.setVelocity(it.body, { x: vx, y: vy });
-      if (sp > 2) it.capBoost = 1; // let a real throw sail before the cap reels it in
+      if (sp > 2) {
+        it.capBoost = 1; // let a real throw sail before the cap reels it in
+        thrown = true;
+      }
     }
+    // soft start home: a gentle let-go mutes most of the clamp spring and
+    // eases it back in (settleDecay); a real throw keeps half the mute so
+    // the reel-in after the sail is not a yank either
+    it.settle = thrown ? 0.5 : 1;
     if (grab.dist > 6) {
       suppressEl = it.el;
       suppressUntil = performance.now() + 420;
@@ -415,6 +440,13 @@ export function initPerkField(scroll, modal) {
     true,
   );
   section.addEventListener('dragstart', (e) => e.preventDefault());
+
+  // mobile long-press must grab, never open the OS copy/context sheet
+  // (2026-07-24 user report; pairs with the touch-callout CSS). A quick
+  // tap never reaches here, so links and popups stay one press away.
+  section.addEventListener('contextmenu', (e) => {
+    if (e.target.closest('.perk-bubble')) e.preventDefault();
+  });
 
   /* ---------------- impact flashes: rim ring + contact spark ------------ */
   const sparkLayer = document.createElement('div');
@@ -553,10 +585,22 @@ export function initPerkField(scroll, modal) {
       }
 
       // home spring + displacement clamp: extra pull beyond the radius (§6.4),
-      // multiplier capped so far throws never build a snap-back force
+      // multiplier capped so far throws never build a snap-back force; a fresh
+      // release mutes the clamp spring and fades it back in (settle) so the
+      // pull ramps up instead of grabbing the instant fingers open
       let k = TUNING.homeSpring;
       if (dist > clampR) {
-        k += TUNING.clampSpring * Math.min((dist - clampR) / clampR, TUNING.clampSpringMax);
+        let ck = TUNING.clampSpring * Math.min((dist - clampR) / clampR, TUNING.clampSpringMax);
+        if (it.settle > 0.02) {
+          ck *= 1 - TUNING.settleSoft * it.settle;
+          it.settle *= TUNING.settleDecay;
+        }
+        k += ck;
+      }
+      if (dist > 0.5) {
+        const kick = k * dist * STEP * STEP;
+        const kickMax = mobile ? TUNING.springKickMax.m : TUNING.springKickMax.d;
+        if (kick > kickMax) k = kickMax / (dist * STEP * STEP);
       }
       b.force.x += dx * k * b.mass;
       b.force.y += dy * k * b.mass;
@@ -600,22 +644,9 @@ export function initPerkField(scroll, modal) {
         });
       }
 
-      // return glide: beyond the casual-drift radius, homeward radial speed is
-      // trimmed to a calm glide (tangential swirl kept; the boost dies here so
-      // the spring cannot ride an elevated cap back home)
-      if (dist > clampR) {
-        const inx = dx / dist;
-        const iny = dy / dist;
-        const vin = b.velocity.x * inx + b.velocity.y * iny;
-        const glide = mobile ? TUNING.returnGlide.m : TUNING.returnGlide.d;
-        if (vin > glide) {
-          it.capBoost = 0;
-          Body.setVelocity(b, {
-            x: b.velocity.x - inx * (vin - glide),
-            y: b.velocity.y - iny * (vin - glide),
-          });
-        }
-      }
+      // (the return glide lives in glidePass(), which runs AFTER the
+      // engine integrates these forces — trimming here was ineffective,
+      // see the note on glidePass)
     });
 
     // hover make-room: neighbors politely part around the hovered bubble
@@ -661,6 +692,40 @@ export function initPerkField(scroll, modal) {
     // stir current dies when the pointer rests
     pointerVel.x *= 0.88;
     pointerVel.y *= 0.88;
+  }
+
+  // return glide — runs AFTER Engine.update, because Matter integrates
+  // forces as k*dist*dt² per step (~17px/step at a 165px stretch): any cap
+  // applied before integration was immediately re-buried by the spring,
+  // which is exactly the "quick snap" the user felt on release
+  // (2026-07-24). Homeward RADIAL speed is capped on a distance-eased
+  // curve: full returnGlide out at the throw ceiling, easing to glideEase
+  // of it at the home seat, so every comeback decelerates into place.
+  // Tangential swirl, outward sails, grabs and collisions are untouched.
+  function glidePass() {
+    const mobile = isMobile();
+    const glide = mobile ? TUNING.returnGlide.m : TUNING.returnGlide.d;
+    const clampR = mobile ? TUNING.clampRadius.m : TUNING.clampRadius.d;
+    const reach = clampR + (mobile ? TUNING.throwRange.m : TUNING.throwRange.d);
+    activeItems().forEach((it) => {
+      if (it.grabbed) return;
+      const b = it.body;
+      const dx = it.home.x - b.position.x;
+      const dy = it.home.y + it.zone.offsetY - b.position.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 1) return;
+      const inx = dx / dist;
+      const iny = dy / dist;
+      const vin = b.velocity.x * inx + b.velocity.y * iny;
+      const cap = glide * (TUNING.glideEase + (1 - TUNING.glideEase) * Math.min(dist / reach, 1));
+      if (vin > cap) {
+        if (dist > clampR) it.capBoost = 0; // homeward past the ring ends a sail
+        Body.setVelocity(b, {
+          x: b.velocity.x - inx * (vin - cap),
+          y: b.velocity.y - iny * (vin - cap),
+        });
+      }
+    });
   }
 
   /* ---------------- render: position + jelly + breathing ---------------- */
@@ -715,6 +780,7 @@ export function initPerkField(scroll, modal) {
     while (acc >= STEP) {
       applyForces();
       Engine.update(engine, STEP);
+      glidePass();
       acc -= STEP;
       stepped = true;
     }
@@ -763,6 +829,7 @@ export function initPerkField(scroll, modal) {
   const stepOnce = () => {
     applyForces();
     Engine.update(engine, STEP);
+    glidePass();
   };
 
   return {

@@ -10,8 +10,8 @@
 
 html {
   height: 100%;
-  /* warm off-white ground; the fixed div.site-bg ribbon layer
-     (aurora.css, rebuilt v0.1.5) paints the color fields on top of this */
+  /* warm off-white ground; the fixed div.site-bg layer (aurora.css,
+     ray-line rebuild 2026-07-24) paints the color lines on top of this */
   background-color: var(--bg);
   scrollbar-color: #c9a6b2 #f3edf0;
 }

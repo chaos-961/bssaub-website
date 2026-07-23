@@ -1,19 +1,23 @@
-// Aurora sky — the WebGL curtain layer (v0.1.7, user call 2026-07-23:
-// "think of a new way, make it cooler"). A fragment shader paints
-// flowing aurora curtains with ray striations in the brand palette
-// over the cream ground, exactly the northern-lights reference but
-// recolored. Progressive enhancement: the canvas fades in over the
-// CSS ribbon fallback in aurora.css; no WebGL, no JS, or reduced
-// motion means the ribbons (or a single static shader frame) carry
+// Aurora sky — the WebGL ray-line layer (2026-07-24 final brief, after a
+// same-day night-sky detour: "white background and on top simple colors
+// and like these lines and some stars"). A fragment shader paints tall
+// striated ray curtains over the warm white ground in the site family:
+// dusty rose, brand maroon, mauve, a lilac guest, and the champagne
+// glow — the reference photo's structure, the site's palette.
+// Progressive enhancement: the canvas fades in at z 1 over the CSS
+// bands and under the star-speck layer (z 2), so the specks ride both
+// modes. No WebGL, no JS, or a lost context means the CSS bands carry
 // the look. 404 stays CSS-only to protect its ~1KB JS identity.
 //
 // Performance contract:
 // - Renders at half CSS resolution (soft gradients upscale invisibly),
-//   dimension-capped for 4K, mediump, low-power context, one draw
-//   call per frame, ~30fps gate, paused whenever the tab is hidden.
-// - Color mixes are capped (rose .36, maroon .16, mauve .26,
-//   champagne .30) to hold the modeled readability floor; the
-//   shader-contrast.mjs port re-verifies frames without a GPU.
+//   dimension-capped for 4K, an extra 0.8 factor on small screens,
+//   low-power context, one draw call per frame, ~30fps gate, paused
+//   whenever the tab is hidden.
+// - Color mixes are capped (rose .40, maroon .16, mauve .26, lilac .20,
+//   champagne .30) so the darkest pixel the sky can produce keeps every
+//   text token at WCAG AA on the ground; the night-contrast.mjs port
+//   (light mode) re-verifies worst-case frames without a GPU.
 
 const VERT = `
 attribute vec2 aPos;
@@ -58,37 +62,43 @@ float fbm(vec2 p) {
   return v;
 }
 
-// one curtain: gaussian band around a wandering baseline, modulated
-// by vertical ray striations (high frequency in x, stretched in y)
-float curtain(vec2 uv, float cy, float th, float rf, float sp, float seed) {
-  float wander = fbm(vec2(uv.x * 1.3 + seed, uTime * 0.016 + seed * 3.0));
-  float y = uv.y - cy - (wander - 0.5) * 0.34 - sin(uv.x * 2.1 + seed * 7.0) * 0.05;
+// one curtain: gaussian band around a wandering baseline, textured by
+// noise rays (stretched vertically) times a sine striation — the tall
+// thin ray LINES of the reference photo
+float curtain(vec2 uv, float cy, float th, float rf, float sf, float sp, float seed) {
+  float wander = fbm(vec2(uv.x * 1.2 + seed, uTime * 0.014 + seed * 3.0));
+  float y = uv.y - cy - (wander - 0.5) * 0.3 - sin(uv.x * 1.9 + seed * 7.0) * 0.05;
   float band = exp(-y * y / (th * th));
-  float rays = fbm(vec2(uv.x * rf + uTime * sp + seed * 31.0, uv.y * 1.1 - uTime * 0.012));
-  rays = smoothstep(0.28, 0.85, rays);
-  return band * (0.4 + 0.6 * rays);
+  float rays = fbm(vec2(uv.x * rf + uTime * sp + seed * 31.0, uv.y * 1.4 - uTime * 0.010));
+  rays = smoothstep(0.30, 0.85, rays);
+  float stri = 0.5 + 0.5 * sin(uv.x * sf + (wander - 0.5) * 9.0 + seed * 13.0);
+  stri = 0.35 + 0.65 * stri * stri;
+  return band * (0.30 + 0.70 * rays) * stri;
 }
 
 void main() {
   vec2 uv = gl_FragCoord.xy / uRes;
   vec2 p = uv + uPointer * 0.025;
-  p.x *= uRes.x / uRes.y;
-  // diagonal sky: curtains sweep upper left to lower right
-  float cs = cos(-0.24);
-  float sn = sin(-0.24);
-  vec2 d = vec2(p.x * cs - p.y * sn, p.x * sn + p.y * cs);
+  vec2 q = vec2(p.x * (uRes.x / uRes.y), p.y);
+  // slight diagonal lean, matching the CSS band rotations
+  float cs = cos(-0.14);
+  float sn = sin(-0.14);
+  vec2 d = vec2(q.x * cs - q.y * sn, q.x * sn + q.y * cs);
 
   float breathe = 0.92 + 0.08 * sin(uTime * 0.05);
-  float rose = curtain(d, 0.74, 0.15, 2.6, 0.010, 1.7) * breathe;
-  float deep = curtain(d, 0.50, 0.09, 3.8, -0.014, 9.2);
-  float low = curtain(d, 0.20, 0.19, 1.9, 0.008, 4.4) * breathe;
-  vec2 g = uv - vec2(0.62, 0.34);
+  float rose = curtain(d, 0.68, 0.16, 2.4, 30.0, 0.012, 1.7) * breathe;
+  float deep = curtain(d, 0.50, 0.09, 3.6, 40.0, -0.014, 9.2);
+  float mauve = curtain(d, 0.24, 0.18, 1.9, 20.0, 0.008, 4.4) * breathe;
+  float lilac = curtain(d, 0.42, 0.13, 2.1, 26.0, -0.010, 6.1);
+  vec2 g = uv - vec2(0.62, 0.38);
   float glow = exp(-dot(g, g) * 2.8);
 
+  // mixes over the cream ground, each capped for the readability floor
   vec3 col = vec3(0.988, 0.980, 0.973);
   col = mix(col, vec3(0.910, 0.776, 0.667), glow * 0.30);
-  col = mix(col, vec3(0.588, 0.431, 0.529), min(low * 0.26, 0.26));
-  col = mix(col, vec3(0.745, 0.392, 0.510), min(rose * 0.36, 0.36));
+  col = mix(col, vec3(0.588, 0.431, 0.529), min(mauve * 0.26, 0.26));
+  col = mix(col, vec3(0.604, 0.463, 0.753), min(lilac * 0.20, 0.20));
+  col = mix(col, vec3(0.745, 0.392, 0.510), min(rose * 0.40, 0.40));
   col = mix(col, vec3(0.533, 0.082, 0.196), min(deep * 0.16, 0.16));
   gl_FragColor = vec4(col, 1.0);
 }
@@ -146,8 +156,11 @@ export function initAuroraSky() {
   host.appendChild(canvas);
 
   const size = () => {
-    // half CSS resolution, capped: soft content upscales invisibly
-    const k = Math.min((window.devicePixelRatio || 1), 2) * 0.5;
+    // half CSS resolution, capped; phones drop a further 20% — the sky
+    // is soft gradients, the upscale is invisible and the GPU is spared
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const small = Math.min(innerWidth, innerHeight) < 700 ? 0.8 : 1;
+    const k = dpr * 0.5 * small;
     const w = Math.min(1600, Math.round(innerWidth * k));
     const h = Math.min(1000, Math.round(innerHeight * k));
     if (canvas.width !== w || canvas.height !== h) {
@@ -207,7 +220,7 @@ export function initAuroraSky() {
   canvas.addEventListener('webglcontextlost', (e) => {
     e.preventDefault();
     stop();
-    canvas.remove(); // CSS ribbons take over
+    canvas.remove(); // CSS bands take over
     host.dataset.aurora = 'css';
   });
 

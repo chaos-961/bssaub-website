@@ -104,6 +104,14 @@
 /* ---- v0.0.4 juice: grab-and-throw, impact flashes, hover life ---- */
 .perk-bubble {
   touch-action: pan-y pinch-zoom; /* scroll still starts on a bubble; hold grabs */
+}
+
+/* long-press must grab, never select or open the copy sheet — belt and
+   braces on the bubble AND everything inside it (2026-07-24 user report:
+   mobile press tried to copy the bubble); perkField.js swallows the
+   matching contextmenu event */
+.perk-bubble,
+.perk-bubble * {
   user-select: none;
   -webkit-user-select: none;
   -webkit-user-drag: none;

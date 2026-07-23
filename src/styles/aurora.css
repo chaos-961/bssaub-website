@@ -1,38 +1,46 @@
 /* ------------------------------------------------------------------
-   Aurora — made literal at v0.1.7. The user's reference (2026-07-23,
-   northern lights image search) is the brief: sweeping DIAGONAL
-   RIBBONS of light with feathered edges and one warm glowing core,
-   recolored to the brand palette over the cream ground. The v0.1.5
-   subtle spec and its 0.12 alpha cap are history (two invisible
-   rounds); the ribbon shapes and boldness are the point now.
+   Aurora — RAY LINES ON WHITE (2026-07-24, the user's final word
+   after a same-day night-sky detour: "white background and on top
+   simple colors and like these lines and some stars"). The reference
+   is a northern-lights photo; what survives of it here is the
+   STRUCTURE — tall thin ray lines, feathered curtains, a warm core,
+   a sprinkle of star specks — recolored to the site's family over
+   the warm white ground: dusty rose, brand maroon, mauve, a lilac
+   guest, champagne.
 
    Structure: div.site-bg (fixed, inset 0, z-index -1) carries the
-   ground, the champagne core, and the cream veil as backgrounds;
-   four child ribbons are rotated elongated radial-gradient bands
-   (rotation is why they are children: background layers cannot
-   tilt). Same architecture the v0.1.4 blob field proved out.
-
-   Sampled anchors: ground #fcfaf8 (--bg) · maroon rgb(136 21 50) =
-   #881532 from the .btn--primary membership CTA.
+   ground, the champagne core and a cream veil; five child bands are
+   rotated, feathered gradient fields — the ray-line texture is two
+   offset repeating-linear-gradients (prime px periods, near-vertical
+   stripes) whose moiré reads as organic rays, shaped by a radial
+   mask and the band's elliptical clip. A star-speck div sits above
+   everything (z 2) so the specks survive the WebGL takeover; the
+   shader canvas (auroraSky.js) fades in at z 1 over the bands. No
+   JS, no WebGL, or a lost context and the CSS bands ARE the look.
+   404 stays CSS-only by design.
 
    Performance contract:
-   - Pure CSS. No images, no filter: blur, no JS, no canvas, no
-     background-attachment: fixed (iOS). Feathering is long eased
-     gradient falloffs; every band is transparent by 72-76% of its
-     radius, so no edge or band artifact.
-   - Sizes in vmax + percentages only; scales 360px to 4K with zero
-     media queries.
-   - Motion is transform-only and compositor-owned: each ribbon sways
-     around its base pose on mutually prime durations (53/67/71/83s),
-     the parent breathes on a 120s drift, base scale(1.05) overscans
-     so edges never show. Gated behind prefers-reduced-motion:
+   - Pure CSS, no images, no filter: blur, no blend modes, no
+     background-attachment: fixed (iOS). Feathering is gradient
+     falloff plus the radial masks; every stripe is a soft alpha
+     ramp, so no hard edges exist anywhere.
+   - Band sizes in vmax + percentages, one composition 360px to 4K.
+     Ray periods are px on purpose: lines keep a physical width, so
+     phones show a few broad rays and desktops show many.
+   - Motion is transform-only and compositor-owned: bands sway on
+     mutually prime durations (53/61/71/83/97s), the parent drifts on
+     120s, base scale(1.05) overscans the sway; the star layer
+     twinkles by opacity. All gated behind prefers-reduced-motion:
      no-preference; html.reduced-motion (the ?reduced-motion QA hook)
-     freezes everything but keeps the full composition.
-   - Readability floor, re-based for the bold look (model: scratch
-     ribbon-contrast.mjs; six viewports, 9-combo drift jitter, worst
-     composite rgb(227 199 197)): --ink 11.3:1, --accent 6.0:1,
-     --ink-soft 5.1:1. Every token holds WCAG AA (4.5:1) with margin;
-     the old 12/6.5/5.5 numbers belonged to the quiet designs.
+     freezes the designed pose.
+   - Readability floor (model: scratch night-contrast.mjs, light
+     mode — CSS and shader ports, 240x60 grid, six viewports, 9 sway
+     phases, drift jitter, time samples): CSS worst (darkest)
+     composite rgb(223 184 189) holds --ink 10.07:1, --ink-soft
+     4.54:1, --accent 5.35:1; shader worst rgb(224 191 193) holds
+     10.58 / 4.77 / 5.62. Everything clears WCAG AA (4.5) raw on the
+     ground — no panels, no scrims, same layout as ever. Star specks
+     are sub-glyph points outside the model.
    ------------------------------------------------------------------ */
 
 .site-bg {
@@ -42,7 +50,7 @@
   overflow: hidden;
   pointer-events: none;
   background-color: #fcfaf8;
-  /* first layer paints on top: veil over the champagne core */
+  /* first layer paints on top: cream veil over the champagne core */
   background-image:
     linear-gradient(
       180deg,
@@ -61,13 +69,12 @@
   transform: scale(1.05);
 }
 
-/* the WebGL sky (auroraSky.js, index + account) paints the full
-   composition and fades in over the ribbons; if it never arrives
-   (no JS, no WebGL, 404 page, context loss) the ribbons ARE the
-   aurora */
+/* the WebGL layer (auroraSky.js, index + account) paints the full
+   composition and fades in over the CSS bands; star specks stay above */
 .site-bg__canvas {
   position: absolute;
   inset: 0;
+  z-index: 1;
   width: 100%;
   height: 100%;
   opacity: 0;
@@ -78,8 +85,42 @@
   opacity: 1;
 }
 
-/* the curtains: rotated feathered bands, brightest along their arc */
-.site-bg__ribbon {
+/* ---- star specks: two tiled dot sets on one layer, soft twinkle ---- */
+.site-bg__stars {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background-image:
+    radial-gradient(1.5px 1.5px at 8% 12%, rgba(136, 21, 50, 0.4), transparent 65%),
+    radial-gradient(1.1px 1.1px at 22% 74%, rgba(176, 74, 103, 0.42), transparent 65%),
+    radial-gradient(1.7px 1.7px at 37% 33%, rgba(136, 21, 50, 0.45), transparent 65%),
+    radial-gradient(1px 1px at 55% 58%, rgba(200, 150, 110, 0.5), transparent 65%),
+    radial-gradient(1.3px 1.3px at 68% 18%, rgba(150, 110, 135, 0.48), transparent 65%),
+    radial-gradient(1.1px 1.1px at 81% 66%, rgba(176, 74, 103, 0.4), transparent 65%),
+    radial-gradient(1.4px 1.4px at 92% 40%, rgba(136, 21, 50, 0.38), transparent 65%),
+    radial-gradient(1px 1px at 14% 52%, rgba(150, 110, 135, 0.38), transparent 65%),
+    radial-gradient(1px 1px at 33% 8%, rgba(176, 74, 103, 0.35), transparent 65%),
+    radial-gradient(1px 1px at 52% 84%, rgba(200, 150, 110, 0.4), transparent 65%),
+    radial-gradient(1.1px 1.1px at 71% 28%, rgba(154, 118, 192, 0.38), transparent 65%),
+    radial-gradient(1px 1px at 88% 62%, rgba(136, 21, 50, 0.32), transparent 65%);
+  background-size:
+    640px 640px,
+    640px 640px,
+    640px 640px,
+    640px 640px,
+    640px 640px,
+    640px 640px,
+    640px 640px,
+    360px 360px,
+    360px 360px,
+    360px 360px,
+    360px 360px,
+    360px 360px;
+  background-repeat: repeat;
+}
+
+/* ---- the bands: rotated feathered fields, ray lines via moiré ---- */
+.site-bg__band {
   position: absolute;
   border-radius: 50%;
   animation-timing-function: ease-in-out;
@@ -88,76 +129,129 @@
   animation-play-state: paused;
 }
 
-/* primary dusty rose curtain, sweeps the hero diagonally */
-.site-bg__ribbon--rose {
-  left: 30%;
-  top: 12%;
+/* broad soft mauve mass across the lower page */
+.site-bg__band--mauve {
+  left: 58%;
+  top: 74%;
   width: 150vmax;
-  height: 30vmax;
+  height: 40vmax;
   background: radial-gradient(
     closest-side,
-    rgba(190, 100, 130, 0.34),
-    rgba(190, 100, 130, 0.19) 44%,
-    rgba(190, 100, 130, 0.07) 62%,
-    rgba(190, 100, 130, 0) 75%
-  );
-  transform: translate(-50%, -50%) rotate(-22deg);
-  animation-name: ribbon-sway-a;
-  animation-duration: 67s;
-}
-
-/* deep maroon undercurrent, the brand ink of the sky */
-.site-bg__ribbon--maroon {
-  left: 66%;
-  top: 36%;
-  width: 140vmax;
-  height: 20vmax;
-  background: radial-gradient(
-    closest-side,
-    rgba(136, 21, 50, 0.17),
-    rgba(136, 21, 50, 0.095) 45%,
-    rgba(136, 21, 50, 0.035) 62%,
-    rgba(136, 21, 50, 0) 74%
-  );
-  transform: translate(-50%, -50%) rotate(-20deg);
-  animation-name: ribbon-sway-b;
-  animation-duration: 53s;
-}
-
-/* soft mauve band across the lower page */
-.site-bg__ribbon--mauve {
-  left: 30%;
-  top: 80%;
-  width: 160vmax;
-  height: 34vmax;
-  background: radial-gradient(
-    closest-side,
-    rgba(150, 110, 135, 0.24),
-    rgba(150, 110, 135, 0.13) 46%,
-    rgba(150, 110, 135, 0.045) 64%,
+    rgba(150, 110, 135, 0.22),
+    rgba(150, 110, 135, 0.12) 46%,
+    rgba(150, 110, 135, 0.04) 64%,
     rgba(150, 110, 135, 0) 76%
   );
-  transform: translate(-50%, -50%) rotate(-24deg);
-  animation-name: ribbon-sway-c;
+  transform: translate(-50%, -50%) rotate(-10deg);
+  animation-name: band-sway-a;
+  animation-duration: 97s;
+}
+
+/* quiet lilac choir, upper left */
+.site-bg__band--lilac {
+  left: 22%;
+  top: 28%;
+  width: 100vmax;
+  height: 40vmax;
+  background:
+    repeating-linear-gradient(
+      92deg,
+      rgba(154, 118, 192, 0) 0px,
+      rgba(154, 118, 192, 0) 22px,
+      rgba(154, 118, 192, 0.16) 40px,
+      rgba(154, 118, 192, 0) 58px,
+      rgba(154, 118, 192, 0) 88px
+    ),
+    radial-gradient(
+      closest-side,
+      rgba(154, 118, 192, 0.06),
+      rgba(154, 118, 192, 0.02) 52%,
+      rgba(154, 118, 192, 0) 74%
+    );
+  -webkit-mask-image: radial-gradient(52% 58% at 50% 46%, #000 30%, rgba(0, 0, 0, 0.5) 55%, transparent 78%);
+  mask-image: radial-gradient(52% 58% at 50% 46%, #000 30%, rgba(0, 0, 0, 0.5) 55%, transparent 78%);
+  transform: translate(-50%, -50%) rotate(-5deg);
+  animation-name: band-sway-b;
+  animation-duration: 71s;
+}
+
+/* low champagne wisp near the page floor */
+.site-bg__band--champagne {
+  left: 42%;
+  top: 86%;
+  width: 130vmax;
+  height: 22vmax;
+  background:
+    repeating-linear-gradient(
+      91deg,
+      rgba(226, 184, 146, 0) 0px,
+      rgba(226, 184, 146, 0) 26px,
+      rgba(226, 184, 146, 0.18) 44px,
+      rgba(226, 184, 146, 0) 62px,
+      rgba(226, 184, 146, 0) 96px
+    ),
+    radial-gradient(
+      closest-side,
+      rgba(226, 184, 146, 0.26),
+      rgba(226, 184, 146, 0.12) 50%,
+      rgba(226, 184, 146, 0) 73%
+    );
+  -webkit-mask-image: radial-gradient(55% 62% at 50% 48%, #000 30%, rgba(0, 0, 0, 0.55) 56%, transparent 80%);
+  mask-image: radial-gradient(55% 62% at 50% 48%, #000 30%, rgba(0, 0, 0, 0.55) 56%, transparent 80%);
+  transform: translate(-50%, -50%) rotate(-14deg);
+  animation-name: band-sway-c;
   animation-duration: 83s;
 }
 
-/* thin rose wisp, high right, the far streak */
-.site-bg__ribbon--wisp {
-  left: 82%;
-  top: 6%;
-  width: 96vmax;
-  height: 13vmax;
-  background: radial-gradient(
-    closest-side,
-    rgba(190, 100, 130, 0.18),
-    rgba(190, 100, 130, 0.1) 44%,
-    rgba(190, 100, 130, 0.04) 60%,
-    rgba(190, 100, 130, 0) 72%
+/* the signature dusty rose ray curtain, high right of center */
+.site-bg__band--rose {
+  left: 58%;
+  top: 30%;
+  width: 130vmax;
+  height: 46vmax;
+  background:
+    repeating-linear-gradient(
+      94deg,
+      rgba(190, 100, 130, 0) 0px,
+      rgba(190, 100, 130, 0) 18px,
+      rgba(190, 100, 130, 0.15) 33px,
+      rgba(190, 100, 130, 0.26) 39px,
+      rgba(190, 100, 130, 0.15) 45px,
+      rgba(190, 100, 130, 0) 60px,
+      rgba(190, 100, 130, 0) 76px
+    ),
+    radial-gradient(
+      closest-side,
+      rgba(190, 100, 130, 0.07),
+      rgba(190, 100, 130, 0.03) 52%,
+      rgba(190, 100, 130, 0) 74%
+    );
+  -webkit-mask-image: radial-gradient(50% 60% at 50% 44%, #000 32%, rgba(0, 0, 0, 0.55) 56%, transparent 78%);
+  mask-image: radial-gradient(50% 60% at 50% 44%, #000 32%, rgba(0, 0, 0, 0.55) 56%, transparent 78%);
+  transform: translate(-50%, -50%) rotate(-8deg);
+  animation-name: band-sway-d;
+  animation-duration: 61s;
+}
+
+/* thin brand maroon undercurrent rays, sparse on purpose */
+.site-bg__band--maroon {
+  left: 30%;
+  top: 60%;
+  width: 110vmax;
+  height: 30vmax;
+  background: repeating-linear-gradient(
+    93deg,
+    rgba(136, 21, 50, 0) 0px,
+    rgba(136, 21, 50, 0) 40px,
+    rgba(136, 21, 50, 0.12) 52px,
+    rgba(136, 21, 50, 0) 64px,
+    rgba(136, 21, 50, 0) 104px
   );
-  transform: translate(-50%, -50%) rotate(-26deg);
-  animation-name: ribbon-sway-d;
-  animation-duration: 71s;
+  -webkit-mask-image: radial-gradient(52% 60% at 50% 46%, #000 30%, rgba(0, 0, 0, 0.5) 55%, transparent 78%);
+  mask-image: radial-gradient(52% 60% at 50% 46%, #000 30%, rgba(0, 0, 0, 0.5) 55%, transparent 78%);
+  transform: translate(-50%, -50%) rotate(-12deg);
+  animation-name: band-sway-e;
+  animation-duration: 53s;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -166,9 +260,13 @@
     animation: site-bg-drift 120s ease-in-out infinite;
   }
 
-  .site-bg__ribbon {
+  .site-bg__band {
     will-change: transform;
     animation-play-state: running;
+  }
+
+  .site-bg__stars {
+    animation: star-twinkle 9s ease-in-out infinite alternate;
   }
 }
 
@@ -187,46 +285,65 @@
   }
 }
 
-/* each sway is symmetric around the ribbon's base pose, so the
-   frozen (reduced motion) frame is the designed composition */
-@keyframes ribbon-sway-a {
+@keyframes star-twinkle {
   from {
-    transform: translate(-51.5%, -48.5%) rotate(-23.2deg);
+    opacity: 0.65;
   }
   to {
-    transform: translate(-48.5%, -51.5%) rotate(-20.8deg);
+    opacity: 1;
   }
 }
 
-@keyframes ribbon-sway-b {
+/* each sway is symmetric around the band's base pose, so the frozen
+   (reduced motion) frame is the designed composition */
+@keyframes band-sway-a {
   from {
-    transform: translate(-48.6%, -51.4%) rotate(-18.9deg);
+    transform: translate(-51.2%, -49%) rotate(-10.9deg);
   }
   to {
-    transform: translate(-51.4%, -48.6%) rotate(-21.1deg);
+    transform: translate(-48.8%, -51%) rotate(-9.1deg);
   }
 }
 
-@keyframes ribbon-sway-c {
+@keyframes band-sway-b {
   from {
-    transform: translate(-51.2%, -49%) rotate(-25.1deg);
+    transform: translate(-48.8%, -51.3%) rotate(-6.1deg);
   }
   to {
-    transform: translate(-48.8%, -51%) rotate(-22.9deg);
+    transform: translate(-51.2%, -48.7%) rotate(-3.9deg);
   }
 }
 
-@keyframes ribbon-sway-d {
+@keyframes band-sway-c {
   from {
-    transform: translate(-49%, -51.3%) rotate(-27.1deg);
+    transform: translate(-51.4%, -48.8%) rotate(-15.1deg);
   }
   to {
-    transform: translate(-51%, -48.7%) rotate(-24.9deg);
+    transform: translate(-48.6%, -51.2%) rotate(-12.9deg);
   }
 }
 
-/* ?reduced-motion QA hook: freeze the sky, keep the aurora */
+@keyframes band-sway-d {
+  from {
+    transform: translate(-49%, -51.4%) rotate(-9.1deg);
+  }
+  to {
+    transform: translate(-51%, -48.6%) rotate(-6.9deg);
+  }
+}
+
+@keyframes band-sway-e {
+  from {
+    transform: translate(-50.9%, -49.2%) rotate(-12.9deg);
+  }
+  to {
+    transform: translate(-49.1%, -50.8%) rotate(-11.1deg);
+  }
+}
+
+/* ?reduced-motion QA hook: freeze the sky, keep the look */
 html.reduced-motion .site-bg,
-html.reduced-motion .site-bg__ribbon {
+html.reduced-motion .site-bg__band,
+html.reduced-motion .site-bg__stars {
   animation: none;
 }
