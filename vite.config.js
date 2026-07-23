@@ -34,15 +34,44 @@ const preloadGatedAssets = () => ({
   },
 });
 
+// Clean URLs — internal links use extensionless paths ("account", not
+// "account.html"). GitHub Pages resolves /account to account.html natively;
+// this middleware gives the dev and preview servers the same behavior so
+// links work identically in all three environments. Bare paths only (no
+// trailing slash) to match what Pages actually serves.
+const BASE = '/bssaub-website/';
+const CLEAN_PAGES = ['account'];
+const cleanUrls = () => {
+  const rewrite = (req, _res, next) => {
+    const [path, query] = req.url.split('?');
+    for (const page of CLEAN_PAGES) {
+      if (path === `${BASE}${page}`) {
+        req.url = `${BASE}${page}.html${query ? `?${query}` : ''}`;
+        break;
+      }
+    }
+    next();
+  };
+  return {
+    name: 'bss-clean-urls',
+    configureServer(server) {
+      server.middlewares.use(rewrite);
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(rewrite);
+    },
+  };
+};
+
 // base matches the GitHub Pages project path (CLAUDE.md §11).
 // Custom domain later: flip base to '/' and add public/CNAME.
 export default defineConfig({
-  base: '/bssaub-website/',
+  base: BASE,
   server: {
     port: 5173,
     strictPort: true,
   },
-  plugins: [preloadGatedAssets()],
+  plugins: [preloadGatedAssets(), cleanUrls()],
   build: {
     rollupOptions: {
       input: {

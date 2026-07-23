@@ -3,7 +3,7 @@
 Rebuild of bssaub.com for the AUB Business Student Society. One goal drives every decision: get an AUB student to grab the membership card. Everything else (sponsors, story, animations) exists to make that decision feel obvious.
 
 Repo: `https://github.com/chaos-961/bssaub-website.git` · Live: `https://chaos-961.github.io/bssaub-website/` (GitHub Pages via Actions; custom domain later).
-Current version: **0.1.2**.
+Current version: **0.1.3**.
 
 ## Rules (standing, no exceptions)
 
@@ -24,11 +24,12 @@ Vanilla JS + Vite 6 multi-page (`index.html`, `account.html`, `404.html`) · GSA
 - `src/modules/*` — one module per concern; `src/styles/*` — tokens.css first, then per-section files.
 - `public/assets/` — brand/, card/, sponsors/<category>/<id>.webp, journey/.
 - Deploy: `.github/workflows/static.yml` (push to main → build → Pages). `vite.config.js` has `base: '/bssaub-website/'`. Custom-domain flip: CNAME in public/, base to `/`, revisit 404.html's absolute icon paths.
+- Clean URLs (v0.1.3): internal links are extensionless (`account`, never `account.html`); Pages resolves them natively, and the `cleanUrls` middleware in `vite.config.js` (CLEAN_PAGES list) mirrors that in dev and preview. New pages join CLEAN_PAGES. Canonical and og:url use the extensionless form.
 - Local run: `run-local.bat` (untracked, gitignored — user helper): opens the already-running server if 5173 is busy, else installs deps if needed and starts `vite --open`.
 
 ## Design system (light theme since v0.0.9, light aurora since v0.1.0)
 
-The site went light on the user's word (2026-07-23); the old dark background system (aurora canvas, ground washes, film grain) is deleted for good — do not resurrect it. Later the same day the user asked for a new LIGHT background: `src/styles/aurora.css`, a fixed pure-CSS layer on all three pages (warm off-white `#fcfaf8` ground, four vast edgeless radial fields in muted burgundy / dusty rose / pale mauve / warm gray under a static cream veil, transform-only drift on mutually prime durations, no blur filters, no JS, no canvas). Reduced motion (OS setting or `?reduced-motion`, which the inline head script stamps as `html.reduced-motion`) freezes the drift but keeps the tint. Worst-case tint overlap keeps `--ink` above 7:1.
+The site went light on the user's word (2026-07-23); the old dark background system (aurora canvas, ground washes, film grain) is deleted for good — do not resurrect it. Later the same day the user asked for a new LIGHT background: `src/styles/aurora.css`, a fixed pure-CSS layer on all three pages (warm off-white `#fcfaf8` ground, four vast edgeless radial fields in muted burgundy / dusty rose / pale mauve / warm gray under a static cream veil, transform-only drift on mutually prime durations, no blur filters, no JS, no canvas). Reduced motion (OS setting or `?reduced-motion`, which the inline head script stamps as `html.reduced-motion`) freezes the drift but keeps the tint. Tint intensity lifted at v0.1.3 (user could not see the original values on real hardware, roughly doubled the color fields, eased the veil); remeasured worst-case overlap (full drift-phase sweep, five viewports) keeps `--ink` above 14:1, `--accent` above 7.8:1, `--ink-soft` above 6.6:1.
 
 - Tokens in `src/styles/tokens.css`: `--bg #fcfaf8` (warmed from pure white at v0.1.0 to match the aurora ground) · `--surface #f8f3f5` · `--ink #221219` · `--ink-soft #5f4a54` (8.1:1 on white) · `--accent #881532` (brand maroon extracted from the logo, 9.55:1 on white) · `--accent-strong #a31a3c` · `--accent-2 #b04a67` (deep rose, 5.2:1 — deepened from the dark-theme `#e18ba1` so it reads on white).
 - The preloader keeps the maroon brand curtain (`#290a13`, inline critical CSS in index.html) that wipes up to reveal the white page. OG image and favicons stay maroon brand assets.
