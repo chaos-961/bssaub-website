@@ -40,6 +40,32 @@
   gap: 0.9rem;
 }
 
+/* quiet trust row under the CTAs (user facts, 2026-07-23) */
+.hero__facts {
+  margin-top: 1.7rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 1.5rem;
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.hero__facts span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
+}
+
+.hero__facts span::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
 /* masked headline lines (§6.3 entrance) — padding/margin pair keeps Fraunces
    descenders out of the overflow clip */
 .hero__headline .line {

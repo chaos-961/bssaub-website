@@ -1,7 +1,8 @@
 /* ------------------------------------------------------------------
    Design tokens — the one file the site recolors/retypes from.
-   PALETTE: white ground (v0.0.9, 2026-07-23 user call — background
-   system removed, site went light). The maroon stays the brand accent:
+   PALETTE: warm off-white ground (v0.1.0, 2026-07-23 user call — the
+   light aurora layer landed, see aurora.css; ground warmed from pure
+   white to #fcfaf8 to match it). The maroon stays the brand accent:
    #881532 EXTRACTED from assets/logo.png (programmatic sample,
    2026-07-22 — the logo's true ink). --accent-2 deepened from the old
    dark-theme rose #e18ba1 so it reads on white (5.2:1).
@@ -10,7 +11,7 @@
   color-scheme: light;
 
   /* color */
-  --bg: #ffffff;
+  --bg: #fcfaf8;
   --surface: #f8f3f5;
   --surface-glass: rgba(255, 255, 255, 0.78);
   --ink: #221219;

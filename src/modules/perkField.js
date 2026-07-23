@@ -33,6 +33,12 @@ const TUNING = {
   grabMaxSpeed: 27,         // grabbed body tracks faster than the free cap
   flingCap: { d: 30, m: 20 },
   flingScale: 0.95,         // release velocity → body velocity factor
+  throwRange: { d: 190, m: 120 }, // hard travel ceiling past clampRadius — a thrown
+                            //    bubble stays in its neighborhood (2026-07-23 fix:
+                            //    flings could sail under later sections = "disappeared")
+  returnGlide: { d: 7, m: 5 },    // homeward speed cap beyond clampRadius — the
+                            //    throw sails out fast, the comeback glides (was snapping)
+  clampSpringMax: 1.4,      // cap on the clamp spring's distance multiplier
   hitSpeed: 2.4,            // min relative speed for an impact flash
   jellyK: 0.012,            // speed → squash-stretch amount
   jellyMax: 0.085,
@@ -524,13 +530,33 @@ export function initPerkField(scroll, modal) {
 
       const hx = it.home.x;
       const hy = it.home.y + it.zone.offsetY;
-      const dx = hx - b.position.x;
-      const dy = hy - b.position.y;
-      const dist = Math.hypot(dx, dy);
+      let dx = hx - b.position.x;
+      let dy = hy - b.position.y;
+      let dist = Math.hypot(dx, dy);
 
-      // home spring + displacement clamp: extra pull beyond the radius (§6.4)
+      // hard travel ceiling: project runaway bodies back onto the ring and
+      // strip the outward velocity component (tangential motion survives)
+      const throwR = clampR + (mobile ? TUNING.throwRange.m : TUNING.throwRange.d);
+      if (dist > throwR) {
+        Body.setPosition(b, { x: hx - (dx / dist) * throwR, y: hy - (dy / dist) * throwR });
+        const ox = -dx / dist;
+        const oy = -dy / dist;
+        const vr = b.velocity.x * ox + b.velocity.y * oy;
+        if (vr > 0) {
+          Body.setVelocity(b, { x: b.velocity.x - ox * vr, y: b.velocity.y - oy * vr });
+        }
+        it.capBoost = 0;
+        dx = hx - b.position.x;
+        dy = hy - b.position.y;
+        dist = throwR;
+      }
+
+      // home spring + displacement clamp: extra pull beyond the radius (§6.4),
+      // multiplier capped so far throws never build a snap-back force
       let k = TUNING.homeSpring;
-      if (dist > clampR) k += TUNING.clampSpring * ((dist - clampR) / clampR);
+      if (dist > clampR) {
+        k += TUNING.clampSpring * Math.min((dist - clampR) / clampR, TUNING.clampSpringMax);
+      }
       b.force.x += dx * k * b.mass;
       b.force.y += dy * k * b.mass;
 
@@ -571,6 +597,23 @@ export function initPerkField(scroll, modal) {
           x: (b.velocity.x / sp) * cap,
           y: (b.velocity.y / sp) * cap,
         });
+      }
+
+      // return glide: beyond the casual-drift radius, homeward radial speed is
+      // trimmed to a calm glide (tangential swirl kept; the boost dies here so
+      // the spring cannot ride an elevated cap back home)
+      if (dist > clampR) {
+        const inx = dx / dist;
+        const iny = dy / dist;
+        const vin = b.velocity.x * inx + b.velocity.y * iny;
+        const glide = mobile ? TUNING.returnGlide.m : TUNING.returnGlide.d;
+        if (vin > glide) {
+          it.capBoost = 0;
+          Body.setVelocity(b, {
+            x: b.velocity.x - inx * (vin - glide),
+            y: b.velocity.y - iny * (vin - glide),
+          });
+        }
       }
     });
 

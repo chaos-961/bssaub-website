@@ -3,7 +3,7 @@
 Rebuild of bssaub.com for the AUB Business Student Society. One goal drives every decision: get an AUB student to grab the membership card. Everything else (sponsors, story, animations) exists to make that decision feel obvious.
 
 Repo: `https://github.com/chaos-961/bssaub-website.git` · Live: `https://chaos-961.github.io/bssaub-website/` (GitHub Pages via Actions; custom domain later).
-Current version: **0.0.9**.
+Current version: **0.1.0**.
 
 ## Rules (standing, no exceptions)
 
@@ -25,11 +25,11 @@ Vanilla JS + Vite 6 multi-page (`index.html`, `account.html`, `404.html`) · GSA
 - `public/assets/` — brand/, card/, sponsors/<category>/<id>.webp, journey/.
 - Deploy: `.github/workflows/static.yml` (push to main → build → Pages). `vite.config.js` has `base: '/bssaub-website/'`. Custom-domain flip: CNAME in public/, base to `/`, revisit 404.html's absolute icon paths.
 
-## Design system (white theme since v0.0.9)
+## Design system (light theme since v0.0.9, light aurora since v0.1.0)
 
-The site went light on the user's word (2026-07-23): plain white ground, background system deleted entirely (the old aurora canvas, ground washes, and film grain are gone — do not resurrect them).
+The site went light on the user's word (2026-07-23); the old dark background system (aurora canvas, ground washes, film grain) is deleted for good — do not resurrect it. Later the same day the user asked for a new LIGHT background: `src/styles/aurora.css`, a fixed pure-CSS layer on all three pages (warm off-white `#fcfaf8` ground, four vast edgeless radial fields in muted burgundy / dusty rose / pale mauve / warm gray under a static cream veil, transform-only drift on mutually prime durations, no blur filters, no JS, no canvas). Reduced motion (OS setting or `?reduced-motion`, which the inline head script stamps as `html.reduced-motion`) freezes the drift but keeps the tint. Worst-case tint overlap keeps `--ink` above 7:1.
 
-- Tokens in `src/styles/tokens.css`: `--bg #ffffff` · `--surface #f8f3f5` · `--ink #221219` · `--ink-soft #5f4a54` (8.1:1 on white) · `--accent #881532` (brand maroon extracted from the logo, 9.55:1 on white) · `--accent-strong #a31a3c` · `--accent-2 #b04a67` (deep rose, 5.2:1 — deepened from the dark-theme `#e18ba1` so it reads on white).
+- Tokens in `src/styles/tokens.css`: `--bg #fcfaf8` (warmed from pure white at v0.1.0 to match the aurora ground) · `--surface #f8f3f5` · `--ink #221219` · `--ink-soft #5f4a54` (8.1:1 on white) · `--accent #881532` (brand maroon extracted from the logo, 9.55:1 on white) · `--accent-strong #a31a3c` · `--accent-2 #b04a67` (deep rose, 5.2:1 — deepened from the dark-theme `#e18ba1` so it reads on white).
 - The preloader keeps the maroon brand curtain (`#290a13`, inline critical CSS in index.html) that wipes up to reveal the white page. OG image and favicons stay maroon brand assets.
 - Type: Fraunces (display, `opsz 144`, WONK on hero/stub titles) + Instrument Sans (UI/body). Fluid clamp() scale lives in tokens.
 - Motion: power2/power3-out reveals; elastic feel only inside the Perk Field; scrub only where scroll is the mechanic (field impulses, journey path). `prefers-reduced-motion` strips physics, tilt, and scroll effects sitewide; `?reduced-motion` URL param is the QA hook.
@@ -58,8 +58,7 @@ One object in `src/data/sponsors.js` + one image = a new sponsor. Fields: `id`, 
 
 ## Open items owed by the user
 
-- **8 sponsor discounts** (these ship badge-less until confirmed): sushi-bell 15%? · craves-burger 10%? · fattouh 20%? · munchease-diner 20%? · joy-of-beirut 10%? · dunkin ? · dentspa-dr-rabah ? · the-kalm-studio ?. Each is a one-field edit in sponsors.js; the badge appears automatically.
-- **Dunkin' popup redemption details.**
+- **7 sponsor discounts** (these ship badge-less until confirmed): sushi-bell 15%? · craves-burger 10%? · fattouh 20%? · munchease-diner 20%? · joy-of-beirut 10%? · dentspa-dr-rabah ? · the-kalm-studio ?. Each is a one-field edit in sponsors.js; the badge appears automatically. (Dunkin' resolved 2026-07-23: 10% plus popup steps, shipped.)
 - **Become-a-Sponsor Google Form URL** (CTA runs on the mailto until then).
 
 Design Lab stays excluded entirely (user lock; zero credits anywhere on the site). The old bssaub.com is down — verify anything missing via web search or the user, never by scraping it.

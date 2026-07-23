@@ -5,6 +5,7 @@ import '@fontsource-variable/instrument-sans';
 
 import './styles/tokens.css';
 import './styles/base.css';
+import './styles/aurora.css';
 import './styles/nav.css';
 import './styles/stub.css';
 import './styles/footer.css';

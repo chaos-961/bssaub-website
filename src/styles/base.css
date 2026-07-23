@@ -10,8 +10,8 @@
 
 html {
   height: 100%;
-  /* plain white ground (v0.0.9, user call) — the v0.0.5 background system
-     (washes, film grain, ambient canvas) is gone entirely */
+  /* warm off-white ground; the fixed .aurora layer (aurora.css, v0.1.0)
+     paints the drifting color fields on top of this */
   background-color: var(--bg);
   scrollbar-color: #c9a6b2 #f3edf0;
 }

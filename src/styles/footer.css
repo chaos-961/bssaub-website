@@ -99,3 +99,23 @@
   font-size: 0.72rem;
   color: var(--ink-soft);
 }
+
+/* agency credit (user call 2026-07-23) */
+.site-footer__credit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  color: var(--ink-soft);
+  transition: color 0.25s;
+}
+
+.site-footer__credit img {
+  display: block;
+  height: 24px;
+  width: 24px;
+  border-radius: 6px;
+}
+
+.site-footer__credit:hover {
+  color: var(--ink);
+}

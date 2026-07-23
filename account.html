@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Account · BSS AUB</title>
     <meta name="description" content="Member accounts for the AUB Business Student Society are coming soon." />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#fcfaf8" />
     <link rel="canonical" href="https://chaos-961.github.io/bssaub-website/account.html" />
     <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/favicon-16.png" />
@@ -19,14 +19,25 @@
     <meta name="twitter:card" content="summary_large_image" />
     <script>
       document.documentElement.classList.add('js');
+      if (new URLSearchParams(location.search).has('reduced-motion'))
+        document.documentElement.classList.add('reduced-motion');
     </script>
     <script type="module" src="/src/account.js"></script>
   </head>
   <body class="stub stub--nav">
+    <div class="aurora" aria-hidden="true">
+      <div class="aurora__blob aurora__blob--burgundy"></div>
+      <div class="aurora__blob aurora__blob--rose"></div>
+      <div class="aurora__blob aurora__blob--mauve"></div>
+      <div class="aurora__blob aurora__blob--gray"></div>
+    </div>
+
     <a class="skip-link" href="#main">Skip to content</a>
 
     <header class="site-nav" data-nav>
-      <a class="site-nav__wordmark" href="./" aria-label="Business Student Society, home">Business Student Society</a>
+      <a class="site-nav__wordmark" href="./" aria-label="Business Student Society, home">
+        <img class="site-nav__logo" src="assets/brand/logo.webp" alt="" width="233" height="108" decoding="async" />
+      </a>
       <div class="site-nav__right">
         <a class="site-nav__account" href="account.html" aria-current="page">Account</a>
         <button
@@ -140,8 +151,12 @@
       </div>
       <div class="site-footer__bottom">
         <div class="site-footer__bottom-inner">
-          <p>© Business Student Society, AUB</p>
-          <span class="version-badge" data-version-badge>v0.0.9</span>
+          <p>© Business Student Society, AUB · CRN: 5014</p>
+          <a class="site-footer__credit" href="https://nervemedia.agency/" target="_blank" rel="noopener">
+            <span>Brought to you by</span>
+            <img src="assets/brand/nerve-media.webp" alt="Nerve Media" width="96" height="96" loading="lazy" decoding="async" />
+          </a>
+          <span class="version-badge" data-version-badge>v0.1.0</span>
         </div>
       </div>
     </footer>

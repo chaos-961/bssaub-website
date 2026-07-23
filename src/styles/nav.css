@@ -27,12 +27,17 @@
   transform: translateY(-100%);
 }
 
+/* top left is the real logo lockup (user call 2026-07-23) — the name lives
+   inside the art, already in brand maroon */
 .site-nav__wordmark {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: clamp(0.95rem, 0.85rem + 0.5vw, 1.15rem);
-  letter-spacing: 0.005em;
-  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+}
+
+.site-nav__logo {
+  display: block;
+  height: 42px;
+  width: auto;
 }
 
 .site-nav__right {
@@ -54,10 +59,10 @@
   color: var(--ink);
 }
 
-/* very narrow screens: keep Account in the bar (§3) without crowding the wordmark */
+/* very narrow screens: keep Account in the bar without crowding the logo */
 @media (max-width: 22.5rem) {
-  .site-nav__wordmark {
-    font-size: 0.78rem;
+  .site-nav__logo {
+    height: 34px;
   }
 
   .site-nav__right {

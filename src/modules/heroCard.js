@@ -92,7 +92,7 @@ export function initHeroCard(scroll) {
     if (entered) return;
     const lines = document.querySelectorAll('.hero__headline .line__inner');
     const eyebrow = document.querySelector('.hero__eyebrow');
-    const soft = ['.hero__sub', '.hero__ctas']
+    const soft = ['.hero__sub', '.hero__ctas', '.hero__facts']
       .map((s) => document.querySelector(s))
       .filter(Boolean);
 

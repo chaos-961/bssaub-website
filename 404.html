@@ -6,7 +6,11 @@
     <title>404 · BSS AUB</title>
     <meta name="description" content="Page not found." />
     <meta name="robots" content="noindex" />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#fcfaf8" />
+    <script>
+      if (new URLSearchParams(location.search).has('reduced-motion'))
+        document.documentElement.classList.add('reduced-motion');
+    </script>
     <!-- served at arbitrary paths by GitHub Pages, so icon links must be absolute
          (revisit with the base flip when the custom domain lands, §11) -->
     <link rel="icon" type="image/png" sizes="32x32" href="/bssaub-website/assets/brand/favicon-32.png" />
@@ -15,6 +19,13 @@
     <script type="module" src="/src/page.js"></script>
   </head>
   <body class="stub">
+    <div class="aurora" aria-hidden="true">
+      <div class="aurora__blob aurora__blob--burgundy"></div>
+      <div class="aurora__blob aurora__blob--rose"></div>
+      <div class="aurora__blob aurora__blob--mauve"></div>
+      <div class="aurora__blob aurora__blob--gray"></div>
+    </div>
+
     <main class="stub__main">
       <p class="eyebrow">Business Student Society</p>
       <h1 class="stub__title">404. This page took a 100% discount.</h1>
@@ -25,7 +36,7 @@
     </main>
     <footer class="stub__footer">
       <p>© Business Student Society, AUB</p>
-      <span class="version-badge" data-version-badge>v0.0.9</span>
+      <span class="version-badge" data-version-badge>v0.1.0</span>
     </footer>
   </body>
 </html>

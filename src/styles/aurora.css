@@ -1,0 +1,167 @@
+/* ------------------------------------------------------------------
+   Aurora — the light background layer (v0.1.0, 2026-07-23 user call:
+   bring a background back, but luxury-light, not the retired dark
+   system). Warm off-white ground (#fcfaf8) with four vast, edgeless
+   color fields drifting under a static cream veil.
+
+   Performance contract:
+   - No filter: blur anywhere. Softness comes from long radial-gradient
+     falloffs, which rasterize once; every animation is transform (and
+     one opacity), so after first paint the whole layer lives on the
+     compositor. Safe for low-end mobile.
+   - Durations are mutually prime (53/67/71/83s) so the composition
+     never visibly loops.
+   - Readability floor: worst-case overlap of the tints keeps --ink
+     above 7:1 and --accent above 8.5:1, and the static veil brightens
+     the center band where copy sits.
+   ------------------------------------------------------------------ */
+
+.aurora {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background: #fcfaf8;
+}
+
+.aurora__blob {
+  position: absolute;
+  border-radius: 50%;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+/* muted burgundy bloom, upper right, the quietest layer */
+.aurora__blob--burgundy {
+  width: 95vmax;
+  height: 95vmax;
+  top: -42vmax;
+  right: -30vmax;
+  background: radial-gradient(
+    closest-side,
+    rgba(139, 30, 63, 0.055),
+    rgba(139, 30, 63, 0.028) 42%,
+    rgba(139, 30, 63, 0) 72%
+  );
+  animation-name: aurora-drift-a;
+  animation-duration: 67s;
+}
+
+/* dusty rose current, left of center */
+.aurora__blob--rose {
+  width: 85vmax;
+  height: 85vmax;
+  top: 4vmax;
+  left: -38vmax;
+  background: radial-gradient(
+    closest-side,
+    rgba(181, 106, 130, 0.085),
+    rgba(181, 106, 130, 0.04) 45%,
+    rgba(181, 106, 130, 0) 74%
+  );
+  animation-name: aurora-drift-b;
+  animation-duration: 53s;
+}
+
+/* pale mauve pool, low and wide */
+.aurora__blob--mauve {
+  width: 105vmax;
+  height: 105vmax;
+  bottom: -55vmax;
+  right: -18vmax;
+  background: radial-gradient(
+    closest-side,
+    rgba(215, 184, 197, 0.17),
+    rgba(215, 184, 197, 0.08) 46%,
+    rgba(215, 184, 197, 0) 75%
+  );
+  animation-name: aurora-drift-c;
+  animation-duration: 83s;
+}
+
+/* warm gray anchor, lower left, keeps the palette from going sweet */
+.aurora__blob--gray {
+  width: 90vmax;
+  height: 90vmax;
+  bottom: -46vmax;
+  left: -34vmax;
+  background: radial-gradient(
+    closest-side,
+    rgba(233, 227, 224, 0.5),
+    rgba(233, 227, 224, 0.24) 48%,
+    rgba(233, 227, 224, 0) 76%
+  );
+  animation-name: aurora-drift-d;
+  animation-duration: 71s;
+}
+
+/* static cream veil: brightens the copy band, settles the top edge
+   under the transparent nav, and softens every blob at once */
+.aurora::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(90vmax 62vmax at 50% 36%, rgba(247, 243, 241, 0.5), rgba(247, 243, 241, 0) 70%),
+    linear-gradient(
+      180deg,
+      rgba(252, 250, 248, 0.55),
+      rgba(252, 250, 248, 0.12) 32%,
+      rgba(252, 250, 248, 0.28) 100%
+    );
+}
+
+@keyframes aurora-drift-a {
+  from {
+    transform: translate3d(-5%, -4%, 0) scale(1);
+    opacity: 0.8;
+  }
+  to {
+    transform: translate3d(4%, 7%, 0) scale(1.16);
+    opacity: 1;
+  }
+}
+
+@keyframes aurora-drift-b {
+  from {
+    transform: translate3d(-4%, 6%, 0) scale(1.1) rotate(0.001deg);
+  }
+  to {
+    transform: translate3d(7%, -5%, 0) scale(1);
+  }
+}
+
+@keyframes aurora-drift-c {
+  from {
+    transform: translate3d(6%, 3%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(-7%, -6%, 0) scale(1.14);
+  }
+}
+
+@keyframes aurora-drift-d {
+  from {
+    transform: translate3d(4%, -3%, 0) scale(1.08);
+    opacity: 0.85;
+  }
+  to {
+    transform: translate3d(-5%, 5%, 0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* reduced motion: the field freezes but stays lit — base.css already
+   collapses animation durations for the OS setting; the html class is
+   the ?reduced-motion QA hook (stamped by the inline head script) */
+html.reduced-motion .aurora__blob {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora__blob {
+    animation: none;
+  }
+}

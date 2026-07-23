@@ -16,11 +16,11 @@
 //   details    OPTIONAL — presence = popup instead of direct Instagram link
 //
 // ---------------------------------------------------------------------------
-// PENDING DATA (§13.2 — badges appear the moment the user confirms the %):
+// PENDING DATA (badges appear the moment the user confirms the %):
 //   discounts   sushi-bell (15%?) · craves-burger (10%?) · fattouh (20%?) ·
-//               munchease-diner (20%?) · joy-of-beirut (10%?) · dunkin (?) ·
+//               munchease-diner (20%?) · joy-of-beirut (10%?) ·
 //               dentspa-dr-rabah (?) · the-kalm-studio (?)
-//   dunkin      popup redemption details also missing (ships as direct IG link)
+//   (dunkin resolved 2026-07-23: 10% + popup steps supplied by the user)
 // VERIFIED 2026-07-23 via web search (old site down, per the user):
 //   craves-burger → @cravesburger (Mar Mikhael; @craveslb doesn't surface)
 //   padel-square  → @padelsquare.lb (real account, Saida)
@@ -163,10 +163,20 @@ export const sponsors = [
     id: 'dunkin',
     name: "Dunkin'",
     category: 'restaurants',
-    discount: null, // unknown — popup redemption details also pending (§13.2)
+    discount: '10% OFF', // confirmed by the user 2026-07-23
     instagram: 'https://www.instagram.com/dunkinleb',
     image: 'assets/sponsors/restaurants/dunkin.webp',
     size: 1,
+    details: {
+      summary: "10% off through the Dunkin' app",
+      steps: [
+        "Download the Dunkin' app",
+        'Create an account using your phone number',
+        'Fill the activation form',
+        'Your account activates within 3 working days',
+      ],
+      links: [{ label: 'Activation form', url: 'https://forms.office.com/r/VQjM8gE7m9' }],
+    },
   },
 
   /* ------------------------------- clothing ------------------------------ */
