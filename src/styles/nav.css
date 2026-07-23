@@ -34,6 +34,10 @@
   display: block;
   height: 42px;
   width: auto;
+  /* the lockup is brand maroon on transparent; at ~1.4:1 it went muddy on
+     the dark ground (v0.2.1). A brightness lift floats it to a vivid brand
+     red that reads on dark and ties to the lifted accent, hue intact. */
+  filter: brightness(1.5) saturate(1.06);
 }
 
 .site-nav__right {
@@ -178,7 +182,7 @@ html.reduced-motion .site-nav__burger[aria-expanded='true'] {
   border-radius: 18px;
   box-shadow:
     0 28px 70px -24px rgba(34, 18, 25, 0.28),
-    0 0 0 1px rgba(136, 21, 50, 0.04) inset;
+    0 0 0 1px rgba(207, 63, 95, 0.04) inset;
   padding: 0.45rem;
   transform-origin: top right;
   visibility: hidden;

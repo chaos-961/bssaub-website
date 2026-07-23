@@ -3,7 +3,7 @@
 Rebuild of bssaub.com for the AUB Business Student Society. One goal drives every decision: get an AUB student to grab the membership card. Everything else (sponsors, story, animations) exists to make that decision feel obvious.
 
 Repo: `https://github.com/chaos-961/bssaub-website.git` · Live: `https://chaos-961.github.io/bssaub-website/` (GitHub Pages via Actions; custom domain later).
-Current version: **0.2.0**.
+Current version: **0.2.1**.
 
 ## Rules (standing, no exceptions)
 
@@ -27,12 +27,13 @@ Vanilla JS + Vite 6 multi-page (`index.html`, `account.html`, `404.html`) · GSA
 - Clean URLs (v0.1.3): internal links are extensionless (`account`, never `account.html`); Pages resolves them natively, and the `cleanUrls` middleware in `vite.config.js` (CLEAN_PAGES list) mirrors that in dev and preview. New pages join CLEAN_PAGES. Canonical and og:url use the extensionless form.
 - Local run: `run-local.bat` (untracked, gitignored — user helper): opens the already-running server if 5173 is busy, else installs deps if needed and starts `vite --open`.
 
-## Design system (light theme since v0.0.9, plain white background since v0.1.9)
+## Design system (dark gray "paper" ground with white ink since v0.2.1)
 
-The site went light on the user's word (2026-07-23); the old dark background system is deleted for good. A light aurora background (rotated CSS ray-line bands plus a WebGL shader curtain, `div.site-bg` first in `<body>`) rode from v0.1.0 to v0.1.8, went through a reversed night-sky detour, and was then deleted site wide on the user's word (v0.1.9, 2026-07-24): the ground is now plain `#ffffff` with no background layer at all. `div.site-bg`, `src/styles/aurora.css`, and `src/modules/auroraSky.js` are gone; do not reintroduce them without a fresh brief.
+The theme has swung: light on the user's word (2026-07-23), a light aurora background (rotated CSS ray-line bands plus a WebGL shader curtain, `div.site-bg` first in `<body>`) rode from v0.1.0 to v0.1.8 through a reversed night-sky detour, then was deleted site wide (v0.1.9, 2026-07-24) for a plain `#ffffff` ground that ran to v0.2.0. On the user's word (v0.2.1, 2026-07-24) the ground flipped again to a darker gray "paper" sheet with white body text. `div.site-bg`, `src/styles/aurora.css`, and `src/modules/auroraSky.js` stay gone; do not reintroduce them without a fresh brief.
 
-- Tokens in `src/styles/tokens.css`: `--bg #ffffff` (plain white; rode a warm `#fcfaf8` under the aurora from v0.1.0 to v0.1.8, back to pure white at v0.1.9) · `--surface #f8f3f5` · `--ink #221219` · `--ink-soft #5f4a54` (8.1:1 on white) · `--accent #881532` (brand maroon extracted from the logo, 9.55:1 on white) · `--accent-strong #a31a3c` · `--accent-2 #b04a67` (deep rose, 5.2:1 — deepened from the dark-theme `#e18ba1` so it reads on white).
-- The preloader keeps the maroon brand curtain (`#290a13`, inline critical CSS in index.html) that wipes up to reveal the white page. OG image and favicons stay maroon brand assets.
+- Tokens in `src/styles/tokens.css` (`color-scheme: dark`): `--bg #2c2a2e` (dark gray paper; ran plain `#ffffff` v0.1.9 to v0.2.0, a warm `#fcfaf8` under the aurora v0.1.0 to v0.1.8) · `--surface #38353b` (raised panels) · `--surface-glass rgba(44,42,46,0.72)` (nav) · `--ink #ffffff` (14.2:1 on bg) · `--ink-soft #cfc7cd` (8.6:1) · `--line rgba(255,255,255,0.14)` · `--accent #cf3f5f` (a rose maroon lifted for dark: white button text 4.64:1, 3.07:1 on the ground, since the deep brand `#881532` read at only ~1.4:1 on the gray) · `--accent-strong #d64d68` · `--accent-2 #e79dac` (6.6:1). The old maroon glow rgbs `136,21,50` and `176,74,103` were swept to the lifted accent `207,63,95` and `231,157,172` so journey draws, modal, and perk sparks pop on dark; the dark ink shadows `34,18,25` were kept (they read as depth pools on the gray). The deep `#881532` now lives only in the maroon brand assets.
+- Paper grain: a fixed `body::before` fractal-noise data URI (base.css, `saturate 0` grayscale, `mix-blend-mode: soft-light`, opacity 0.5, `z-index -1`). No image request, no JS, no animation, so reduced motion needs no exception; panels paint over it and it shows in the gaps. Dial the tooth with that one opacity.
+- The navbar logo (`assets/brand/logo.webp`, brand maroon on transparent, went muddy at ~1.4:1 on the gray) carries `filter: brightness(1.5) saturate(1.06)` in nav.css so it floats to a vivid brand red on dark, hue intact. Sponsor bubble tiles are opaque coins whose marks contrast with their own baked field, so they read as is on dark (verified: even the darkest tiles carry light or bright marks). The preloader keeps the maroon brand curtain (`#290a13`, inline critical CSS in index.html) that now wipes up to reveal the dark page. OG image and favicons stay maroon brand assets.
 - Type: Fraunces (display, `opsz 144`, WONK on hero/stub titles) + Instrument Sans (UI/body). Fluid clamp() scale lives in tokens.
 - Motion: power2/power3-out reveals; elastic feel only inside the Perk Field; scrub only where scroll is the mechanic (field impulses, journey path). `prefers-reduced-motion` strips physics, tilt, and scroll effects sitewide; `?reduced-motion` URL param is the QA hook.
 

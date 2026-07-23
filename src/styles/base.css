@@ -10,10 +10,11 @@
 
 html {
   height: 100%;
-  /* plain white ground (v0.1.9, 2026-07-24 user call — the aurora
-     background layer was deleted site wide) */
+  /* dark gray paper ground since v0.2.1 (user call); the flat --bg color,
+     with the body::before fractal grain below layered over it. Palette
+     history lives in tokens.css. */
   background-color: var(--bg);
-  scrollbar-color: #c9a6b2 #f3edf0;
+  scrollbar-color: color-mix(in srgb, var(--accent) 40%, var(--surface)) var(--bg);
 }
 
 body {
@@ -27,6 +28,23 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* dark paper ground (v0.2.1, 2026-07-24 user call — flipped off the plain
+   white theme). A fixed fractal grain sheet sits behind every section and
+   gives the gray its paper tooth. Pure CSS data URI: no image request, no
+   JS, no animation, so reduced motion needs no exception. Panels (cards,
+   nav glass, modal) paint over it; the grain shows in the gaps. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  opacity: 0.5;
+  mix-blend-mode: soft-light;
+}
+
 /* page scrollbar, on brand (modal keeps its own thinner one) */
 ::-webkit-scrollbar {
   width: 12px;
@@ -37,13 +55,13 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--accent) 26%, #eadfe4);
+  background: color-mix(in srgb, var(--accent) 42%, var(--surface));
   border: 3px solid var(--bg);
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--accent) 48%, #eadfe4);
+  background: color-mix(in srgb, var(--accent) 62%, var(--surface));
 }
 
 img,
@@ -159,7 +177,7 @@ html.u-scroll-lock body {
 
 .btn--primary:hover {
   background: var(--accent-strong);
-  box-shadow: 0 14px 34px -12px rgba(136, 21, 50, 0.38);
+  box-shadow: 0 14px 34px -12px rgba(207, 63, 95, 0.38);
 }
 
 .btn--ghost {
