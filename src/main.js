@@ -7,7 +7,6 @@ import '@fontsource-variable/instrument-sans';
 
 import './styles/tokens.css';
 import './styles/base.css';
-import './styles/ambient.css';
 import './styles/nav.css';
 import './styles/sections.css';
 import './styles/perk-field.css';
@@ -20,7 +19,6 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 import { initScroll } from './modules/scroll.js';
-import { initAmbient } from './modules/ambient.js';
 import { initNav } from './modules/nav.js';
 import { initHeroCard } from './modules/heroCard.js';
 import { initSponsorModal } from './modules/sponsorModal.js';
@@ -31,7 +29,6 @@ import { initPreloader } from './modules/preloader.js';
 import { initFooterVersion } from './modules/footerVersion.js';
 
 const scroll = initScroll();
-const ambient = initAmbient(scroll);
 initNav(scroll);
 const heroCard = initHeroCard(scroll);
 const modal = initSponsorModal(scroll);
@@ -43,4 +40,4 @@ scroll.refresh();
 initPreloader({ scroll, onComplete: () => heroCard.enter() });
 
 // dev-only handle for QA sessions (manual ticker stepping, state inspection)
-if (import.meta.env.DEV) window.__bss = { gsap, scroll, perkField, modal, journey, ambient };
+if (import.meta.env.DEV) window.__bss = { gsap, scroll, perkField, modal, journey };

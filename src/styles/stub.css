@@ -27,7 +27,7 @@ body.stub--nav .stub__main {
   width: min(360px, 78vw);
   height: auto;
   border-radius: var(--radius);
-  box-shadow: 0 26px 60px -22px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 26px 60px -22px rgba(34, 18, 25, 0.32);
   margin-block: 0.6rem;
 }
 

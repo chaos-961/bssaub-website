@@ -72,7 +72,7 @@
 .perk-bubble:focus-visible .perk-bubble__scale {
   transform: scale(1.05);
   border-color: var(--accent-2);
-  box-shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 14px 34px -14px rgba(34, 18, 25, 0.3);
 }
 
 .perk-bubble img {
@@ -98,7 +98,7 @@
   padding: 0.32em 0.7em;
   border-radius: 999px;
   white-space: nowrap;
-  box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 6px 16px -6px rgba(136, 21, 50, 0.4);
 }
 
 /* ---- v0.0.4 juice: grab-and-throw, impact flashes, hover life ---- */
@@ -146,7 +146,7 @@
 .perk-bubble.is-grabbed .perk-bubble__scale {
   transform: scale(1.09);
   border-color: var(--accent-2);
-  box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.72);
+  box-shadow: 0 24px 48px -16px rgba(34, 18, 25, 0.36);
 }
 
 html.is-grabbing,
@@ -161,11 +161,11 @@ html.is-grabbing .perk-bubble {
 
 @keyframes perk-hit {
   0% {
-    box-shadow: 0 0 0 0 rgba(225, 139, 161, 0.5);
+    box-shadow: 0 0 0 0 rgba(176, 74, 103, 0.5);
     border-color: var(--accent-2);
   }
   100% {
-    box-shadow: 0 0 0 16px rgba(225, 139, 161, 0);
+    box-shadow: 0 0 0 16px rgba(176, 74, 103, 0);
     border-color: var(--line);
   }
 }
@@ -186,7 +186,7 @@ html.is-grabbing .perk-bubble {
   margin: -6px 0 0 -6px;
   border-radius: 50%;
   opacity: 0;
-  background: radial-gradient(circle, rgba(244, 239, 235, 0.9), rgba(225, 139, 161, 0.5) 45%, transparent 72%);
+  background: radial-gradient(circle, rgba(136, 21, 50, 0.85), rgba(176, 74, 103, 0.5) 45%, transparent 72%);
 }
 
 .perk-spark.is-on {
