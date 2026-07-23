@@ -12,10 +12,12 @@ import './styles/footer.css';
 
 import { initScroll } from './modules/scroll.js';
 import { initNav } from './modules/nav.js';
+import { initAuroraSky } from './modules/auroraSky.js';
 import { initFooterVersion } from './modules/footerVersion.js';
 
 const scroll = initScroll();
 initNav(scroll);
+initAuroraSky();
 initFooterVersion();
 
 document.querySelectorAll('[data-home-link]').forEach((a) => {
