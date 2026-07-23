@@ -103,6 +103,7 @@
   width: 100%;
   height: auto;
   border-radius: var(--radius);
+  border: 2px solid var(--ink); /* black outline (user call 2026-07-23) */
   box-shadow: 0 30px 70px -25px rgba(34, 18, 25, 0.35);
 }
 

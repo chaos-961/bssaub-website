@@ -3,7 +3,7 @@
 Rebuild of bssaub.com for the AUB Business Student Society. One goal drives every decision: get an AUB student to grab the membership card. Everything else (sponsors, story, animations) exists to make that decision feel obvious.
 
 Repo: `https://github.com/chaos-961/bssaub-website.git` · Live: `https://chaos-961.github.io/bssaub-website/` (GitHub Pages via Actions; custom domain later).
-Current version: **0.1.0**.
+Current version: **0.1.1**.
 
 ## Rules (standing, no exceptions)
 
@@ -24,6 +24,7 @@ Vanilla JS + Vite 6 multi-page (`index.html`, `account.html`, `404.html`) · GSA
 - `src/modules/*` — one module per concern; `src/styles/*` — tokens.css first, then per-section files.
 - `public/assets/` — brand/, card/, sponsors/<category>/<id>.webp, journey/.
 - Deploy: `.github/workflows/static.yml` (push to main → build → Pages). `vite.config.js` has `base: '/bssaub-website/'`. Custom-domain flip: CNAME in public/, base to `/`, revisit 404.html's absolute icon paths.
+- Local run: `run-local.bat` (untracked, gitignored — user helper): opens the already-running server if 5173 is busy, else installs deps if needed and starts `vite --open`.
 
 ## Design system (light theme since v0.0.9, light aurora since v0.1.0)
 
@@ -37,12 +38,12 @@ The site went light on the user's word (2026-07-23); the old dark background sys
 ## The page (scroll order)
 
 1. **Preloader** — honest progress (both font families + every `[data-preload]` image), 400ms floor, 4s hard cap, curtain wipe into the hero entrance.
-2. **Navbar** — wordmark left; Account + hamburger right. Transparent over the hero, white glass after 80px, hides scrolling down, returns scrolling up. The hamburger opens a compact dropdown anchored under the button (not a full panel): ESC, outside press, scroll movement, or tab-out closes it; no scroll lock.
-3. **Hero** — headline "One card. A campus of perks.", membership CTA + "See the perks", 3D card: pointer tilt ±12° with tracking glare and counter-moving shadow, idle float, gyro only where it needs no permission prompt.
-4. **The Perk Field** — the signature section. 5 category zones, all 25 sponsors as physical DOM bubbles (real links/buttons, aria-labeled) in a zero-gravity Matter world: home springs, collisions, Lenis scroll impulses, pointer repulsor with stir currents, grab-and-throw with velocity fling, jelly squash-stretch, impact sparks, displacement clamps ("mixed but not too much"). Bubbles with a `details` object open the modal (focus trap, ESC, no-scroll layout tiers incl. landscape two-column); all others link straight to Instagram. Reduced motion: static cluster grid, physics never created.
+2. **Navbar** — the real logo lockup top left (`assets/brand/logo.webp`, trimmed + white knocked to alpha from raw `assets/logo.png`, 42px tall, 34px under 360px); Account + hamburger right. Transparent over the hero, white glass after 80px, hides scrolling down, returns scrolling up. The hamburger opens a compact dropdown anchored under the button (not a full panel): ESC, outside press, scroll movement, or tab-out closes it; no scroll lock.
+3. **Hero** — headline "One card. A campus of perks.", membership CTA + "See the perks", trust row under the CTAs (+400 Active Members · +50 Industry Partners · Exclusive Member Benefits, user facts), 3D card: ink outline, pointer tilt ±12° with tracking glare and counter-moving shadow, idle float, gyro only where it needs no permission prompt.
+4. **The Perk Field** — the signature section. 5 category zones, all 25 sponsors as physical DOM bubbles (real links/buttons, aria-labeled) in a zero-gravity Matter world: home springs, collisions, Lenis scroll impulses, pointer repulsor with stir currents, grab-and-throw with velocity fling, jelly squash-stretch, impact sparks, displacement clamps ("mixed but not too much"). Throw guardrails (v0.1.0, user report): a hard travel ceiling (clampRadius + throwRange) projects runaway bodies back so a fling can never slide under later sections, and a returnGlide cap trims homeward radial speed beyond the clamp radius so the comeback glides instead of snapping. Bubbles with a `details` object open the modal (focus trap, ESC, no-scroll layout tiers incl. landscape two-column); all others link straight to Instagram. Reduced motion: static cluster grid, physics never created.
 5. **Our Journey** — one SVG path scrub-drawn through Story, Mission, Vision, Join. Desktop: chaotic bows and overshoot curls between checkpoints, guaranteed never over an image or text column (wander is index-hashed so geometry is stable across rebuilds and ignition prefixes cannot drift). Mobile: straight left rail, dots at measured image centers (JS sets y inline, CSS owns rail x). A glowing orb rides the draw front. Ignition (`.is-lit`) drives decorative state only — content reveals are once-only ScrollTriggers (`.is-in`) and can never un-reveal.
 6. **Become a Sponsor** — stat row computed from sponsors.js so it never goes stale; CTA currently a mailto (interim until the Google Form URL arrives).
-7. **Footer** — anchors, socials, mini CTA, version badge read from version.json.
+7. **Footer** — anchors, socials, mini CTA, version badge read from version.json. Bottom bar: "© Business Student Society, AUB · CRN: 5014" plus a "Brought to you by" Nerve Media credit (logo `assets/brand/nerve-media.webp` from nervemedia.agency, links there; user call 2026-07-23 — distinct from the still-standing Design Lab exclusion).
 
 `account.html`: "Member accounts are coming soon" placeholder sharing nav/footer, own entry (`src/account.js`) so a future auth system slots in without touching index. `404.html`: one line of personality + home button, ~1KB JS, served automatically by Pages.
 
