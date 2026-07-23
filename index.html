@@ -356,7 +356,7 @@
 
       <section class="agency-credit" aria-label="Site credit" data-agency-credit>
         <div class="agency-credit__inner">
-          <p class="eyebrow section__eyebrow">Brought to you by</p>
+          <p class="eyebrow agency-credit__eyebrow"><span>Brought to you by</span></p>
           <a
             class="agency-credit__lockup"
             href="https://nervemedia.agency/"
@@ -364,10 +364,32 @@
             rel="noopener"
             aria-label="Nerve Media, opens nervemedia.agency"
           >
-            <img src="assets/brand/nerve-media.webp" alt="" width="96" height="96" loading="lazy" decoding="async" />
-            <span class="agency-credit__name">Nerve Media</span>
+            <span class="agency-credit__badge">
+              <img src="assets/brand/nerve-media.webp" alt="" width="96" height="96" loading="lazy" decoding="async" />
+            </span>
+            <span class="agency-credit__text">
+              <span class="agency-credit__name">Nerve Media</span>
+              <span class="agency-credit__link">
+                nervemedia.agency
+                <svg
+                  class="agency-credit__arrow"
+                  viewBox="0 0 16 16"
+                  width="15"
+                  height="15"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path d="M5 11 11 5" />
+                  <path d="M6 5h5v5" />
+                </svg>
+              </span>
+            </span>
           </a>
-          <p class="agency-credit__note">The team behind this site.</p>
         </div>
       </section>
     </main>
@@ -418,7 +440,7 @@
       <div class="site-footer__bottom">
         <div class="site-footer__bottom-inner">
           <p>© Business Student Society, AUB · CRN: 5014</p>
-          <span class="version-badge" data-version-badge>v0.1.9</span>
+          <span class="version-badge" data-version-badge>v0.2.0</span>
         </div>
       </div>
     </footer>

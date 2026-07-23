@@ -1,6 +1,14 @@
 /* The Perk Field (§6.4) — zones, bubbles, category ruler, mobile chip */
 .perk-field {
   position: relative;
+  /* Clip the horizontal axis only: a bubble dragged or shoved to the edge is
+     hidden past the section box instead of opening a page-wide sideways
+     scrollbar. overflow-x: clip leaves vertical flow untouched (unlike hidden,
+     which would trap scroll and clip the sticky nav's world). The drag clamp in
+     perkField.js keeps bubbles reachable; this is the belt-and-braces so no
+     collision shove or momentary overshoot can ever scroll the page sideways.
+     2026-07-24 user report. */
+  overflow-x: clip;
   border-top: 1px solid var(--line);
   padding-block: var(--section-pad);
 }

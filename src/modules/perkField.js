@@ -32,18 +32,18 @@ const TUNING = {
                             //    (160 → 140, 2026-07-24: grab should feel immediate)
   grabFollow: 0.34,         // fraction of the pointer gap closed per step
   grabMaxSpeed: 27,         // grabbed body tracks faster than the free cap
-  flingCap: { d: 30, m: 20 },
-  flingScale: 0.95,         // release velocity → body velocity factor
-  throwRange: { d: 190, m: 120 }, // hard travel ceiling past clampRadius — a thrown
-                            //    bubble stays in its neighborhood (2026-07-23 fix:
-                            //    flings could sail under later sections = "disappeared")
-  returnGlide: { d: 3.5, m: 2.5 }, // homeward speed ceiling beyond clampRadius — the
-                            //    throw sails out fast, the comeback glides (halved at
-                            //    v0.1.4; distance-eased below, user call 2026-07-24:
-                            //    the constant-speed return read as a snap)
-  glideEase: 0.15,          // glide fraction left at the home seat — the return
-                            //    runs near full glide far out and eases down the
-                            //    whole way in, so it lands instead of snapping
+  throwRange: { d: 190, m: 120 }, // hard travel ceiling past clampRadius for IDLE
+                            //    bodies only (collision runaways). A released body
+                            //    homes on a timed glide instead, so it never hits
+                            //    this (2026-07-23 fix: flings could sail under later
+                            //    sections = "disappeared")
+  returnMs: 1000,           // release → home takes this long, ALWAYS, near or far
+                            //    (user call 2026-07-24: the old teleport-to-ring-
+                            //    then-crawl read as a snap; a fixed-time smoothstep
+                            //    from wherever you let go lands soft every time)
+  returnGlide: { d: 3.5, m: 2.5 }, // homeward speed ceiling for IDLE bodies drifting
+                            //    home after a collision (not the release glide)
+  glideEase: 0.15,          // idle-glide fraction left at the home seat
   settleSoft: 0.8,          // how much of the clamp spring a fresh release mutes
   settleDecay: 0.972,       // per-step settle fade (~1.5s) — the spring eases back
                             //    in instead of yanking the moment fingers let go
@@ -238,8 +238,8 @@ export function initPerkField(scroll, modal) {
     it.deform = { k: 0, dx: 1, dy: 0 };                 // smoothed jelly state
     it.breathePhase = hash01(it.i * 17 + 3) * Math.PI * 2;
     it.breatheSpeed = 0.9 + hash01(it.i * 13 + 5) * 0.5;
-    it.capBoost = 0;                                    // elevated cap after a fling
     it.settle = 0;                                      // fresh-release spring mute
+    it.homing = null;                                   // active return glide, or null
     it.hitAt = 0;
     it.grabbed = false;
     it.body = Bodies.circle(it.home.x, it.home.y + zone.offsetY, it.r, {
@@ -299,8 +299,19 @@ export function initPerkField(scroll, modal) {
   const blockTouch = (ev) => ev.preventDefault();
 
   function setTarget(e) {
-    const p = sectionPoint(e);
-    grab.target = { x: p.x - grab.it.zone.offsetX, y: p.y };
+    const r = section.getBoundingClientRect();
+    const it = grab.it;
+    const w = it.zone.canvas.clientWidth;
+    // pointer → body frame (X is canvas-local, Y is section-local), then CLAMP
+    // to the canvas box horizontally and the section box vertically. A dragged
+    // bubble can no longer be flung off-screen or pushed past the page edge
+    // into a sideways scrollbar; wherever the finger goes it stays somewhere it
+    // can glide home from. 2026-07-24 user report: drag + scroll sent bubbles
+    // far away, they glitched and locked, and opened a horizontal scrollbar.
+    grab.target = {
+      x: gsap.utils.clamp(it.r, Math.max(w - it.r, it.r), e.clientX - r.left - it.zone.offsetX),
+      y: gsap.utils.clamp(it.r, Math.max(r.height - it.r, it.r), e.clientY - r.top),
+    };
   }
   function pushSample(e) {
     grab.samples.push({ x: e.clientX, y: e.clientY, t: performance.now() });
@@ -311,6 +322,7 @@ export function initPerkField(scroll, modal) {
     hoverIt = null;
     it.grabbed = true;
     it.settle = 0;
+    it.homing = null; // grabbing a mid-return bubble cancels its glide
     grab = { it, pointerId: e.pointerId, target: null, samples: [], dist: 0, lastClient: { x: e.clientX, y: e.clientY } };
     setTarget(e);
     pushSample(e);
@@ -327,35 +339,19 @@ export function initPerkField(scroll, modal) {
     }
   }
 
-  function release(fling) {
+  function release() {
     if (!grab) return;
     const it = grab.it;
     it.grabbed = false;
-    let thrown = false;
-    if (fling && grab.samples.length >= 2) {
-      const now = performance.now();
-      const recent = grab.samples.filter((s) => now - s.t < 110);
-      const a = recent[0] || grab.samples[0];
-      const b = grab.samples[grab.samples.length - 1];
-      const dt = Math.max(b.t - a.t, 8);
-      let vx = ((b.x - a.x) / dt) * STEP * TUNING.flingScale;
-      let vy = ((b.y - a.y) / dt) * STEP * TUNING.flingScale;
-      const cap = isMobile() ? TUNING.flingCap.m : TUNING.flingCap.d;
-      const sp = Math.hypot(vx, vy);
-      if (sp > cap) {
-        vx = (vx / sp) * cap;
-        vy = (vy / sp) * cap;
-      }
-      Body.setVelocity(it.body, { x: vx, y: vy });
-      if (sp > 2) {
-        it.capBoost = 1; // let a real throw sail before the cap reels it in
-        thrown = true;
-      }
-    }
-    // soft start home: a gentle let-go mutes most of the clamp spring and
-    // eases it back in (settleDecay); a real throw keeps half the mute so
-    // the reel-in after the sail is not a yank either
-    it.settle = thrown ? 0.5 : 1;
+    // No sail, no throw. Wherever the finger let go, glide home on a fixed
+    // timeline (returnMs) — momentum is dropped and a smoothstep from rest
+    // (handled in glidePass) lands soft in the same ~1s near or far. This is
+    // the whole point of the 2026-07-24 rework: the old release teleported a
+    // far bubble onto the throw ring and then crawled it in, which read as a
+    // snap. Homing runs post-integration so the spring can never re-bury it.
+    it.settle = 0;
+    Body.setVelocity(it.body, { x: 0, y: 0 });
+    it.homing = { e: 0, from: { x: it.body.position.x, y: it.body.position.y } };
     if (grab.dist > 6) {
       suppressEl = it.el;
       suppressUntil = performance.now() + 420;
@@ -515,6 +511,12 @@ export function initPerkField(scroll, modal) {
   const activeItems = () => {
     const act = zones.filter((z) => z.active).flatMap((z) => z.items);
     if (grab && !grab.it.zone.active) act.push(grab.it);
+    // a bubble released while its zone was scrolled out of view still has to be
+    // driven home, or its glide never advances and it looks locked in place
+    // (2026-07-24). A homing body is never also the grabbed one, so no dupes.
+    allItems.forEach((it) => {
+      if (it.homing && !it.zone.active) act.push(it);
+    });
     return act;
   };
 
@@ -526,7 +528,6 @@ export function initPerkField(scroll, modal) {
     const clampR = mobile ? TUNING.clampRadius.m : TUNING.clampRadius.d;
     const impulseK = mobile ? TUNING.impulse.m : TUNING.impulse.d;
     const maxSpeed = mobile ? TUNING.maxSpeed.m : TUNING.maxSpeed.d;
-    const flingCap = mobile ? TUNING.flingCap.m : TUNING.flingCap.d;
     const act = activeItems();
 
     simT += STEP;
@@ -561,6 +562,12 @@ export function initPerkField(scroll, modal) {
         return;
       }
 
+      // returning body: no spring, no clamp, no throw ceiling — glidePass owns
+      // its position on a fixed timeline. Collisions still shove neighbors
+      // aside (soft-space loop + solver read its velocity below), so it swims
+      // home through the crowd instead of teleporting onto a ring.
+      if (it.homing) return;
+
       const hx = it.home.x;
       const hy = it.home.y + it.zone.offsetY;
       let dx = hx - b.position.x;
@@ -578,7 +585,6 @@ export function initPerkField(scroll, modal) {
         if (vr > 0) {
           Body.setVelocity(b, { x: b.velocity.x - ox * vr, y: b.velocity.y - oy * vr });
         }
-        it.capBoost = 0;
         dx = hx - b.position.x;
         dy = hy - b.position.y;
         dist = throwR;
@@ -630,17 +636,14 @@ export function initPerkField(scroll, modal) {
         }
       }
 
-      // speed cap — briefly elevated after a fling so throws can sail
-      let cap = maxSpeed;
-      if (it.capBoost > 0.01) {
-        cap = maxSpeed + (flingCap - maxSpeed) * it.capBoost;
-        it.capBoost *= 0.95;
-      }
+      // speed cap: idle bodies (scroll/pointer/collision driven) never outrun
+      // maxSpeed. Grabbed and homing bodies took their early return above, so
+      // the cap can't fight the drag or the timed glide.
       const sp = Math.hypot(b.velocity.x, b.velocity.y);
-      if (sp > cap) {
+      if (sp > maxSpeed) {
         Body.setVelocity(b, {
-          x: (b.velocity.x / sp) * cap,
-          y: (b.velocity.y / sp) * cap,
+          x: (b.velocity.x / sp) * maxSpeed,
+          y: (b.velocity.y / sp) * maxSpeed,
         });
       }
 
@@ -694,14 +697,17 @@ export function initPerkField(scroll, modal) {
     pointerVel.y *= 0.88;
   }
 
-  // return glide — runs AFTER Engine.update, because Matter integrates
-  // forces as k*dist*dt² per step (~17px/step at a 165px stretch): any cap
-  // applied before integration was immediately re-buried by the spring,
-  // which is exactly the "quick snap" the user felt on release
-  // (2026-07-24). Homeward RADIAL speed is capped on a distance-eased
-  // curve: full returnGlide out at the throw ceiling, easing to glideEase
-  // of it at the home seat, so every comeback decelerates into place.
-  // Tangential swirl, outward sails, grabs and collisions are untouched.
+  // Runs AFTER Engine.update — two homeward jobs that both have to sit past
+  // integration, because Matter buries a pre-integration velocity cap under
+  // the spring's k*dist*dt² kick (~17px/step at a long stretch = the old
+  // "quick snap"). Two paths:
+  //   1. it.homing (a just-released body): position is DRIVEN on a fixed-time
+  //      smoothstep from release point to home (returnMs), overwriting any
+  //      integrated drift. This is the 2026-07-24 rework — same duration near
+  //      or far, soft landing, no teleport onto a ring.
+  //   2. everything else: an idle body drifting home after a collision gets
+  //      its homeward RADIAL speed capped on a distance-eased curve so it
+  //      decelerates into its seat. Tangential swirl and collisions untouched.
   function glidePass() {
     const mobile = isMobile();
     const glide = mobile ? TUNING.returnGlide.m : TUNING.returnGlide.d;
@@ -710,6 +716,31 @@ export function initPerkField(scroll, modal) {
     activeItems().forEach((it) => {
       if (it.grabbed) return;
       const b = it.body;
+
+      // timed return glide: interpolate release-point → home over returnMs on a
+      // smoothstep (zero velocity at both ends = soft push-off, soft landing).
+      // Same duration near or far, so every release feels identical. Runs here,
+      // AFTER Engine.update, so the integrated spring/collision drift can't
+      // fight it — we just overwrite the position each step.
+      if (it.homing) {
+        const hx = it.home.x;
+        const hy = it.home.y + it.zone.offsetY;
+        it.homing.e += STEP;
+        const p = Math.min(it.homing.e / TUNING.returnMs, 1);
+        const k = p * p * (3 - 2 * p); // smoothstep
+        const tx = it.homing.from.x + (hx - it.homing.from.x) * k;
+        const ty = it.homing.from.y + (hy - it.homing.from.y) * k;
+        const vx = tx - b.position.x;
+        const vy = ty - b.position.y;
+        Body.setPosition(b, { x: tx, y: ty });
+        Body.setVelocity(b, { x: vx, y: vy }); // per-step delta → jelly + soft-push read
+        if (p >= 1) {
+          it.homing = null;
+          Body.setVelocity(b, { x: 0, y: 0 });
+        }
+        return;
+      }
+
       const dx = it.home.x - b.position.x;
       const dy = it.home.y + it.zone.offsetY - b.position.y;
       const dist = Math.hypot(dx, dy);
@@ -719,7 +750,6 @@ export function initPerkField(scroll, modal) {
       const vin = b.velocity.x * inx + b.velocity.y * iny;
       const cap = glide * (TUNING.glideEase + (1 - TUNING.glideEase) * Math.min(dist / reach, 1));
       if (vin > cap) {
-        if (dist > clampR) it.capBoost = 0; // homeward past the ring ends a sail
         Body.setVelocity(b, {
           x: b.velocity.x - inx * (vin - cap),
           y: b.velocity.y - iny * (vin - cap),
@@ -763,12 +793,22 @@ export function initPerkField(scroll, modal) {
       zone.items.forEach(renderItem);
     });
     if (grab && !grab.it.zone.active) renderItem(grab.it);
+    // a body gliding home after its zone went inactive still needs its DOM
+    // moved, so it lands on target instead of snapping when the zone returns
+    allItems.forEach((it) => {
+      if (it.homing && !it.zone.active) renderItem(it);
+    });
   }
 
   /* ---------------- stepping: fixed timestep + accumulator -------------- */
   let sectionNear = true;
   let acc = 0;
-  const running = () => sectionNear && !document.hidden;
+  // keep the sim alive while a bubble is in-hand or gliding home, even after the
+  // section scrolls out of view — a release must ALWAYS reach home instead of
+  // freezing wherever it was let go (2026-07-24 user report). It quiets again
+  // the moment nothing is grabbed and every glide has landed.
+  const busy = () => !!grab || allItems.some((it) => it.homing);
+  const running = () => (sectionNear || busy()) && !document.hidden;
 
   gsap.ticker.add((t, dt) => {
     if (!running()) {
@@ -816,6 +856,7 @@ export function initPerkField(scroll, modal) {
       layout();
       zones.forEach((zone) => {
         zone.items.forEach((it) => {
+          it.homing = null;
           Body.setPosition(it.body, { x: it.home.x, y: it.home.y + zone.offsetY });
           Body.setVelocity(it.body, { x: 0, y: 0 });
           it.el.style.transform = 'translate3d(0px, 0px, 0)';
