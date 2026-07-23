@@ -10,17 +10,59 @@
 
 html {
   height: 100%;
+  /* static ground washes (v0.0.5): wine light from above, ember corner, deep
+     vignette — depth even before the ambient canvas, and for reduced motion.
+     Sized to the viewport so iOS (no fixed attachment) degrades cleanly. */
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(58% 44% at 50% 0%, rgba(136, 21, 50, 0.17), transparent 70%),
+    radial-gradient(46% 60% at 100% 100%, rgba(136, 21, 50, 0.11), transparent 64%),
+    radial-gradient(150% 92% at 50% 112%, rgba(0, 0, 0, 0.34), transparent 62%);
+  background-size: 100vw 100vh;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  scrollbar-color: #421121 #120b0f;
 }
 
 body {
   min-height: 100%;
-  background: var(--bg);
+  background: none;
   color: var(--ink);
   font-family: var(--font-body);
   font-size: var(--step-0);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* film grain over the ambient layer — texture kills the flat digital look */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* page scrollbar, on brand (modal keeps its own thinner one) */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--accent) 30%, #241019);
+  border: 3px solid var(--bg);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--accent) 55%, #241019);
 }
 
 img,
@@ -136,6 +178,7 @@ html.u-scroll-lock body {
 
 .btn--primary:hover {
   background: var(--accent-strong);
+  box-shadow: 0 14px 34px -12px rgba(136, 21, 50, 0.6);
 }
 
 .btn--ghost {

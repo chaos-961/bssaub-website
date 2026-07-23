@@ -1,15 +1,15 @@
-// Ambient background (v0.0.4): scroll-reactive dust + a whisper of sea
-// shimmer — moonlight-on-water streaks for a campus above the Mediterranean.
-// One fixed canvas behind all content. §7 rule: everything outside the Perk
-// Field stays quiet, so this layer whispers — tiny sizes, single-digit
-// alphas, slow clocks. The dust inherits a fraction of Lenis velocity, which
-// echoes the field's scroll-physics site-wide at 1% intensity.
-// Reduced motion: never initialized (static ground, zero canvas work).
+// Ambient background (v0.0.5): aurora wine blobs + scroll-reactive dust + sea
+// shimmer. One fixed canvas behind all content, over the static CSS washes and
+// under the film grain (base.css). The dust inherits a fraction of Lenis
+// velocity, echoing the Perk Field's scroll physics site-wide; the blobs give
+// the ground slow breathing color so the page never sits flat.
+// Reduced motion: never initialized — the CSS washes + grain still carry depth.
 import gsap from 'gsap';
 
 const COUNT = {
-  dust: { d: 48, m: 26 },
-  streaks: { d: 4, m: 3 },
+  blobs: { d: 3, m: 2 },
+  dust: { d: 60, m: 30 },
+  streaks: { d: 5, m: 3 },
 };
 
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -23,38 +23,63 @@ export function initAmbient(scroll) {
   document.body.prepend(canvas);
   const ctx = canvas.getContext('2d');
 
+  // aurora blobs render at 1/8 resolution and scale up — they are pure soft
+  // gradients, so the upsample is invisible and the fill cost drops ~98%
+  const blobCanvas = document.createElement('canvas');
+  const bctx = blobCanvas.getContext('2d');
+
   const mobile = () => window.matchMedia('(max-width: 47.99rem)').matches;
   let W = 0;
   let H = 0;
+  let blobs = [];
   let dust = [];
   let streaks = [];
+
+  function spawnBlob(i) {
+    const rose = i === 1; // one blob leans rose, the rest deep wine
+    return {
+      px: rnd(0.15, 0.85),
+      py: rnd(0.2, 0.8),
+      rx: rnd(0.1, 0.2),
+      ry: rnd(0.12, 0.24),
+      w1: rnd(0.00006, 0.00012) * (Math.random() < 0.5 ? 1 : -1), // ~1–3 min orbits
+      w2: rnd(0.00005, 0.0001) * (Math.random() < 0.5 ? 1 : -1),
+      p1: rnd(0, Math.PI * 2),
+      p2: rnd(0, Math.PI * 2),
+      r: rnd(0.38, 0.55), // fraction of the viewport's larger side
+      a: rose ? rnd(0.045, 0.06) : rnd(0.07, 0.1),
+      rose,
+      breathe: rnd(0, Math.PI * 2),
+      breatheSpeed: rnd(0.00008, 0.00016),
+    };
+  }
 
   function spawnMote(scattered) {
     const depth = rnd(0.35, 1); // 1 = close: bigger, brighter, streams faster
     return {
       x: rnd(0, W),
       y: scattered ? rnd(0, H) : 0, // caller re-seats edge entries
-      r: 0.6 + depth * 1.3,
+      r: 0.7 + depth * 1.5,
       depth,
-      rose: Math.random() < 0.3, // a third carry the accent tint
-      a: rnd(0.05, 0.16) * (0.5 + depth * 0.5),
+      rose: Math.random() < 0.35, // a third carry the accent tint
+      a: rnd(0.07, 0.2) * (0.5 + depth * 0.5),
       drift: rnd(0, Math.PI * 2),
       driftSpeed: rnd(0.00018, 0.00045),
-      rise: rnd(0.02, 0.085), // px/frame upward bias — dust in a light shaft
+      rise: rnd(0.02, 0.09), // px/frame upward bias — dust in a light shaft
       tw: rnd(0, Math.PI * 2),
       twSpeed: rnd(0.0006, 0.0016),
     };
   }
 
   function spawnStreak(scattered) {
-    const w = rnd(200, 420);
+    const w = rnd(220, 460);
     return {
       x: scattered ? rnd(-w, W) : -w,
       dir: Math.random() < 0.5 ? 1 : -1,
       y: rnd(H * 0.12, H * 0.92),
       w,
-      speed: rnd(0.12, 0.3), // px/frame — a crossing takes ~a minute
-      a: rnd(0.02, 0.045),
+      speed: rnd(0.14, 0.34), // px/frame — a crossing takes ~a minute
+      a: rnd(0.03, 0.06),
       bob: rnd(0, Math.PI * 2),
       bobSpeed: rnd(0.00025, 0.0006),
       breathe: rnd(0, Math.PI * 2),
@@ -68,7 +93,10 @@ export function initAmbient(scroll) {
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    blobCanvas.width = Math.max(2, W >> 3);
+    blobCanvas.height = Math.max(2, H >> 3);
     const m = mobile();
+    blobs = Array.from({ length: m ? COUNT.blobs.m : COUNT.blobs.d }, (_, i) => spawnBlob(i));
     dust = Array.from({ length: m ? COUNT.dust.m : COUNT.dust.d }, () => spawnMote(true));
     streaks = Array.from({ length: m ? COUNT.streaks.m : COUNT.streaks.d }, () => spawnStreak(true));
   }
@@ -78,10 +106,39 @@ export function initAmbient(scroll) {
     lenisVel = velocity;
   });
 
+  let t = 0;
   function step(dt) {
+    t += dt;
     const f = dt / 16.7; // normalize to a 60fps frame
     const sv = lenisVel;
     ctx.clearRect(0, 0, W, H);
+
+    // aurora blobs — drawn small, upsampled soft
+    const bw = blobCanvas.width;
+    const bh = blobCanvas.height;
+    bctx.clearRect(0, 0, bw, bh);
+    bctx.globalCompositeOperation = 'lighter';
+    for (const b of blobs) {
+      const cx = (b.px + Math.sin(t * b.w1 + b.p1) * b.rx) * bw;
+      const cy = (b.py + Math.cos(t * b.w2 + b.p2) * b.ry) * bh;
+      const R = b.r * Math.max(bw, bh);
+      const a = b.a * (0.72 + 0.28 * Math.sin(t * b.breatheSpeed + b.breathe));
+      const g = bctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+      if (b.rose) {
+        g.addColorStop(0, `rgba(225, 139, 161, ${a.toFixed(3)})`);
+        g.addColorStop(0.55, `rgba(163, 26, 60, ${(a * 0.5).toFixed(3)})`);
+      } else {
+        g.addColorStop(0, `rgba(136, 21, 50, ${a.toFixed(3)})`);
+        g.addColorStop(0.55, `rgba(77, 12, 29, ${(a * 0.55).toFixed(3)})`);
+      }
+      g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      bctx.fillStyle = g;
+      bctx.fillRect(0, 0, bw, bh);
+    }
+    bctx.globalCompositeOperation = 'source-over';
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(blobCanvas, 0, 0, W, H);
+
     ctx.globalCompositeOperation = 'lighter';
 
     // dust: slow wander + upward bias; scrolling streams it past the viewport
@@ -132,7 +189,7 @@ export function initAmbient(scroll) {
     lenisVel *= 0.9;
   }
 
-  gsap.ticker.add((t, dt) => {
+  gsap.ticker.add((time, dt) => {
     if (document.hidden) return;
     step(Math.min(dt, 100));
   });
@@ -147,6 +204,9 @@ export function initAmbient(scroll) {
   return {
     canvas,
     step,
+    get blobs() {
+      return blobs;
+    },
     get dust() {
       return dust;
     },

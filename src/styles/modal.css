@@ -1,4 +1,6 @@
-/* Sponsor detail modal (§6.4 popups) */
+/* Sponsor detail modal (§6.4 popups) — v0.0.5 redesign: centered header with
+   ringed logo + oblique discount pill (echoes the field badges), numbered step
+   chips, full-width CTA, thin scrollbar. */
 .sponsor-modal {
   position: fixed;
   inset: 0;
@@ -16,23 +18,45 @@
 .sponsor-modal__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(10, 5, 8, 0.62);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  background: rgba(10, 5, 8, 0.66);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
 }
 
 .sponsor-modal__panel {
   position: relative;
-  width: min(100%, 430px);
-  max-height: min(84vh, 640px);
+  width: min(100%, 460px);
+  max-height: min(86vh, 660px);
   overflow: auto;
-  background: var(--surface);
+  overscroll-behavior: contain;
+  background:
+    radial-gradient(130% 60% at 50% -8%, rgba(136, 21, 50, 0.22), transparent 60%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 88%, var(--accent)) 0%, var(--surface) 34%);
   border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  padding: clamp(1.5rem, 5vw, 2.25rem);
+  border-radius: 24px;
+  box-shadow:
+    0 44px 96px -32px rgba(0, 0, 0, 0.72),
+    0 0 0 1px rgba(225, 139, 161, 0.06) inset;
+  padding: clamp(1.7rem, 5vw, 2.4rem) clamp(1.4rem, 4.5vw, 2.1rem) clamp(1.4rem, 4.5vw, 1.9rem);
   display: grid;
   gap: 0.85rem;
-  justify-items: start;
+  justify-items: center;
+  text-align: center;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(225, 139, 161, 0.3) transparent;
+}
+
+.sponsor-modal__panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sponsor-modal__panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sponsor-modal__panel::-webkit-scrollbar-thumb {
+  background: rgba(225, 139, 161, 0.28);
+  border-radius: 999px;
 }
 
 .sponsor-modal__close {
@@ -45,74 +69,139 @@
   place-items: center;
   border-radius: 50%;
   border: 1px solid var(--line);
-  background: none;
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
   color: var(--ink-soft);
   cursor: pointer;
-  transition: color 0.25s, border-color 0.25s;
+  transition: color 0.25s, border-color 0.25s, background-color 0.25s;
+}
+
+.sponsor-modal__close svg {
+  transition: transform 0.35s var(--ease-out);
 }
 
 .sponsor-modal__close:hover {
   color: var(--ink);
   border-color: var(--accent-2);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.sponsor-modal__close:hover svg {
+  transform: rotate(90deg);
 }
 
 .sponsor-modal__logo {
-  width: 72px;
-  height: 72px;
+  width: 88px;
+  height: 88px;
   border-radius: 50%;
   object-fit: cover;
   border: 1px solid var(--line);
+  box-shadow:
+    0 0 0 6px rgba(136, 21, 50, 0.22),
+    0 0 0 7px rgba(225, 139, 161, 0.12),
+    0 18px 44px -18px rgba(0, 0, 0, 0.65);
+  margin-bottom: 0.35rem;
 }
 
+/* discount pill — same oblique accent language as the field badges */
 .sponsor-modal__discount {
-  font-size: var(--step--1);
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.18em;
-  color: var(--accent-2);
-  font-weight: 600;
+  letter-spacing: 0.14em;
+  padding: 0.42em 1em;
+  border-radius: 999px;
+  transform: rotate(-4deg);
+  box-shadow: 0 8px 22px -8px rgba(136, 21, 50, 0.8);
 }
 
 .sponsor-modal__name {
   font-size: var(--step-2);
+  margin-top: 0.15rem;
 }
 
 .sponsor-modal__summary {
   color: var(--ink);
+  max-width: 30ch;
+  text-wrap: balance;
 }
 
 .sponsor-modal__notes {
   color: var(--ink-soft);
   font-size: var(--step--1);
+  max-width: 36ch;
 }
 
+/* numbered step chips */
 .sponsor-modal__steps {
-  margin: 0;
-  padding-left: 1.2rem;
+  list-style: none;
+  counter-reset: step;
+  margin: 0.35rem 0 0;
+  padding: 1.15rem 0 0;
+  border-top: 1px solid var(--line);
+  justify-self: stretch;
+  text-align: left;
   display: grid;
-  gap: 0.45rem;
+  gap: 0.7rem;
   color: var(--ink-soft);
+  font-size: var(--step--1);
 }
 
-.sponsor-modal__steps li::marker {
+.sponsor-modal__steps li {
+  counter-increment: step;
+  position: relative;
+  padding-left: 2.4rem;
+  min-height: 1.6rem;
+  display: flex;
+  align-items: center;
+}
+
+.sponsor-modal__steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.6rem;
+  height: 1.6rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 26%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-2) 40%, transparent);
   color: var(--accent-2);
-  font-weight: 600;
+  font-size: 0.7rem;
+  font-weight: 700;
 }
 
 .sponsor-modal__links {
-  display: flex;
-  flex-wrap: wrap;
+  justify-self: stretch;
+  display: grid;
   gap: 0.6rem;
-  margin-top: 0.3rem;
+  margin-top: 0.5rem;
+}
+
+.sponsor-modal__links .btn {
+  width: 100%;
+  justify-content: center;
 }
 
 .sponsor-modal__ig {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6em 1.3em;
+  border: 1px solid var(--line);
+  border-radius: 999px;
   font-size: var(--step--1);
+  letter-spacing: 0.03em;
   color: var(--ink-soft);
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  transition: color 0.25s;
+  transition: color 0.25s, border-color 0.25s;
 }
 
 .sponsor-modal__ig:hover {
   color: var(--accent-2);
+  border-color: var(--accent-2);
 }

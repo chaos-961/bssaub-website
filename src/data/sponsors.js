@@ -59,7 +59,7 @@ export const sponsors = [
     size: 1.1,
     details: {
       summary: "20% off select items across all McDonald's Lebanon stores",
-      notes: 'Dine-in, Drive-Thru and Delivery. No BSS card or AUB ID needed.',
+      notes: 'Dine in, drive thru and delivery. No BSS card or AUB ID needed.',
       steps: [
         "Download the McDonald's app",
         'Create an account with your AUB email',

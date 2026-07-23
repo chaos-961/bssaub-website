@@ -24,7 +24,9 @@ export function initSponsorModal(scroll) {
   const fill = (s) => {
     img.src = s.image;
     nameEl.textContent = s.name;
-    discountEl.textContent = s.discount;
+    // discount: null (§1.5 unverified) → no pill in the popup either
+    discountEl.textContent = s.discount || '';
+    discountEl.hidden = !s.discount;
     const d = s.details || {};
     summaryEl.textContent = d.summary || '';
     summaryEl.hidden = !d.summary;
@@ -69,8 +71,8 @@ export function initSponsorModal(scroll) {
       // synchronous focus move below (root .is-open owns visibility)
       gsap.fromTo(
         panel,
-        { opacity: 0, scale: 0.92, y: 16 },
-        { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: 'power3.out' },
+        { opacity: 0, scale: 0.9, y: 24 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.45, ease: 'back.out(1.3)' },
       );
     }
     closeBtn.focus({ preventScroll: true });
