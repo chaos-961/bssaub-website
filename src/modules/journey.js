@@ -36,29 +36,32 @@ export function initJourney(scroll) {
   let lastProgress = 0;
 
   function buildPath() {
-    // Desktop (user calls 2026-07-23): checkpoints sit beside their image
-    // (measured px, recomputed every rebuild — the P4 --dot-x lesson) and the
-    // path may NEVER cross a frame: it runs straight alongside each image at
-    // the dot's x and does the whole S-swing in the vertical gaps between
-    // frames. Mobile: the straight rail returned (second user call) — dots
-    // back on the CSS rail, so inline positions are cleared, path is a line.
+    // Checkpoints (user calls 2026-07-23): always vertically centered on
+    // their image — desktop beside the frame (measured px), mobile ON the
+    // rail (CSS x, JS y — dots were sitting above the images). Positions
+    // recompute every rebuild, so breakpoints can't go stale (P4 lesson).
     const mobileNow = window.matchMedia('(max-width: 59.99rem)').matches;
     nodes.forEach((n, i) => {
       const dot = dots[i];
       if (!dot) return;
       const media = n.querySelector('.journey-node__media');
-      if (mobileNow || !media) {
+      if (!media) {
         dot.style.left = '';
         dot.style.top = '';
         return;
       }
       const liR = n.getBoundingClientRect();
       const mR = media.getBoundingClientRect();
-      const odd = i % 2 === 0;
       const y = mR.top - liR.top + mR.height / 2;
-      const x = odd ? mR.right - liR.left + 28 : mR.left - liR.left - 28;
-      dot.style.left = `${x.toFixed(1)}px`;
-      dot.style.top = `${y.toFixed(1)}px`;
+      if (mobileNow) {
+        dot.style.left = ''; // the rail owns x — the line stays straight
+        dot.style.top = `${y.toFixed(1)}px`;
+      } else {
+        const odd = i % 2 === 0;
+        const x = odd ? mR.right - liR.left + 28 : mR.left - liR.left - 28;
+        dot.style.left = `${x.toFixed(1)}px`;
+        dot.style.top = `${y.toFixed(1)}px`;
+      }
     });
 
     const tr = track.getBoundingClientRect();
@@ -81,18 +84,42 @@ export function initJourney(scroll) {
         pts.push(p);
       });
     } else {
-      const PAD = 24; // clearance above/below each frame before the swing
-      pts.push({ x: W / 2, y: 0 });
+      // "chaotic but never over an image" (user call, third round): entry
+      // bows, exit bows, and an overshoot curl in each inter-frame gap —
+      // amounts hashed per node so the wander is stable across rebuilds.
+      // All wander x is clamped to the mid corridor (between the two text
+      // columns) and bows always point AWAY from the node's image, so the
+      // no-overlap guarantee survives the chaos.
+      const PAD = 24; // clearance above/below each frame before any swing
+      const h01 = (n2) => {
+        const v = Math.sin((n2 + 1) * 127.1) * 43758.5453;
+        return v - Math.floor(v);
+      };
+      const cx = (v) => Math.min(W * 0.64, Math.max(W * 0.36, v));
+      pts.push({ x: cx(W / 2 + (h01(9) - 0.5) * 90), y: 0 });
+      let prevExitY = 0;
       nodes.forEach((n, i) => {
         const media = n.querySelector('.journey-node__media');
         const p = dotPts[i];
         if (media) {
           const mR = media.getBoundingClientRect();
-          pts.push({ x: p.x, y: mR.top - tr.top - PAD });
+          const topY = mR.top - tr.top - PAD;
+          const botY = mR.bottom - tr.top + PAD;
+          const out = i % 2 === 0 ? 1 : -1; // away from this node's image
+          if (topY - prevExitY > 90) {
+            // mid-gap curl: swing past the checkpoint's x, then come back
+            const midY = prevExitY + (topY - prevExitY) * (0.38 + h01(i * 7 + 3) * 0.27);
+            pts.push({ x: cx(p.x + out * (26 + h01(i * 11 + 4) * 36)), y: midY });
+          }
+          pts.push({ x: cx(p.x + out * (12 + h01(i * 3 + 1) * 24)), y: topY });
           dotIdx.push(pts.length);
           pts.push(p);
-          pts.push({ x: p.x, y: mR.bottom - tr.top + PAD });
+          pts.push({ x: cx(p.x + out * (12 + h01(i * 5 + 2) * 24)), y: botY });
+          prevExitY = botY;
         } else {
+          // Join: one last sway on the approach, then center on the CTA
+          const midY = prevExitY + (p.y - prevExitY) * 0.45;
+          pts.push({ x: cx(p.x + (h01(i * 13 + 5) - 0.5) * 130), y: midY });
           dotIdx.push(pts.length);
           pts.push(p);
         }

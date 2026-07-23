@@ -438,10 +438,8 @@
     padding-block: clamp(2.4rem, 6vh, 3.8rem);
   }
 
-  .journey-node__dot {
-    top: 26px;
-    margin-top: 0;
-  }
+  /* content-node dots: journey.js sets top inline — centered on each image
+     (user call 2026-07-23, they sat above the frames); rail keeps the x */
 
   .journey-node__media,
   .journey-node:nth-child(even) .journey-node__media {
@@ -471,7 +469,7 @@
   }
 
   .journey-node--join .journey-node__dot {
-    top: 12px;
+    top: 20px; /* same visual seat as before (base margin recenters by -8px) */
   }
 
   .journey-node__card--join {
