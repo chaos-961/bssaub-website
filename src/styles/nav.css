@@ -1,3 +1,18 @@
+/* The bar is its own white "paper" island on the dark ground (v0.2.2, user
+   call): a white sheet with the same fractal grain as the page but tuned for
+   white, carrying dark ink content. The old dark glass bar is gone. The bar
+   and its dropdown share these light tokens, mirrors of the pre v0.2.1 light
+   theme, so the deep brand maroon reads on the white. */
+.site-nav,
+.nav-menu {
+  --nav-paper: #ffffff;
+  --nav-ink: #221219;
+  --nav-ink-soft: #5f4a54;
+  --nav-accent: #881532;
+  --nav-accent-strong: #a31a3c;
+  --nav-line: rgba(34, 18, 25, 0.14);
+}
+
 .site-nav {
   position: fixed;
   top: 0;
@@ -9,18 +24,32 @@
   align-items: center;
   justify-content: space-between;
   padding-inline: var(--gutter);
-  border-bottom: 1px solid transparent;
+  background-color: var(--nav-paper);
+  border-bottom: 1px solid var(--nav-line);
   transition:
-    transform 0.4s var(--ease-out),
-    background-color 0.35s,
+    box-shadow 0.35s,
     border-color 0.35s;
 }
 
+/* paper grain on the white bar: the same noise tile as the page, multiplied
+   at a whisper so it reads as tooth, not a gray veil (soft-light is a no-op
+   on pure white). Sits above the white fill, behind the bar content. */
+.site-nav::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  opacity: 0.14;
+  mix-blend-mode: multiply;
+}
+
+/* scrolled: lift the sheet off the page as content slides under it */
 .site-nav.is-scrolled {
-  background: var(--surface-glass);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  border-bottom-color: var(--line);
+  border-bottom-color: color-mix(in srgb, var(--nav-ink) 22%, transparent);
+  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.55);
 }
 
 /* top left is the real logo lockup (user call 2026-07-23) — the name lives
@@ -34,10 +63,8 @@
   display: block;
   height: 42px;
   width: auto;
-  /* the lockup is brand maroon on transparent; at ~1.4:1 it went muddy on
-     the dark ground (v0.2.1). A brightness lift floats it to a vivid brand
-     red that reads on dark and ties to the lifted accent, hue intact. */
-  filter: brightness(1.5) saturate(1.06);
+  /* brand maroon lockup on the white paper bar: reads as is, no lift needed
+     (v0.2.2; the v0.2.1 brightness filter was for the old dark glass nav). */
 }
 
 .site-nav__right {
@@ -50,13 +77,13 @@
   font-size: var(--step--1);
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  color: var(--ink-soft);
+  color: var(--nav-ink-soft);
   transition: color var(--dur-quick);
 }
 
 .site-nav__account:hover,
 .site-nav__account[aria-current='page'] {
-  color: var(--ink);
+  color: var(--nav-ink);
 }
 
 /* very narrow screens: keep Account in the bar without crowding the logo */
@@ -85,10 +112,10 @@
   display: grid;
   place-content: center;
   row-gap: 6px;
-  background: color-mix(in srgb, var(--bg) 62%, transparent);
+  background: color-mix(in srgb, var(--nav-paper) 62%, transparent);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
-  border: 1px solid var(--line);
+  border: 1px solid var(--nav-line);
   border-radius: 999px;
   cursor: pointer;
   position: relative;
@@ -100,8 +127,8 @@
 }
 
 .site-nav__burger:hover {
-  background: color-mix(in srgb, var(--accent) 9%, var(--bg));
-  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--nav-accent) 9%, var(--nav-paper));
+  border-color: color-mix(in srgb, var(--nav-accent) 35%, transparent);
 }
 
 .site-nav__burger:active {
@@ -113,14 +140,14 @@
   width: 20px;
   height: 2px;
   border-radius: 2px;
-  background: var(--ink);
+  background: var(--nav-ink);
   transition:
     transform 0.45s cubic-bezier(0.34, 1.35, 0.4, 1),
     background-color 0.3s;
 }
 
 .site-nav__burger:hover span {
-  background: var(--accent);
+  background: var(--nav-accent);
 }
 
 /* closed + hover: the two lines lean toward each other, hinting the X */
@@ -133,13 +160,13 @@
 }
 
 .site-nav__burger[aria-expanded='true'] {
-  background: var(--accent);
+  background: var(--nav-accent);
   border-color: transparent;
   transform: rotate(90deg);
 }
 
 .site-nav__burger[aria-expanded='true']:hover {
-  background: var(--accent-strong);
+  background: var(--nav-accent-strong);
 }
 
 .site-nav__burger[aria-expanded='true'] span {
@@ -175,14 +202,12 @@ html.reduced-motion .site-nav__burger[aria-expanded='true'] {
   width: min(300px, calc(100vw - 2rem));
   max-height: calc(100dvh - var(--nav-h) - 2rem);
   overflow: auto;
-  background: color-mix(in srgb, var(--surface) 82%, var(--bg));
-  -webkit-backdrop-filter: blur(22px);
-  backdrop-filter: blur(22px);
-  border: 1px solid var(--line);
+  background: var(--nav-paper);
+  border: 1px solid var(--nav-line);
   border-radius: 18px;
   box-shadow:
-    0 28px 70px -24px rgba(34, 18, 25, 0.28),
-    0 0 0 1px rgba(207, 63, 95, 0.04) inset;
+    0 28px 70px -24px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(34, 18, 25, 0.03) inset;
   padding: 0.45rem;
   transform-origin: top right;
   visibility: hidden;
@@ -211,17 +236,17 @@ html.reduced-motion .site-nav__burger[aria-expanded='true'] {
   font-size: var(--step-0);
   font-weight: 520;
   letter-spacing: 0.005em;
-  color: var(--ink);
+  color: var(--nav-ink);
   transition: color 0.2s, background-color 0.2s;
 }
 
 .nav-menu__link:hover {
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--nav-accent);
+  background: color-mix(in srgb, var(--nav-accent) 10%, transparent);
 }
 
 .nav-menu__link.is-active {
-  color: var(--accent);
+  color: var(--nav-accent);
 }
 
 .nav-menu__link.is-active .nav-menu__label {
@@ -236,13 +261,13 @@ html.reduced-motion .site-nav__burger[aria-expanded='true'] {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--nav-accent);
   transform: translateY(-50%);
 }
 
 .nav-menu__index {
   font-size: 0.68rem;
   letter-spacing: 0.12em;
-  color: var(--ink-soft);
+  color: var(--nav-ink-soft);
   font-variant-numeric: tabular-nums;
 }
