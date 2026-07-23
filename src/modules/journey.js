@@ -36,19 +36,18 @@ export function initJourney(scroll) {
   let lastProgress = 0;
 
   function buildPath() {
-    // checkpoints ride the media (user call 2026-07-23): beside the image on
-    // desktop, on the image edge on mobile, always vertically centered on the
-    // frame. Positions are measured px, recomputed on every rebuild, so a
-    // breakpoint change can never leave stale geometry (the P4 --dot-x lesson).
-    // The path is generated FROM these dots, so it weaves through them —
-    // mobile serpentines exactly like desktop (straight rail retired).
+    // Desktop (user calls 2026-07-23): checkpoints sit beside their image
+    // (measured px, recomputed every rebuild — the P4 --dot-x lesson) and the
+    // path may NEVER cross a frame: it runs straight alongside each image at
+    // the dot's x and does the whole S-swing in the vertical gaps between
+    // frames. Mobile: the straight rail returned (second user call) — dots
+    // back on the CSS rail, so inline positions are cleared, path is a line.
     const mobileNow = window.matchMedia('(max-width: 59.99rem)').matches;
     nodes.forEach((n, i) => {
       const dot = dots[i];
-      const media = n.querySelector('.journey-node__media');
       if (!dot) return;
-      if (!media) {
-        // Join node: CSS owns it (centered above the CTA)
+      const media = n.querySelector('.journey-node__media');
+      if (mobileNow || !media) {
         dot.style.left = '';
         dot.style.top = '';
         return;
@@ -57,9 +56,7 @@ export function initJourney(scroll) {
       const mR = media.getBoundingClientRect();
       const odd = i % 2 === 0;
       const y = mR.top - liR.top + mR.height / 2;
-      const x = mobileNow
-        ? (odd ? mR.left - liR.left + 12 : mR.right - liR.left - 12)
-        : (odd ? mR.right - liR.left + 28 : mR.left - liR.left - 28);
+      const x = odd ? mR.right - liR.left + 28 : mR.left - liR.left - 28;
       dot.style.left = `${x.toFixed(1)}px`;
       dot.style.top = `${y.toFixed(1)}px`;
     });
@@ -73,8 +70,34 @@ export function initJourney(scroll) {
       const r = d.getBoundingClientRect();
       return { x: r.left - tr.left + r.width / 2, y: r.top - tr.top + r.height / 2 };
     });
-    const start = { x: W / 2, y: 0 };
-    const pts = [start, ...dotPts];
+
+    // waypoints, plus which point is each node's checkpoint (for ignition)
+    const pts = [];
+    const dotIdx = [];
+    if (mobileNow) {
+      pts.push({ x: dotPts[0].x, y: 0 }); // rail: enter straight above dot 1
+      dotPts.forEach((p) => {
+        dotIdx.push(pts.length);
+        pts.push(p);
+      });
+    } else {
+      const PAD = 24; // clearance above/below each frame before the swing
+      pts.push({ x: W / 2, y: 0 });
+      nodes.forEach((n, i) => {
+        const media = n.querySelector('.journey-node__media');
+        const p = dotPts[i];
+        if (media) {
+          const mR = media.getBoundingClientRect();
+          pts.push({ x: p.x, y: mR.top - tr.top - PAD });
+          dotIdx.push(pts.length);
+          pts.push(p);
+          pts.push({ x: p.x, y: mR.bottom - tr.top + PAD });
+        } else {
+          dotIdx.push(pts.length);
+          pts.push(p);
+        }
+      });
+    }
 
     let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
     const segs = [];
@@ -90,16 +113,17 @@ export function initJourney(scroll) {
     drawPath.setAttribute('d', d);
     totalLen = drawPath.getTotalLength();
 
-    // exact cumulative length at each node = prefix path length
+    // exact cumulative length at each checkpoint = prefix path length
     const probe = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     svg.appendChild(probe);
     let acc = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
-    nodeLens = segs.map((seg) => {
+    const cum = segs.map((seg) => {
       acc += seg;
       probe.setAttribute('d', acc);
       return probe.getTotalLength();
     });
     svg.removeChild(probe);
+    nodeLens = dotIdx.map((k) => cum[k - 1]);
 
     drawPath.style.strokeDasharray = `${totalLen}`;
     glowPath.style.strokeDasharray = `${totalLen}`;

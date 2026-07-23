@@ -142,10 +142,15 @@
 .journey-node {
   position: relative;
   padding-block: clamp(3.4rem, 9vh, 6rem);
-  /* content-node dots are positioned inline by journey.js (measured against
-     each media frame — beside the image on desktop, on its edge on mobile);
-     this default only places the Join dot, centered above the CTA */
-  --dot-x: 50%;
+  /* mobile rail default; on desktop journey.js positions content-node dots
+     inline (measured px beside each image) and the Join dot centers below */
+  --dot-x: 18px;
+}
+
+@media (min-width: 60rem) {
+  .journey-node--join {
+    --dot-x: 50%;
+  }
 }
 
 /* ---- node dot + ignition burst (double ring + bloom, keyed to .is-lit) ---- */
@@ -425,12 +430,26 @@
   }
 }
 
-/* ---- mobile: stacked media → content; the path serpentines exactly like
-   desktop (straight rail retired 2026-07-23, user call) — dots sit on the
-   image edges, alternating sides, and the media wipes in from its dot side ---- */
+/* ---- mobile: left rail, stacked media → content (straight line restored
+   2026-07-23 on the user's word after trying the serpentine) ---- */
 @media (max-width: 59.99rem) {
   .journey-node {
+    padding-left: 46px;
     padding-block: clamp(2.4rem, 6vh, 3.8rem);
+  }
+
+  .journey-node__dot {
+    top: 26px;
+    margin-top: 0;
+  }
+
+  .journey-node__media,
+  .journey-node:nth-child(even) .journey-node__media {
+    clip-path: inset(0 0 0 100% round var(--radius-lg));
+  }
+
+  .journey-node.is-in .journey-node__media {
+    clip-path: inset(0 0 0 0 round var(--radius-lg));
   }
 
   .journey-node__content {
@@ -444,5 +463,23 @@
 
   .journey-node.is-in .journey-node__content > * {
     transform: none;
+  }
+
+  .journey-node--join {
+    padding-left: 46px;
+    text-align: left;
+  }
+
+  .journey-node--join .journey-node__dot {
+    top: 12px;
+  }
+
+  .journey-node__card--join {
+    margin-inline: 0;
+    padding-top: 0;
+  }
+
+  .journey-node--join .journey-node__content {
+    justify-items: start;
   }
 }
