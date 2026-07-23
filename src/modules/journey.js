@@ -36,6 +36,34 @@ export function initJourney(scroll) {
   let lastProgress = 0;
 
   function buildPath() {
+    // checkpoints ride the media (user call 2026-07-23): beside the image on
+    // desktop, on the image edge on mobile, always vertically centered on the
+    // frame. Positions are measured px, recomputed on every rebuild, so a
+    // breakpoint change can never leave stale geometry (the P4 --dot-x lesson).
+    // The path is generated FROM these dots, so it weaves through them —
+    // mobile serpentines exactly like desktop (straight rail retired).
+    const mobileNow = window.matchMedia('(max-width: 59.99rem)').matches;
+    nodes.forEach((n, i) => {
+      const dot = dots[i];
+      const media = n.querySelector('.journey-node__media');
+      if (!dot) return;
+      if (!media) {
+        // Join node: CSS owns it (centered above the CTA)
+        dot.style.left = '';
+        dot.style.top = '';
+        return;
+      }
+      const liR = n.getBoundingClientRect();
+      const mR = media.getBoundingClientRect();
+      const odd = i % 2 === 0;
+      const y = mR.top - liR.top + mR.height / 2;
+      const x = mobileNow
+        ? (odd ? mR.left - liR.left + 12 : mR.right - liR.left - 12)
+        : (odd ? mR.right - liR.left + 28 : mR.left - liR.left - 28);
+      dot.style.left = `${x.toFixed(1)}px`;
+      dot.style.top = `${y.toFixed(1)}px`;
+    });
+
     const tr = track.getBoundingClientRect();
     const W = track.clientWidth;
     const H = track.clientHeight;
@@ -45,8 +73,7 @@ export function initJourney(scroll) {
       const r = d.getBoundingClientRect();
       return { x: r.left - tr.left + r.width / 2, y: r.top - tr.top + r.height / 2 };
     });
-    // desktop: enter from top center; mobile rail: start straight above dot 1
-    const start = W < 700 ? { x: dotPts[0].x, y: 0 } : { x: W / 2, y: 0 };
+    const start = { x: W / 2, y: 0 };
     const pts = [start, ...dotPts];
 
     let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
