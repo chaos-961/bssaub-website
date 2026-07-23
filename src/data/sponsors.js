@@ -11,21 +11,22 @@
 //   image      public path (webp generated in Phase 3 from assets/Sponsored/)
 //   size       relative bubble scale — mapped from discount:
 //              10% → 1.0 · 15% → 1.05 · 20% → 1.10 · 25% → 1.15 · 30% → 1.20
+//   discount   null = sponsor is real and links out, but the % is unverified
+//              (§1.5) — bubble renders WITHOUT a badge until §13.2 data lands
 //   details    OPTIONAL — presence = popup instead of direct Instagram link
 //
 // ---------------------------------------------------------------------------
-// BLOCKED (not in this file until the user supplies/confirms data — §13.2):
-//   sushi-bell          discount unverified (15%?)
-//   craves-burger       discount unverified (10%?) + which IG: @cravesburger or @craveslb?
-//   fattouh             discount unverified (20%?)
-//   munchease-diner     discount unverified (20%?)
-//   joy-of-beirut       discount unverified (10%?)
-//   dunkin              discount unknown + popup redemption details missing
-//   dentspa-dr-rabah    discount unknown
-//   padel-square        IG handle needs verification (@padelsquare.lb?)
-//   design-lab          keep-or-remove decision pending (§13.3)
-//   the-kalm-studio     in assets/Sponsored/ but absent from §14 — category,
-//                       discount and IG all unknown
+// PENDING DATA (§13.2 — badges appear the moment the user confirms the %):
+//   discounts   sushi-bell (15%?) · craves-burger (10%?) · fattouh (20%?) ·
+//               munchease-diner (20%?) · joy-of-beirut (10%?) · dunkin (?) ·
+//               dentspa-dr-rabah (?) · the-kalm-studio (?)
+//   dunkin      popup redemption details also missing (ships as direct IG link)
+// VERIFIED 2026-07-23 via web search (old site down, per the user):
+//   craves-burger → @cravesburger (Mar Mikhael; @craveslb doesn't surface)
+//   padel-square  → @padelsquare.lb (real account, Saida)
+//   the-kalm-studio → @thekalmstudio — Pilates studio in Beirut ⇒ fitness
+// EXCLUDED: design-lab — prior session locked "exclude Design Lab entirely";
+//   no image in assets/Sponsored/ either.
 // ---------------------------------------------------------------------------
 
 export const sponsors = [
@@ -113,6 +114,60 @@ export const sponsors = [
     image: 'assets/sponsors/restaurants/papas-mia-tacos.webp',
     size: 1.2,
   },
+  {
+    id: 'sushi-bell',
+    name: 'Sushi Bell',
+    category: 'restaurants',
+    discount: null, // 15%? — unverified (§13.2)
+    instagram: 'https://www.instagram.com/sushi_bell',
+    image: 'assets/sponsors/restaurants/sushi-bell.webp',
+    size: 1,
+  },
+  {
+    id: 'craves-burger',
+    name: 'Craves Burger',
+    category: 'restaurants',
+    discount: null, // 10%? — unverified (§13.2)
+    instagram: 'https://www.instagram.com/cravesburger',
+    image: 'assets/sponsors/restaurants/craves-burger.webp',
+    size: 1,
+  },
+  {
+    id: 'fattouh',
+    name: 'Fattouh',
+    category: 'restaurants',
+    discount: null, // 20%? — unverified (§13.2)
+    instagram: 'https://www.instagram.com/fattouhrestaurant',
+    image: 'assets/sponsors/restaurants/fattouh.webp',
+    size: 1,
+  },
+  {
+    id: 'munchease-diner',
+    name: 'Munchease Diner',
+    category: 'restaurants',
+    discount: null, // 20%? — unverified (§13.2)
+    instagram: 'https://www.instagram.com/muncheasediner',
+    image: 'assets/sponsors/restaurants/munchease-diner.webp',
+    size: 1,
+  },
+  {
+    id: 'joy-of-beirut',
+    name: 'Joy of Beirut',
+    category: 'restaurants',
+    discount: null, // 10%? — unverified (§13.2)
+    instagram: 'https://www.instagram.com/joyofbeirut',
+    image: 'assets/sponsors/restaurants/joy-of-beirut.webp',
+    size: 1,
+  },
+  {
+    id: 'dunkin',
+    name: "Dunkin'",
+    category: 'restaurants',
+    discount: null, // unknown — popup redemption details also pending (§13.2)
+    instagram: 'https://www.instagram.com/dunkinleb',
+    image: 'assets/sponsors/restaurants/dunkin.webp',
+    size: 1,
+  },
 
   /* ------------------------------- clothing ------------------------------ */
   {
@@ -171,6 +226,15 @@ export const sponsors = [
     image: 'assets/sponsors/health-beauty/optique-et-vision.webp',
     size: 1.15,
   },
+  {
+    id: 'dentspa-dr-rabah',
+    name: 'DentSpa Dr. Rabah',
+    category: 'health-beauty',
+    discount: null, // unknown (§13.2)
+    instagram: 'https://www.instagram.com/dentspa_drrabah',
+    image: 'assets/sponsors/health-beauty/dentspa-dr-rabah.webp',
+    size: 1,
+  },
 
   /* -------------------------------- fitness ------------------------------ */
   {
@@ -181,6 +245,24 @@ export const sponsors = [
     instagram: 'https://www.instagram.com/padel.loft',
     image: 'assets/sponsors/fitness/padel-loft.webp',
     size: 1.15,
+  },
+  {
+    id: 'padel-square',
+    name: 'Padel Square',
+    category: 'fitness',
+    discount: '20% OFF', // §14 discount was never in doubt; handle verified 2026-07-23
+    instagram: 'https://www.instagram.com/padelsquare.lb',
+    image: 'assets/sponsors/fitness/padel-square.webp',
+    size: 1.1,
+  },
+  {
+    id: 'the-kalm-studio',
+    name: 'The Kalm Studio',
+    category: 'fitness', // Pilates studio, Beirut — verified 2026-07-23
+    discount: null, // unknown (§13.2)
+    instagram: 'https://www.instagram.com/thekalmstudio',
+    image: 'assets/sponsors/fitness/the-kalm-studio.webp',
+    size: 1,
   },
 
   /* ------------------------------- services ------------------------------ */

@@ -14,74 +14,12 @@
   margin-bottom: clamp(2.5rem, 6vw, 4.5rem);
 }
 
+/* Left category ruler + mobile chip removed 2026-07-23 (user call) — the
+   per-zone titles below are the only category labels now */
 .perk-field__layout {
   max-width: var(--container);
   margin-inline: auto;
   padding-inline: var(--gutter);
-  display: grid;
-  grid-template-columns: 92px 1fr;
-  gap: clamp(1rem, 3vw, 2.5rem);
-  align-items: start;
-}
-
-/* ---- category ruler (desktop) ---- */
-.perk-ruler {
-  position: relative;
-  height: 100%;
-}
-
-.perk-ruler__track {
-  position: sticky;
-  top: calc(var(--nav-h) + 6vh);
-  height: min(68vh, 540px);
-}
-
-.perk-ruler__line {
-  position: absolute;
-  left: 8px;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: var(--line);
-}
-
-.perk-ruler__marker {
-  position: absolute;
-  left: 7px;
-  top: 0;
-  width: 3px;
-  height: 28px;
-  border-radius: 999px;
-  background: var(--accent-2);
-  box-shadow: 0 0 12px rgba(225, 139, 161, 0.55);
-  will-change: transform;
-}
-
-.perk-ruler__labels {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  position: absolute;
-  left: 24px;
-  top: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.perk-ruler__labels li {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--ink-soft);
-  transform-origin: left center;
-  transition: color 0.3s, transform 0.3s var(--ease-out);
-}
-
-.perk-ruler__labels li.is-active {
-  color: var(--accent-2);
-  transform: scale(1.12);
 }
 
 /* ---- zones ---- */
@@ -163,52 +101,8 @@
   box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.5);
 }
 
-/* ---- mobile: no ruler column; thin edge rail + floating chip (§6.4) ---- */
-.perk-chip {
-  position: fixed;
-  left: 16px;
-  bottom: 18px;
-  z-index: 80;
-  padding: 0.55em 1em;
-  border-radius: 999px;
-  background: var(--surface-glass);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--line);
-  color: var(--ink);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  opacity: 0;
-  transform: translateY(8px);
-  pointer-events: none;
-  transition: opacity 0.3s, transform 0.3s var(--ease-out);
-}
-
-.perk-chip.is-visible {
-  opacity: 1;
-  transform: none;
-}
-
-.perk-chip span {
-  display: inline-block;
-}
-
-@media (min-width: 48rem) {
-  .perk-chip {
-    display: none;
-  }
-}
-
+/* ---- mobile: thin edge rail keeps the zones anchored ---- */
 @media (max-width: 47.99rem) {
-  .perk-field__layout {
-    grid-template-columns: 1fr;
-  }
-
-  .perk-ruler {
-    display: none;
-  }
-
   .perk-field__zones {
     position: relative;
     padding-left: 14px;

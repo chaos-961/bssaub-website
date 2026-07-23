@@ -1,7 +1,7 @@
 // Entry — module init order matters (§4): scroll first (Lenis + ScrollTrigger),
 // nav consumes the scroll api, modal before the field (bubbles wire to it),
-// the field builds its DOM before the preloader collects [data-preload]
-// images, ruler measures after the field has set zone heights.
+// the field builds its DOM before the preloader collects [data-preload] images.
+// (categoryRuler retired 2026-07-23 — zone headings carry the category names.)
 import '@fontsource-variable/fraunces/full.css';
 import '@fontsource-variable/instrument-sans';
 
@@ -25,7 +25,6 @@ import { initSponsorModal } from './modules/sponsorModal.js';
 import { initPerkField } from './modules/perkField.js';
 import { initJourney } from './modules/journey.js';
 import { initSponsorCta } from './modules/sponsorCta.js';
-import { initCategoryRuler } from './modules/categoryRuler.js';
 import { initPreloader } from './modules/preloader.js';
 import { initFooterVersion } from './modules/footerVersion.js';
 
@@ -36,7 +35,6 @@ const modal = initSponsorModal(scroll);
 const perkField = initPerkField(scroll, modal);
 const journey = initJourney(scroll);
 initSponsorCta(scroll);
-initCategoryRuler(scroll);
 initFooterVersion();
 scroll.refresh();
 initPreloader({ scroll, onComplete: () => heroCard.enter() });

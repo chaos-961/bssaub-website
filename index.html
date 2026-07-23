@@ -173,20 +173,9 @@
           <h2 class="section__title" id="sponsors-title">Sponsors</h2>
           <p class="section__note">Tap a bubble for the deal — or straight to the sponsor's Instagram.</p>
         </div>
+        <!-- Left category ruler + mobile chip removed 2026-07-23 on the user's word;
+             the per-zone headings below are the category labels that stay -->
         <div class="perk-field__layout">
-          <aside class="perk-ruler" aria-hidden="true" data-ruler>
-            <div class="perk-ruler__track">
-              <div class="perk-ruler__line"></div>
-              <div class="perk-ruler__marker" data-ruler-marker></div>
-              <ul class="perk-ruler__labels">
-                <li data-ruler-label="restaurants">Restaurants</li>
-                <li data-ruler-label="clothing">Clothing</li>
-                <li data-ruler-label="health-beauty">Health &amp; Beauty</li>
-                <li data-ruler-label="fitness">Fitness</li>
-                <li data-ruler-label="services">Services</li>
-              </ul>
-            </div>
-          </aside>
           <div class="perk-field__zones">
             <div class="perk-zone" data-zone="restaurants">
               <h3 class="perk-zone__title">Restaurants</h3>
@@ -210,7 +199,6 @@
             </div>
           </div>
         </div>
-        <div class="perk-chip" data-perk-chip aria-hidden="true"><span data-chip-text>Restaurants</span></div>
       </section>
 
       <section class="journey" id="journey" aria-labelledby="journey-title" data-journey>
@@ -219,73 +207,117 @@
           <h2 class="section__title" id="journey-title">Our Journey</h2>
         </div>
         <div class="journey__track" data-journey-track>
+          <div class="journey__particles" data-journey-particles aria-hidden="true"></div>
           <svg class="journey__svg" data-journey-svg aria-hidden="true" focusable="false">
             <path class="journey__path journey__path--base" data-path-base d="" fill="none" />
+            <path class="journey__path journey__path--glow" data-path-glow d="" fill="none" />
             <path class="journey__path journey__path--draw" data-path-draw d="" fill="none" />
           </svg>
-          <div class="journey__marker" data-journey-marker aria-hidden="true"></div>
+          <div class="journey__marker" data-journey-marker aria-hidden="true">
+            <span class="journey__marker-orb"></span>
+          </div>
           <ol class="journey__nodes">
             <li class="journey-node" data-node>
               <span class="journey-node__dot" aria-hidden="true"></span>
               <article class="journey-node__card">
-                <div class="journey-node__media">
+                <figure class="journey-node__media" data-journey-media>
                   <img
                     src="assets/journey/story.webp"
                     alt="Members of the Commerce Students' Society seated around a meeting table — black-and-white archive photograph"
-                    width="960"
-                    height="455"
+                    width="1012"
+                    height="480"
                     loading="lazy"
                     decoding="async"
                   />
+                </figure>
+                <div class="journey-node__content">
+                  <p class="journey-node__chip">Since 1965</p>
+                  <h3 class="journey-node__title"><span class="jline"><span class="jline__inner">Our Story</span></span></h3>
+                  <p class="journey-node__text">
+                    Founded in 1965 as the Commerce Students' Society — by business students, for business students —
+                    BSS began with a simple idea: what we learn in class becomes transformative when applied.
+                  </p>
+                  <p class="journey-node__text">
+                    It has since grown into a dynamic, student-led hub for collaboration, innovation, and leadership —
+                    bringing together students across finance, marketing, consulting, entrepreneurship, and management.
+                  </p>
+                  <p class="journey-node__text">
+                    Today, BSS keeps expanding its impact through hands-on events, strategic partnerships, and
+                    student-driven initiatives — true to one belief: students learn best when challenged, connected,
+                    and inspired.
+                  </p>
                 </div>
-                <h3>Our Story</h3>
-                <!-- BLOCKED (§1.5): the society's actual Story text — assets/our_story.png is a photo, not copy -->
-                <p class="journey-node__pending">Text coming soon.</p>
               </article>
             </li>
             <li class="journey-node" data-node>
               <span class="journey-node__dot" aria-hidden="true"></span>
               <article class="journey-node__card">
-                <div class="journey-node__media">
+                <figure class="journey-node__media" data-journey-media>
                   <img
                     src="assets/journey/mission.webp"
                     alt="BSS members in maroon vests handing a membership card to a student on campus"
-                    width="960"
-                    height="640"
+                    width="1400"
+                    height="933"
                     loading="lazy"
                     decoding="async"
                   />
+                </figure>
+                <div class="journey-node__content">
+                  <p class="journey-node__chip">What drives us</p>
+                  <h3 class="journey-node__title"><span class="jline"><span class="jline__inner">Our Mission</span></span></h3>
+                  <p class="journey-node__text">
+                    BSS exists to empower business students to grow beyond the classroom — bridging theory and practice
+                    through professional exposure, leadership opportunities, and a community built on learning,
+                    collaboration, and career growth.
+                  </p>
+                  <p class="journey-node__text">
+                    Through events, workshops, competitions, and partnerships, we help students build real-world
+                    skills, explore diverse business paths, and connect with industry professionals.
+                  </p>
                 </div>
-                <h3>Our Mission</h3>
-                <!-- BLOCKED (§1.5): actual Mission text pending -->
-                <p class="journey-node__pending">Text coming soon.</p>
               </article>
             </li>
             <li class="journey-node" data-node>
               <span class="journey-node__dot" aria-hidden="true"></span>
               <article class="journey-node__card">
-                <div class="journey-node__media">
+                <figure class="journey-node__media" data-journey-media>
                   <img
                     src="assets/journey/vision.webp"
                     alt="BSS members at the Suliman S. Olayan School of Business — 125 Years of Business Education celebration"
-                    width="960"
-                    height="720"
+                    width="1400"
+                    height="1050"
                     loading="lazy"
                     decoding="async"
                   />
+                </figure>
+                <div class="journey-node__content">
+                  <p class="journey-node__chip">Where we're headed</p>
+                  <h3 class="journey-node__title"><span class="jline"><span class="jline__inner">Our Vision</span></span></h3>
+                  <p class="journey-node__text">We envision a student body that is confident, capable, and career-ready.</p>
+                  <p class="journey-node__text">
+                    BSS strives to become the leading platform for business students — fostering initiative,
+                    professionalism, and impact, and preparing members to thrive in an evolving global business
+                    environment.
+                  </p>
                 </div>
-                <h3>Our Vision</h3>
-                <!-- BLOCKED (§1.5): actual Vision text pending -->
-                <p class="journey-node__pending">Text coming soon.</p>
               </article>
             </li>
             <li class="journey-node journey-node--join" data-node>
               <span class="journey-node__dot" aria-hidden="true"></span>
               <div class="journey-node__card journey-node__card--join">
-                <h3>Join us</h3>
-                <a class="btn btn--primary" href="https://forms.cloud.microsoft/r/d5fFFxbKKN" target="_blank" rel="noopener">
-                  Get the membership card
-                </a>
+                <div class="journey-node__content">
+                  <p class="journey-node__chip">Your move</p>
+                  <h3 class="journey-node__title"><span class="jline"><span class="jline__inner">Join us</span></span></h3>
+                  <a
+                    class="btn btn--primary journey__cta"
+                    data-journey-cta
+                    href="https://forms.cloud.microsoft/r/d5fFFxbKKN"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    Get the membership card
+                  </a>
+                </div>
               </div>
             </li>
           </ol>
@@ -363,7 +395,7 @@
       <div class="site-footer__bottom">
         <div class="site-footer__bottom-inner">
           <p>© Business Student Society, AUB</p>
-          <span class="version-badge" data-version-badge>v0.0.2</span>
+          <span class="version-badge" data-version-badge>v0.0.3</span>
         </div>
       </div>
     </footer>

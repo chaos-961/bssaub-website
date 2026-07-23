@@ -66,15 +66,18 @@ export function initPerkField(scroll, modal) {
           el.rel = 'noopener';
         }
         // literal discount text so the visible badge is part of the accessible
-        // name (WCAG 2.5.3); screen readers pronounce "20% OFF" naturally
+        // name (WCAG 2.5.3); screen readers pronounce "20% OFF" naturally.
+        // discount: null (§1.5 unverified) → no badge, no % claim anywhere
         el.setAttribute(
           'aria-label',
-          `${s.name}, ${s.discount}, ${hasDetails ? 'opens offer details' : 'opens Instagram'}`,
+          [s.name, s.discount, hasDetails ? 'opens offer details' : 'opens Instagram']
+            .filter(Boolean)
+            .join(', '),
         );
         el.innerHTML = `
           <span class="perk-bubble__scale">
             <img src="${s.image}" alt="" width="320" height="320" decoding="async" data-preload />
-            <span class="perk-bubble__badge" aria-hidden="true">${s.discount}</span>
+            ${s.discount ? `<span class="perk-bubble__badge" aria-hidden="true">${s.discount}</span>` : ''}
           </span>`;
         if (hasDetails) el.addEventListener('click', () => modal.open(s, el));
         canvas.appendChild(el);
