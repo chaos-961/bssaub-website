@@ -27,6 +27,7 @@
   background-color: var(--nav-paper);
   border-bottom: 1px solid var(--nav-line);
   transition:
+    transform 0.4s var(--ease-out),
     box-shadow 0.35s,
     border-color 0.35s;
 }
@@ -50,6 +51,13 @@
 .site-nav.is-scrolled {
   border-bottom-color: color-mix(in srgb, var(--nav-ink) 22%, transparent);
   box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.55);
+}
+
+/* hide-on-scroll (user call): the bar slides up out of view going down and
+   drops back the moment you scroll up. The calc offset clears the lift shadow
+   so nothing peeks at the top edge. */
+.site-nav.is-hidden {
+  transform: translateY(calc(-100% - 16px));
 }
 
 /* top left is the real logo lockup (user call 2026-07-23) — the name lives

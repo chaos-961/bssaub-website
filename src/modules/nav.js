@@ -1,8 +1,9 @@
-// Navbar behavior: glass after 80px, always visible (v0.1.4 user call:
-// the old hide-down/show-up is gone), active-section
-// indicator, and a compact dropdown menu anchored under the hamburger
-// (user call 2026-07-23 — replaced the §6.2 full-screen overlay). Dropdown
-// closes on ESC, outside press, scroll movement, link click, or focus leaving.
+// Navbar behavior: lift shadow after 80px, hide-on-scroll (slides up going
+// down, drops back in going up — user call, brought back after the v0.1.4
+// removal), active-section indicator, and a compact dropdown menu anchored
+// under the hamburger (user call 2026-07-23 — replaced the §6.2 full-screen
+// overlay). Dropdown closes on ESC, outside press, scroll movement, link
+// click, or focus leaving.
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -18,16 +19,27 @@ export function initNav(scroll) {
   let isOpen = false;
   let lastY = window.scrollY;
 
-  /* --- scrolled state (+ close the menu on scroll); the nav never hides --- */
+  const REVEAL_AT = 90; // never hide within the first stretch of the page
+
+  /* --- scrolled state + hide-on-scroll (+ close the menu on scroll) --- */
   const onScroll = (y) => {
     const delta = y - lastY;
-    lastY = y;
     header.classList.toggle('is-scrolled', y > 80);
+    // Slide the bar up when scrolling down, drop it back when scrolling up.
+    // Never hide at the top or while the menu is open; a small deadzone keeps
+    // Lenis micro-deltas from flickering it at a direction change.
+    if (isOpen || y <= REVEAL_AT) header.classList.remove('is-hidden');
+    else if (delta > 6) header.classList.add('is-hidden');
+    else if (delta < -6) header.classList.remove('is-hidden');
     if (isOpen && Math.abs(delta) > 12) close({ returnFocus: false });
+    lastY = y;
   };
   if (scroll.lenis) scroll.lenis.on('scroll', ({ scroll: y }) => onScroll(y));
   else window.addEventListener('scroll', () => onScroll(window.scrollY), { passive: true });
   onScroll(window.scrollY);
+
+  // keyboard users tabbing into the bar reveal it even while scrolled away
+  header.addEventListener('focusin', () => header.classList.remove('is-hidden'));
 
   /* --- dropdown open/close --- */
   gsap.set(menu, { autoAlpha: 0 });

@@ -27,7 +27,7 @@ const DEFAULTS = {
   starColor: '237, 233, 224', // #EDE9E0 warm off white, one hue at many alphas
   starDensity: 11000, // px² of document per star (desktop)
   tierRatios: { bright: 0.07, medium: 0.25 }, // dim = the remainder
-  twinkle: { enabled: true, amplitude: 0.15, periodMs: [3000, 7000], maxAnimated: 80 },
+  twinkle: { enabled: true, amplitude: 0.15, periodMs: [3000, 7000], maxAnimated: 80, frameMs: 50 },
   popIn: { enabled: true, durationMs: 2100, starMs: 450 },
   constellationsPerViewport: [1, 2],
   clusterRadiusPx: [250, 400],
@@ -38,7 +38,7 @@ const DEFAULTS = {
   drawingTraceSpeedMs: 200, // per segment, drawings (more deliberate, §7)
   traceStarPauseMs: 90,
   traceGapMs: 250, // gap between queued traces
-  traceOpacity: 0.35,
+  traceOpacity: 0.5, // warm-white line alpha on the dark ground; 0.35 read too faint in practice
   traceBow: 0.02, // quadratic control offset as a fraction of segment length
   starGapPx: 5, // gap where a line meets a star glow (§5)
   retraceOnReenter: false,
@@ -219,7 +219,10 @@ export function initStarfield(userConfig = {}) {
   }
 
   function sizeCanvas() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    // cap at 2: soft glows and hairline constellation lines stay crisp, while
+    // the backing store on 3x phones shrinks ~55%, which is the biggest single
+    // fill-rate saving for mobile
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
     vw = document.documentElement.clientWidth;
     vh = window.innerHeight;
     canvas.width = Math.round(vw * dpr);
@@ -592,6 +595,11 @@ export function initStarfield(userConfig = {}) {
 
     stars = alive.filter((s) => !s.dead).concat(drawingCons.flatMap((c) => c.stars));
     constellations = [...drawingCons, ...randomCons];
+    // ascending y so the draw loop binary-searches the visible slice instead of
+    // walking every star each frame (bounds per-frame cost to what's on screen,
+    // regardless of how tall the page gets); constellations keep object refs so
+    // reordering this array is safe
+    stars.sort((a, b) => a.y - b.y);
 
     // pop-in stagger radiates outward from a seeded origin in the first screen,
     // so the sky "comes into existence" in a wave rather than as TV static (§4)
@@ -618,6 +626,7 @@ export function initStarfield(userConfig = {}) {
   }
 
   function startTrace(con) {
+    active = con; // THE pen: advanceTrace only steps `active`, so this must be set
     con.tracing = true;
     con.queued = false;
     con.edgeIndex = 0;
@@ -818,7 +827,7 @@ export function initStarfield(userConfig = {}) {
     const alpha = con.tracing ? 1 : con.lineAlpha;
     ctx.globalAlpha = 1;
     ctx.strokeStyle = `rgba(${cfg.starColor}, ${(cfg.traceOpacity * alpha).toFixed(3)})`;
-    ctx.lineWidth = dpr > 1 ? 0.75 : 1;
+    ctx.lineWidth = 1; // 1 css px, crisp on retina; the 0.75 hairline read too faint
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     const upto = con.tracing ? con.edgeIndex : con.edges.length;
@@ -829,6 +838,19 @@ export function initStarfield(userConfig = {}) {
       drawEdge(con, con.edgeIndex, t, scrollY);
     }
     ctx.stroke();
+  }
+
+  // first star at or below `top` (stars are sorted ascending y) — lets the draw
+  // loop skip everything above the viewport without walking the whole array
+  function firstVisibleStar(top) {
+    let lo = 0;
+    let hi = stars.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (stars[mid].y < top) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo;
   }
 
   // -- the loop ----------------------------------------------------------------
@@ -864,16 +886,20 @@ export function initStarfield(userConfig = {}) {
     // twinkle keeps the loop alive but is throttled to ~30fps when it is the
     // only thing moving, so idle desktop cost stays low; mobile has it off
     const twinkleOnly = twinkleOn && !busy;
-    if (twinkleOnly && now - lastDraw < 33) {
+    if (twinkleOnly && now - lastDraw < cfg.twinkle.frameMs) {
       raf = requestAnimationFrame(frame);
       return;
     }
 
-    // paint
+    // paint — only the on-screen slice of stars, found by binary search
     ctx.clearRect(0, 0, vw, vh);
     if (sprites) {
       let budget = cfg.twinkle.maxAnimated;
-      for (let i = 0; i < stars.length; i++) budget = drawStar(stars[i], now, scrollY, popActive, budget);
+      const bottom = scrollY + vh + 220;
+      for (let i = firstVisibleStar(scrollY - 220); i < stars.length; i++) {
+        if (stars[i].y > bottom) break;
+        budget = drawStar(stars[i], now, scrollY, popActive, budget);
+      }
       for (let i = 0; i < constellations.length; i++) drawConstellation(constellations[i], scrollY);
     }
     ctx.globalAlpha = 1;
