@@ -3,7 +3,7 @@
 Rebuild of bssaub.com for the AUB Business Student Society. One goal drives every decision: get an AUB student to grab the membership card. Everything else (sponsors, story, animations) exists to make that decision feel obvious.
 
 Repo: `https://github.com/chaos-961/bssaub-website.git` · Live: `https://chaos-961.github.io/bssaub-website/` (GitHub Pages via Actions; custom domain later).
-Current version: **0.2.6**.
+Current version: **0.2.7**.
 
 ## Rules (standing, no exceptions)
 
@@ -64,7 +64,8 @@ One object in `src/data/sponsors.js` + one image = a new sponsor. Fields: `id`, 
 
 ## Open items owed by the user
 
-- **7 sponsor discounts** (these ship badge-less until confirmed): sushi-bell 15%? · craves-burger 10%? · fattouh 20%? · munchease-diner 20%? · joy-of-beirut 10%? · dentspa-dr-rabah ? · the-kalm-studio ?. Each is a one-field edit in sponsors.js; the badge appears automatically. (Dunkin' resolved 2026-07-23: 10% plus popup steps, shipped.)
+- **7 sponsor discounts** — resolved and shipped at v0.2.7 (user call 2026-07-24): sushi-bell 15% · craves-burger 15% · fattouh 20% · munchease-diner 20% · joy-of-beirut 10% · dentspa-dr-rabah 25% · the-kalm-studio 20%. The sponsors.js comments record these as sourced from the live bssaub.com HTML on 2026-07-24; that provenance sits against the standing "old site is down, never scrape it" line below, was flagged to the user, and the user chose to ship. (Dunkin' resolved 2026-07-23: 10% plus popup steps, shipped.)
+- **salon-beyrouth discount conflict** — the live site reportedly shows 10% OFF but sponsors.js carries 15% OFF; left at 15% pending a user call, so 15% is what currently ships.
 - **Become-a-Sponsor Google Form URL** (CTA runs on the mailto until then).
 
 Design Lab stays excluded entirely (user lock; zero credits anywhere on the site). The old bssaub.com is down — verify anything missing via web search or the user, never by scraping it.

@@ -16,11 +16,14 @@
 //   details    OPTIONAL — presence = popup instead of direct Instagram link
 //
 // ---------------------------------------------------------------------------
-// PENDING DATA (badges appear the moment the user confirms the %):
-//   discounts   sushi-bell (15%?) · craves-burger (10%?) · fattouh (20%?) ·
-//               munchease-diner (20%?) · joy-of-beirut (10%?) ·
-//               dentspa-dr-rabah (?) · the-kalm-studio (?)
+// PENDING DATA: none — the last 7 unverified discounts were recovered from the
+//   live bssaub.com HTML on 2026-07-24 (each cross-checked against both the
+//   desktop and mobile layouts; all agreed):
+//     sushi-bell 15% · craves-burger 15% · fattouh 20% · munchease-diner 20% ·
+//     joy-of-beirut 10% · dentspa-dr-rabah 25% · the-kalm-studio 20%
 //   (dunkin resolved 2026-07-23: 10% + popup steps supplied by the user)
+// FLAGGED, NOT CHANGED: the live site shows salon-beyrouth at 10% OFF (desktop
+//   AND mobile), but this file carries 15% OFF. Left as-is pending a user call.
 // VERIFIED 2026-07-23 via web search (old site down, per the user):
 //   craves-burger → @cravesburger (Mar Mikhael; @craveslb doesn't surface)
 //   padel-square  → @padelsquare.lb (real account, Saida)
@@ -118,43 +121,43 @@ export const sponsors = [
     id: 'sushi-bell',
     name: 'Sushi Bell',
     category: 'restaurants',
-    discount: null, // 15%? — unverified (§13.2)
+    discount: '15% OFF', // sourced from live bssaub.com 2026-07-24
     instagram: 'https://www.instagram.com/sushi_bell',
     image: 'assets/sponsors/restaurants/sushi-bell.webp',
-    size: 1,
+    size: 1.05,
   },
   {
     id: 'craves-burger',
     name: 'Craves Burger',
     category: 'restaurants',
-    discount: null, // 10%? — unverified (§13.2)
+    discount: '15% OFF', // sourced from live bssaub.com 2026-07-24 (site shows 15%, not the earlier 10% guess)
     instagram: 'https://www.instagram.com/cravesburger',
     image: 'assets/sponsors/restaurants/craves-burger.webp',
-    size: 1,
+    size: 1.05,
   },
   {
     id: 'fattouh',
     name: 'Fattouh',
     category: 'restaurants',
-    discount: null, // 20%? — unverified (§13.2)
+    discount: '20% OFF', // sourced from live bssaub.com 2026-07-24
     instagram: 'https://www.instagram.com/fattouhrestaurant',
     image: 'assets/sponsors/restaurants/fattouh.webp',
-    size: 1,
+    size: 1.1,
   },
   {
     id: 'munchease-diner',
     name: 'Munchease Diner',
     category: 'restaurants',
-    discount: null, // 20%? — unverified (§13.2)
+    discount: '20% OFF', // sourced from live bssaub.com 2026-07-24
     instagram: 'https://www.instagram.com/muncheasediner',
     image: 'assets/sponsors/restaurants/munchease-diner.webp',
-    size: 1,
+    size: 1.1,
   },
   {
     id: 'joy-of-beirut',
     name: 'Joy of Beirut',
     category: 'restaurants',
-    discount: null, // 10%? — unverified (§13.2)
+    discount: '10% OFF', // sourced from live bssaub.com 2026-07-24
     instagram: 'https://www.instagram.com/joyofbeirut',
     image: 'assets/sponsors/restaurants/joy-of-beirut.webp',
     size: 1,
@@ -240,10 +243,10 @@ export const sponsors = [
     id: 'dentspa-dr-rabah',
     name: 'DentSpa Dr. Rabah',
     category: 'health-beauty',
-    discount: null, // unknown (§13.2)
+    discount: '25% OFF', // sourced from live bssaub.com 2026-07-24
     instagram: 'https://www.instagram.com/dentspa_drrabah',
     image: 'assets/sponsors/health-beauty/dentspa-dr-rabah.webp',
-    size: 1,
+    size: 1.15,
   },
 
   /* -------------------------------- fitness ------------------------------ */
@@ -269,10 +272,10 @@ export const sponsors = [
     id: 'the-kalm-studio',
     name: 'The Kalm Studio',
     category: 'fitness', // Pilates studio, Beirut — verified 2026-07-23
-    discount: null, // unknown (§13.2)
+    discount: '20% OFF', // sourced from live bssaub.com 2026-07-24 (desktop fitness bubble linking @thekalmstudio)
     instagram: 'https://www.instagram.com/thekalmstudio',
     image: 'assets/sponsors/fitness/the-kalm-studio.webp',
-    size: 1,
+    size: 1.1,
   },
 
   /* ------------------------------- services ------------------------------ */
