@@ -238,48 +238,19 @@ export function initJourney(scroll) {
   });
 
   // Section-on-screen flag (v0.2.9 perf). Everything decorative that loops
-  // forever hangs off this: the ember drifts below, and .is-onscreen in the CSS
-  // which gates the Join CTA's breathing glow. Without it those keep repainting
-  // for the whole session once passed, thousands of px out of view.
-  const drifts = [];
+  // forever hangs off this: .is-onscreen in the CSS gates the Join CTA's
+  // breathing glow. Without it that keeps repainting for the whole session
+  // once passed, thousands of px out of view. (The ambient ember particles
+  // also hung off this until v0.3.3, when the user called the fade in / fade
+  // out dots distracting and they were removed entirely.)
   ScrollTrigger.create({
     trigger: section,
     start: 'top bottom',
     end: 'bottom top',
     onToggle: (self) => {
       section.classList.toggle('is-onscreen', self.isActive);
-      drifts.forEach((tl) => (self.isActive ? tl.play() : tl.pause()));
     },
   });
-
-  // ambient ember particles — paused whenever the section is off screen
-  const pWrap = section.querySelector('[data-journey-particles]');
-  if (pWrap) {
-    const count = window.matchMedia('(max-width: 47.99rem)').matches ? 8 : 14;
-    for (let i = 0; i < count; i++) {
-      const s = document.createElement('span');
-      s.className = 'journey__particle';
-      const size = 3 + Math.random() * 3.5;
-      s.style.width = `${size}px`;
-      s.style.height = `${size}px`;
-      s.style.left = `${4 + Math.random() * 92}%`;
-      s.style.top = `${8 + Math.random() * 88}%`;
-      pWrap.appendChild(s);
-
-      const dur = 6 + Math.random() * 7;
-      const tl = gsap
-        .timeline({ repeat: -1, repeatRefresh: true, delay: Math.random() * 6, paused: true })
-        .fromTo(
-          s,
-          { y: 0, x: 0 },
-          { y: () => -(50 + Math.random() * 90), x: () => (Math.random() - 0.5) * 44, duration: dur, ease: 'none' },
-          0,
-        )
-        .fromTo(s, { opacity: 0 }, { opacity: () => 0.12 + Math.random() * 0.24, duration: dur * 0.35, ease: 'power1.inOut' }, 0)
-        .to(s, { opacity: 0, duration: dur * 0.4, ease: 'power1.inOut' }, dur * 0.6);
-      drifts.push(tl);
-    }
-  }
 
   // magnetic Join CTA — the path ends on this button, so it pulls back a little
   const cta = section.querySelector('[data-journey-cta]');

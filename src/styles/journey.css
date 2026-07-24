@@ -24,27 +24,6 @@
   padding-inline: var(--gutter);
 }
 
-/* ambient ember particles (journey.js spawns the spans) */
-.journey__particles {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.journey__particle {
-  position: absolute;
-  border-radius: 50%;
-  background: var(--accent-2);
-  /* the 8px shadow already gives these embers their soft edge; the extra
-     `filter: blur(0.5px)` this used to carry cost a filter pass per particle
-     per frame, on elements 3px to 6px wide, for a sub pixel difference
-     nobody can see (v0.2.9 perf) */
-  box-shadow: 0 0 8px rgba(176, 74, 103,0.5);
-  opacity: 0;
-  will-change: transform, opacity;
-}
-
 .journey__svg {
   position: absolute;
   inset: 0;

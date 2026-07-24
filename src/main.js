@@ -14,7 +14,6 @@ import './styles/perk-field.css';
 import './styles/modal.css';
 import './styles/journey.css';
 import './styles/sponsor-cta.css';
-import './styles/agency-credit.css';
 import './styles/footer.css';
 
 import gsap from 'gsap';
@@ -28,7 +27,6 @@ import { initSponsorModal } from './modules/sponsorModal.js';
 import { initPerkField } from './modules/perkField.js';
 import { initJourney } from './modules/journey.js';
 import { initSponsorCta } from './modules/sponsorCta.js';
-import { initAgencyCredit } from './modules/agencyCredit.js';
 import { initPreloader } from './modules/preloader.js';
 import { initFooterVersion } from './modules/footerVersion.js';
 
@@ -40,7 +38,6 @@ const modal = initSponsorModal(scroll);
 const perkField = initPerkField(scroll, modal);
 const journey = initJourney(scroll);
 initSponsorCta(scroll);
-initAgencyCredit(scroll);
 initFooterVersion();
 scroll.refresh();
 initPreloader({
