@@ -9,6 +9,7 @@ import './styles/tokens.css';
 import './styles/base.css';
 import './styles/nav.css';
 import './styles/sections.css';
+import './styles/hero-bg.css';
 import './styles/perk-field.css';
 import './styles/modal.css';
 import './styles/journey.css';
@@ -21,6 +22,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 import { initScroll } from './modules/scroll.js';
 import { initNav } from './modules/nav.js';
+import { initHeroBackground } from './modules/heroBackground.js';
 import { initHeroCard } from './modules/heroCard.js';
 import { initSponsorModal } from './modules/sponsorModal.js';
 import { initPerkField } from './modules/perkField.js';
@@ -32,6 +34,7 @@ import { initFooterVersion } from './modules/footerVersion.js';
 
 const scroll = initScroll();
 initNav(scroll);
+const heroBg = initHeroBackground(document.querySelector('[data-hero-bg-canvas]'));
 const heroCard = initHeroCard(scroll);
 const modal = initSponsorModal(scroll);
 const perkField = initPerkField(scroll, modal);
@@ -48,4 +51,4 @@ initPreloader({
 });
 
 // dev-only handle for QA sessions (manual ticker stepping, state inspection)
-if (import.meta.env.DEV) window.__bss = { gsap, scroll, perkField, modal, journey };
+if (import.meta.env.DEV) window.__bss = { gsap, scroll, perkField, modal, journey, heroBg };
