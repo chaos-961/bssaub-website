@@ -40,7 +40,7 @@
      `filter: blur(0.5px)` this used to carry cost a filter pass per particle
      per frame, on elements 3px to 6px wide, for a sub pixel difference
      nobody can see (v0.2.9 perf) */
-  box-shadow: 0 0 8px rgba(231, 157, 172, 0.5);
+  box-shadow: 0 0 8px rgba(176, 74, 103,0.5);
   opacity: 0;
   will-change: transform, opacity;
 }
@@ -65,19 +65,25 @@
    dashoffset changes on EVERY scroll frame — so the GPU re-ran two ~2 megapixel
    Gaussian passes per frame for the length of the section. Replaced by three
    plain stacked strokes that fake the falloff in the rasterizer: no filter
-   surface, no per-frame blur, same soft bloom around the bright core. */
+   surface, no per-frame blur, same soft bloom around the bright core.
+
+   v0.3.0: opacities lifted (0.06 → 0.10, 0.14 → 0.20) for the white ground.
+   On the dark ground these strokes were a pale rose ADDING light, which the
+   eye picks up at a whisper; on white the same stroke is a dark rose taking
+   light away, and 6% of it simply vanished. The lift restores the bloom the
+   dark ground had, not more. */
 .journey__path--halo {
   stroke: var(--accent-2);
   stroke-width: 16;
   stroke-linecap: round;
-  opacity: 0.06;
+  opacity: 0.1;
 }
 
 .journey__path--glow {
   stroke: var(--accent-2);
   stroke-width: 8;
   stroke-linecap: round;
-  opacity: 0.14;
+  opacity: 0.2;
 }
 
 .journey__path--draw {
@@ -109,9 +115,9 @@
   border-radius: 50%;
   background: radial-gradient(circle at 36% 32%, #fff 0%, var(--accent-2) 48%, var(--accent-strong) 100%);
   box-shadow:
-    0 0 10px rgba(231, 157, 172, 0.7),
-    0 0 26px rgba(231, 157, 172, 0.4),
-    0 0 56px rgba(207, 63, 95, 0.35);
+    0 0 10px rgba(176, 74, 103,0.7),
+    0 0 26px rgba(176, 74, 103,0.4),
+    0 0 56px rgba(136, 21, 50,0.35);
   opacity: 0;
   transform: scale(0.3);
   transition:
@@ -133,7 +139,7 @@
   position: absolute;
   inset: -16px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(231, 157, 172, 0.3), transparent 70%);
+  background: radial-gradient(circle, rgba(176, 74, 103,0.3), transparent 70%);
   opacity: 0.65;
   transform: scale(0.72);
 }
@@ -200,8 +206,8 @@
   border-color: var(--accent-2);
   transform: scale(1.18);
   box-shadow:
-    0 0 14px rgba(231, 157, 172, 0.6),
-    0 0 34px rgba(207, 63, 95, 0.35);
+    0 0 14px rgba(176, 74, 103,0.6),
+    0 0 34px rgba(136, 21, 50,0.35);
 }
 
 .journey-node__dot::before,
@@ -298,10 +304,10 @@
 }
 
 .journey-node.is-lit .journey-node__media {
-  border-color: rgba(231, 157, 172, 0.45);
+  border-color: rgba(176, 74, 103,0.45);
   box-shadow:
     0 30px 70px -30px rgba(34, 18, 25, 0.28),
-    0 0 46px -8px rgba(207, 63, 95, 0.3);
+    0 0 46px -8px rgba(136, 21, 50,0.3);
 }
 
 .journey-node__media img {
@@ -360,10 +366,10 @@
   text-transform: uppercase;
   letter-spacing: 0.16em;
   color: var(--accent);
-  border: 1px solid rgba(231, 157, 172, 0.4);
+  border: 1px solid rgba(176, 74, 103,0.4);
   border-radius: 999px;
   padding: 0.42em 0.95em;
-  background: rgba(207, 63, 95, 0.07);
+  background: rgba(136, 21, 50,0.07);
 }
 
 .journey-node__chip::before {
@@ -372,7 +378,7 @@
   height: 5px;
   border-radius: 50%;
   background: var(--accent-2);
-  box-shadow: 0 0 8px rgba(231, 157, 172, 0.6);
+  box-shadow: 0 0 8px rgba(176, 74, 103,0.6);
 }
 
 .journey-node__title {
@@ -448,12 +454,12 @@
   0%,
   100% {
     box-shadow:
-      0 0 0 0 rgba(207, 63, 95, 0),
+      0 0 0 0 rgba(136, 21, 50,0),
       0 0 22px -8px rgba(163, 26, 60, 0.4);
   }
   50% {
     box-shadow:
-      0 0 0 7px rgba(207, 63, 95, 0.12),
+      0 0 0 7px rgba(136, 21, 50,0.12),
       0 0 36px -4px rgba(163, 26, 60, 0.6);
   }
 }

@@ -1,29 +1,32 @@
 /* ------------------------------------------------------------------
    Design tokens — the one file the site recolors/retypes from.
-   PALETTE: dark gray "paper" ground with white ink (v0.2.1, 2026-07-24
-   user call). The site ran a plain #ffffff ground from v0.1.9; on the
-   user's word it flipped to a darker gray paper sheet with white body
-   text. --bg #232225 (darkened 20% from #2c2a2e at v0.2.5 on the user's
-   word) carries a fixed fractal grain layer (base.css) for paper tooth.
-   The brand maroon #881532 read at only ~1.4:1 on the old gray, so the
-   working accent was lifted to a rose maroon: #cf3f5f puts white button
-   text at 4.64:1 and still separates from the darker ground at 3.42:1.
-   The deep #881532 survives only in the maroon brand assets
-   (preloader curtain, favicons, OG image), never as on screen ink.
+   PALETTE: white "paper" ground with dark ink (v0.3.0, 2026-07-24 user
+   call). The ground has swung more than once: warm off white #fcfaf8
+   under the aurora (v0.1.0 to v0.1.8), plain #ffffff (v0.1.9 to v0.2.0),
+   a dark gray paper sheet with white body text (v0.2.1 to v0.2.9), and
+   now back to white on the user's word. --bg #ffffff carries the same
+   fractal grain layer as before (base.css), retuned for white: multiply
+   instead of soft-light, which is a no-op on pure white.
+   The lifted rose accent #cf3f5f the dark ground needed is retired with
+   it — the deep brand maroon #881532 (sampled from assets/logo.png,
+   2026-07-22, the logo's true ink) reads at 9.6:1 on white and is the
+   working accent again, matching the maroon brand assets (preloader
+   curtain, favicons, OG image) instead of diverging from them.
+   --accent-2 #b04a67 is the rose that still holds 5.2:1 on white.
    ------------------------------------------------------------------ */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
   /* color */
-  --bg: #232225;
-  --surface: #38353b;
-  --surface-glass: rgba(44, 42, 46, 0.72);
-  --ink: #ffffff;
-  --ink-soft: #cfc7cd;
-  --line: rgba(255, 255, 255, 0.14);
-  --accent: #cf3f5f;
-  --accent-strong: #d64d68;
-  --accent-2: #e79dac;
+  --bg: #ffffff;
+  --surface: #f8f3f5;
+  --surface-glass: rgba(255, 255, 255, 0.78);
+  --ink: #221219;
+  --ink-soft: #5f4a54;
+  --line: rgba(34, 18, 25, 0.16);
+  --accent: #881532;
+  --accent-strong: #a31a3c;
+  --accent-2: #b04a67;
 
   /* type */
   --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;

@@ -1,8 +1,14 @@
-/* The bar is its own white "paper" island on the dark ground (v0.2.2, user
-   call): a white sheet with the same fractal grain as the page but tuned for
-   white, carrying dark ink content. The old dark glass bar is gone. The bar
-   and its dropdown share these light tokens, mirrors of the pre v0.2.1 light
-   theme, so the deep brand maroon reads on the white. */
+/* The bar is a white "paper" sheet with dark ink content (v0.2.2, user call),
+   carrying the same fractal grain as the page. It was built as an ISLAND
+   standing out against the dark ground; since the ground went white again at
+   v0.3.0 it reads as continuous with the page instead, separated by its
+   hairline border and, once you scroll, the lift shadow below.
+
+   These scoped tokens now duplicate the global ones exactly. They stay on
+   purpose: this ground has flipped four times (see tokens.css), and keeping
+   the bar's palette declared independently is what let it survive the last
+   two flips without a rewrite. Deleting them would re-couple the bar to
+   whatever the page ground becomes next. */
 .site-nav,
 .nav-menu {
   --nav-paper: #ffffff;
@@ -34,7 +40,12 @@
 
 /* paper grain on the white bar: the same noise tile as the page, multiplied
    at a whisper so it reads as tooth, not a gray veil (soft-light is a no-op
-   on pure white). Sits above the white fill, behind the bar content. */
+   on pure white). Sits above the white fill, behind the bar content. Since
+   v0.3.0 the page ground runs this exact recipe, so bar and page match.
+
+   This one stays a mix-blend-mode despite the v0.2.9 GPU rule: the rule is
+   about layers that span the VIEWPORT, and this blends against its own 72px
+   tall white fill, not against the page behind it. */
 .site-nav::before {
   content: '';
   position: absolute;

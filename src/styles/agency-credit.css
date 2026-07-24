@@ -126,7 +126,7 @@
 .agency-credit__lockup:hover {
   transform: translateY(-4px);
   border-color: color-mix(in srgb, var(--accent-2) 55%, var(--line));
-  box-shadow: 0 24px 48px rgba(207, 63, 95, 0.16);
+  box-shadow: 0 24px 48px rgba(136, 21, 50, 0.16);
 }
 
 .agency-credit__lockup:hover::after {
