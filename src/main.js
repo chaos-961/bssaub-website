@@ -21,6 +21,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 import { initScroll } from './modules/scroll.js';
+import { initOceanMesh } from './modules/oceanMesh.js';
 import { initNav } from './modules/nav.js';
 import { initHeroCard } from './modules/heroCard.js';
 import { initSponsorModal } from './modules/sponsorModal.js';
@@ -32,6 +33,7 @@ import { initPreloader } from './modules/preloader.js';
 import { initFooterVersion } from './modules/footerVersion.js';
 
 const scroll = initScroll();
+const ocean = initOceanMesh(); // background layer, independent of everything below it
 initNav(scroll);
 const heroCard = initHeroCard(scroll);
 const modal = initSponsorModal(scroll);
@@ -49,4 +51,4 @@ initPreloader({
 });
 
 // dev-only handle for QA sessions (manual ticker stepping, state inspection)
-if (import.meta.env.DEV) window.__bss = { gsap, scroll, perkField, modal, journey };
+if (import.meta.env.DEV) window.__bss = { gsap, scroll, perkField, modal, journey, ocean };

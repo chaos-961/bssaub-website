@@ -11,10 +11,12 @@ import './styles/stub.css';
 import './styles/footer.css';
 
 import { initScroll } from './modules/scroll.js';
+import { initOceanMesh } from './modules/oceanMesh.js';
 import { initNav } from './modules/nav.js';
 import { initFooterVersion } from './modules/footerVersion.js';
 
 const scroll = initScroll();
+initOceanMesh();
 initNav(scroll);
 initFooterVersion();
 
