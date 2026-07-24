@@ -1,0 +1,136 @@
+/* ------------------------------------------------------------------
+   Starfield background layer (§ generative sky brief). One fixed canvas
+   sitting between the paper grain and the page content: the grain moved
+   to z-index -2 (base.css), the canvas holds -1, every section paints
+   over it at the normal z-index 0. pointer-events: none so it never
+   swallows a click, a text selection, or a scroll. aria-hidden is set
+   in JS on the element itself.
+   ------------------------------------------------------------------ */
+.starfield-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* fade-in hook: the field paints at 0 and JS lifts it, so a slow first
+     paint never shows a hard rectangle edge over the paper */
+  opacity: 0;
+  transition: opacity 0.4s ease-out;
+}
+
+.starfield-canvas.is-visible {
+  opacity: 1;
+}
+
+/* ------------------------------------------------------------------
+   Authoring tool (?skyEditor=1). Dev only overlay, lazy loaded, never
+   part of the normal page. Plain and functional: the point is to place
+   points, wire edges, preview the trace, and export clean JSON.
+   ------------------------------------------------------------------ */
+.sky-editor {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: #201d22;
+  color: #f1ece6;
+  font-family: var(--font-body, system-ui, sans-serif);
+}
+
+.sky-editor__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  background: #17151a;
+}
+
+.sky-editor__bar strong {
+  font-family: var(--font-display, Georgia, serif);
+  font-weight: 580;
+  letter-spacing: 0.02em;
+}
+
+.sky-editor__bar label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #cfc7cd;
+}
+
+.sky-editor__bar input[type='text'] {
+  width: 9rem;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: #26232a;
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.sky-editor__btn {
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: #2c2930;
+  color: inherit;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.sky-editor__btn:hover {
+  background: #3a3640;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.sky-editor__btn--go {
+  background: #cf3f5f;
+  border-color: #cf3f5f;
+  color: #fff;
+}
+
+.sky-editor__btn--go:hover {
+  background: #d64d68;
+}
+
+.sky-editor__hint {
+  font-size: 0.78rem;
+  color: #9d949c;
+}
+
+.sky-editor__stage {
+  position: relative;
+  overflow: hidden;
+  cursor: crosshair;
+}
+
+.sky-editor__stage canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.sky-editor__out {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: min(38ch, 46vw);
+  max-height: 42vh;
+  margin: 0;
+  padding: 12px 14px;
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  background: rgba(15, 13, 17, 0.92);
+  color: #d7f0e2;
+  font-family: ui-monospace, 'Cascadia Code', 'Consolas', monospace;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

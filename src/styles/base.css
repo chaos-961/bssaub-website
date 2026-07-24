@@ -14,7 +14,7 @@ html {
      with the body::before fractal grain below layered over it. Palette
      history lives in tokens.css. */
   background-color: var(--bg);
-  scrollbar-color: color-mix(in srgb, var(--accent) 40%, var(--surface)) var(--bg);
+  scrollbar-color: var(--ink) var(--bg);
 }
 
 body {
@@ -32,12 +32,14 @@ body {
    white theme). A fixed fractal grain sheet sits behind every section and
    gives the gray its paper tooth. Pure CSS data URI: no image request, no
    JS, no animation, so reduced motion needs no exception. Panels (cards,
-   nav glass, modal) paint over it; the grain shows in the gaps. */
+   nav glass, modal) paint over it; the grain shows in the gaps.
+   z-index -2 since v0.2.3: the starfield canvas holds -1, so the stars paint
+   on top of the paper tooth and both stay below the page content (z 0). */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: -2;
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)'/%3E%3C/svg%3E");
   background-size: 180px 180px;
@@ -55,13 +57,19 @@ body::before {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--accent) 42%, var(--surface));
+  background: var(--ink);
   border: 3px solid var(--bg);
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--accent) 62%, var(--surface));
+  background: var(--ink-soft);
+}
+
+/* the end arrow buttons: white glyphs on the paper track */
+::-webkit-scrollbar-button {
+  background: var(--bg);
+  color: var(--ink);
 }
 
 img,
