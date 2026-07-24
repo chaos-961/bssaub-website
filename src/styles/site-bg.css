@@ -1,0 +1,64 @@
+/* ------------------------------------------------------------------
+   Site background (v0.3.1, user brief): a low poly triangle mesh in the
+   site's rose/maroon family, behind EVERY page and behind the whole page,
+   not one section.
+
+   SHAPE. One fixed, viewport sized layer at z-index -1. `body` is
+   transparent so this shows through; `html` keeps the flat --bg for the
+   overscroll gutter and as the fallback if the mesh ever fails to load.
+   Fixed rather than a tall scrolling background because a mesh stretched
+   over a 10x viewport tall document would smear the facets into ribbons,
+   and because a fixed layer that never moves is the cheapest thing the
+   compositor can hold: it is painted once and then simply re-used as
+   content scrolls over it.
+
+   COST. This is the "don't eat GPU/CPU" half of the brief, and it is the
+   reason every tempting option was rejected:
+   - No canvas, no WebGL, no rAF, no JS at all. Nothing recomputes, ever.
+   - No animation, so there is no reduced motion exception to make.
+   - No mix-blend-mode and no backdrop-filter, which would re-read the
+     backdrop every frame anything moved (the v0.2.9 GPU floor). The grain
+     is a `background-blend-mode` between two layers of THIS element, which
+     resolves inside its own paint and is cached.
+   - The mesh is vector, so one file is exact on every DPR and viewport.
+     No 2x/3x raster variants, no srcset, ~8.6 KB gzipped.
+
+   QUALITY AT EVERY SIZE. The source is square (1400x1400) with
+   `background-size: cover`, so it crops gently in both orientations
+   instead of blowing the facets up on portrait phones the way a landscape
+   source would. See scripts/generate-bg-mesh.mjs for the geometry.
+
+   LEGIBILITY. Body copy sits directly on this on every page, so the mesh's
+   deepest tone is bounded by --ink-soft holding AA. Measured on the
+   rendered file: darkest facet keeps --ink-soft at 4.5:1+ and --ink well
+   past 10:1. Retune the palette in the generator, not here.
+   ------------------------------------------------------------------ */
+.site-bg {
+  position: fixed;
+  inset: 0;
+  /* Mobile: when the URL bar retracts the visual viewport grows, and a layer
+     sized to the small viewport can leave an uncovered strip at the bottom
+     that flashes the flat --bg from html. 100lvh pins it to the LARGE
+     viewport so it covers in both states; `inset: 0` above is the fallback
+     for anything without lvh. */
+  height: 100lvh;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--bg);
+  background-image:
+    /* Paper grain, same tile the nav carries, but PRE COMPRESSED into
+       [0.94, 1.0] by the feComponentTransfer below (and forced opaque) so a
+       plain multiply lands at whisper strength. The old recipe diluted a
+       full range tile with a flat --bg layer on top; that trick only works
+       over a flat ground, and would have washed the mesh 86% toward white. */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='0.06' intercept='0.94'/%3E%3CfeFuncG type='linear' slope='0.06' intercept='0.94'/%3E%3CfeFuncB type='linear' slope='0.06' intercept='0.94'/%3E%3CfeFuncA type='linear' slope='0' intercept='1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)'/%3E%3C/svg%3E"),
+    url('../assets/bg/mesh.svg');
+  background-size:
+    180px 180px,
+    cover;
+  background-position:
+    0 0,
+    center center;
+  background-repeat: repeat, no-repeat;
+  background-blend-mode: multiply, normal;
+}

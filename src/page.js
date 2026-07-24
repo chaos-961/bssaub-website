@@ -5,6 +5,7 @@ import '@fontsource-variable/instrument-sans';
 
 import './styles/tokens.css';
 import './styles/base.css';
+import './styles/site-bg.css';
 import './styles/stub.css';
 
 import { initFooterVersion } from './modules/footerVersion.js';

@@ -18,49 +18,19 @@ html {
 
 body {
   min-height: 100%;
-  /* White paper ground since v0.3.0 (user call): --bg with the fractal grain
-     multiplied over it, giving the white its tooth. The grain itself has
-     ridden every ground since v0.2.1; only the blend and the dilution change.
+  /* TRANSPARENT ON PURPOSE since v0.3.1. The ground is no longer painted here
+     — it is the fixed low poly mesh layer in site-bg.css (div.site-bg, z-index
+     -1), and an opaque fill here would simply hide it.
 
-     WHY MULTIPLY NOW: soft-light against pure white is a no-op (white is the
-     identity for it), so the v0.2.1 to v0.2.9 recipe would have left the page
-     perfectly flat. Multiply is what actually bites into white — it is the
-     same blend the nav bar has used on its own white sheet since v0.2.2, so
-     bar and page now carry visually identical tooth.
-
-     v0.2.9 perf, still load bearing: the grain must NEVER go back to being a
-     fixed full viewport layer under mix-blend-mode. A blend mode reads its
-     BACKDROP, so the compositor had to snapshot the whole viewport into a
-     texture and re-blend it every frame anything moved (bubbles breathing,
-     hero card floating, any scroll at all) — a permanent full screen GPU pass
-     in service of a completely static texture, and the single biggest draw on
-     the card. background-blend-mode resolves inside body's own paint instead:
-     painted once, cached, never re-blended.
-
-     Three stacked layers, same structure as before, mirrored for multiply:
-       bottom  background-color --bg      (pure white)
-       middle  noise tile, multiply        → multiply(white, noise) = noise
-       top     --bg at 86% alpha, normal   → 0.86*white + 0.14*noise
-     which is the definition of a 14% opaque multiply layer over white, i.e.
-     exactly the nav's `opacity: 0.14; mix-blend-mode: multiply`. Dial the
-     tooth with that 86% (lower = grainier); the dark ground used 50% with
-     soft-light, a much weaker blend, so the numbers are not comparable.
-
-     It sits on body (not html) so no root-background propagation is involved,
-     and body's box is the full document height. Panels paint over it and it
-     shows in the gaps. Still a pure CSS data URI: no image request, no JS, no
-     animation, so reduced motion needs no exception. */
-  background-color: var(--bg);
-  background-image:
-    linear-gradient(
-      color-mix(in srgb, var(--bg) 86%, transparent),
-      color-mix(in srgb, var(--bg) 86%, transparent)
-    ),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)'/%3E%3C/svg%3E");
-  background-size:
-    auto,
-    180px 180px;
-  background-blend-mode: normal, multiply;
+     The paper grain moved there with it, so there is exactly one place that
+     paints the background instead of two that have to agree. History for
+     anyone digging: this carried the grain from v0.2.1 (fixed body::before,
+     mix-blend-mode soft-light over the dark ground), then v0.2.9 moved it to
+     background-blend-mode layers here to kill a full viewport per frame GPU
+     pass, then v0.3.0 flipped that blend to multiply for the white ground.
+     The v0.2.9 lesson still applies wherever the grain lives: never a
+     viewport spanning mix-blend-mode. */
+  background: transparent;
   color: var(--ink);
   font-family: var(--font-body);
   font-size: var(--step-0);

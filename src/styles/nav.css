@@ -11,7 +11,15 @@
    whatever the page ground becomes next. */
 .site-nav,
 .nav-menu {
-  --nav-paper: #ffffff;
+  /* Was #ffffff from v0.2.2, when the page was dark and a white sheet WAS the
+     separation. On the white ground that fill left the bar with no tone of its
+     own (user report: invisible), so it takes the warm raised panel tone, the
+     same value as the global --surface. Kept as a literal rather than
+     var(--surface) because these nav tokens are deliberately independent of the
+     page palette — that independence is what carried the bar through the last
+     two ground flips. Dial the bar's presence here: #ffffff is flush with the
+     page, lower values read as a more raised sheet. */
+  --nav-paper: #f8f3f5;
   --nav-ink: #221219;
   --nav-ink-soft: #5f4a54;
   --nav-accent: #881532;
@@ -31,7 +39,19 @@
   justify-content: space-between;
   padding-inline: var(--gutter);
   background-color: var(--nav-paper);
-  border-bottom: 1px solid var(--nav-line);
+  /* SEPARATION ON THE WHITE GROUND (v0.3.0, user report: the bar read as
+     invisible). White sheet on a white page has no tonal difference to define
+     itself with — bar and ground both composite to ~250/255 — and the old 14%
+     hairline was a 1.28:1 edge, which is what "invisible" meant. The fill stays
+     white (that is the v0.2.2 user call, and it keeps the maroon lockup crisp),
+     so three things carry it now, none of them heavy on its own: the warm fill
+     tone above, this defined hairline, and a soft always on elevation, the
+     latter two deepened once you scroll. The bar reads as a sheet resting above
+     the page rather than a patch of the same paper. */
+  border-bottom: 1px solid color-mix(in srgb, var(--nav-ink) 24%, transparent);
+  box-shadow:
+    0 1px 2px rgba(34, 18, 25, 0.05),
+    0 12px 28px -22px rgba(34, 18, 25, 0.5);
   transition:
     transform 0.4s var(--ease-out),
     box-shadow 0.35s,
@@ -58,17 +78,22 @@
   mix-blend-mode: multiply;
 }
 
-/* scrolled: lift the sheet off the page as content slides under it */
+/* scrolled: lift the sheet further as content slides under it. Still a real
+   state change now that the rest state also carries an edge and a shadow. */
 .site-nav.is-scrolled {
-  border-bottom-color: color-mix(in srgb, var(--nav-ink) 22%, transparent);
-  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.55);
+  border-bottom-color: color-mix(in srgb, var(--nav-ink) 30%, transparent);
+  box-shadow:
+    0 1px 2px rgba(34, 18, 25, 0.07),
+    0 16px 34px -20px rgba(34, 18, 25, 0.6);
 }
 
 /* hide-on-scroll (user call): the bar slides up out of view going down and
    drops back the moment you scroll up. The calc offset clears the lift shadow
-   so nothing peeks at the top edge. */
+   so nothing peeks at the top edge — widened from 16px to 24px at v0.3.0 since
+   the deepened scrolled shadow now reaches ~13px below the bar (offset 16,
+   spread -20, blur 34 → 16 - 20 + 17), which left only 3px of margin. */
 .site-nav.is-hidden {
-  transform: translateY(calc(-100% - 16px));
+  transform: translateY(calc(-100% - 24px));
 }
 
 /* top left is the real logo lockup (user call 2026-07-23) — the name lives
