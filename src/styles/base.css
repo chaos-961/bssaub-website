@@ -33,8 +33,9 @@ body {
    gives the gray its paper tooth. Pure CSS data URI: no image request, no
    JS, no animation, so reduced motion needs no exception. Panels (cards,
    nav glass, modal) paint over it; the grain shows in the gaps.
-   z-index -2 since v0.2.3: the starfield canvas holds -1, so the stars paint
-   on top of the paper tooth and both stay below the page content (z 0). */
+   z-index -2 sits it below the page content (z 0). It shared this stack with
+   the generative starfield canvas (z -1) until v0.2.5, when that background
+   was extracted to a standalone template and removed from the site. */
 body::before {
   content: '';
   position: fixed;

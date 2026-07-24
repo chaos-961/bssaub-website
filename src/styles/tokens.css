@@ -3,18 +3,19 @@
    PALETTE: dark gray "paper" ground with white ink (v0.2.1, 2026-07-24
    user call). The site ran a plain #ffffff ground from v0.1.9; on the
    user's word it flipped to a darker gray paper sheet with white body
-   text. --bg #2c2a2e carries a fixed fractal grain layer (base.css)
-   for paper tooth. The brand maroon #881532 read at only ~1.4:1 on the
-   gray, so the working accent was lifted to a rose maroon: #cf3f5f puts
-   white button text at 4.64:1 and still separates from the ground at
-   3.07:1. The deep #881532 survives only in the maroon brand assets
+   text. --bg #232225 (darkened 20% from #2c2a2e at v0.2.5 on the user's
+   word) carries a fixed fractal grain layer (base.css) for paper tooth.
+   The brand maroon #881532 read at only ~1.4:1 on the old gray, so the
+   working accent was lifted to a rose maroon: #cf3f5f puts white button
+   text at 4.64:1 and still separates from the darker ground at 3.42:1.
+   The deep #881532 survives only in the maroon brand assets
    (preloader curtain, favicons, OG image), never as on screen ink.
    ------------------------------------------------------------------ */
 :root {
   color-scheme: dark;
 
   /* color */
-  --bg: #2c2a2e;
+  --bg: #232225;
   --surface: #38353b;
   --surface-glass: rgba(44, 42, 46, 0.72);
   --ink: #ffffff;
