@@ -43,7 +43,7 @@
   /* layout */
   --container: 1200px;
   --gutter: clamp(1.25rem, 4vw, 3rem);
-  --section-pad: clamp(4.5rem, 10vw, 8.5rem);
+  --section-pad: clamp(2.25rem, 5vw, 4.25rem);
   --nav-h: 72px;
 
   /* shape + motion */
