@@ -508,27 +508,41 @@ export function initPerkField(scroll, modal) {
     lenisVel = velocity;
   });
 
-  const activeItems = () => {
-    const act = zones.filter((z) => z.active).flatMap((z) => z.items);
+  // The active set is identical for applyForces and glidePass within one step,
+  // so it is built ONCE per step into a reused array (v0.2.9 perf). It used to
+  // be rebuilt twice per step via filter + flatMap + forEach — six throwaway
+  // arrays 120 times a second, pure allocator churn feeding the GC.
+  const act = [];
+  const buildActive = () => {
+    act.length = 0;
+    for (const z of zones) {
+      if (!z.active) continue;
+      for (const it of z.items) act.push(it);
+    }
     if (grab && !grab.it.zone.active) act.push(grab.it);
     // a bubble released while its zone was scrolled out of view still has to be
     // driven home, or its glide never advances and it looks locked in place
     // (2026-07-24). A homing body is never also the grabbed one, so no dupes.
-    allItems.forEach((it) => {
+    for (const it of allItems) {
       if (it.homing && !it.zone.active) act.push(it);
-    });
+    }
     return act;
   };
+
+  // matchMedia allocates a MediaQueryList per call, and isMobile() runs two of
+  // them. applyForces + glidePass asked four times per step = 240 a second for
+  // an answer that only changes on resize, so it is resolved once per frame and
+  // handed down (v0.2.9 perf).
+  let mobile = isMobile();
 
   let simT = 0;        // deterministic sim clock (breathing, shivers)
   let shiverAt = 3200;
 
   function applyForces() {
-    const mobile = isMobile();
     const clampR = mobile ? TUNING.clampRadius.m : TUNING.clampRadius.d;
     const impulseK = mobile ? TUNING.impulse.m : TUNING.impulse.d;
     const maxSpeed = mobile ? TUNING.maxSpeed.m : TUNING.maxSpeed.d;
-    const act = activeItems();
+    buildActive();
 
     simT += STEP;
     if (simT >= shiverAt) {
@@ -709,11 +723,11 @@ export function initPerkField(scroll, modal) {
   //      its homeward RADIAL speed capped on a distance-eased curve so it
   //      decelerates into its seat. Tangential swirl and collisions untouched.
   function glidePass() {
-    const mobile = isMobile();
     const glide = mobile ? TUNING.returnGlide.m : TUNING.returnGlide.d;
     const clampR = mobile ? TUNING.clampRadius.m : TUNING.clampRadius.d;
     const reach = clampR + (mobile ? TUNING.throwRange.m : TUNING.throwRange.d);
-    activeItems().forEach((it) => {
+    // same set applyForces just built for this step — see buildActive()
+    act.forEach((it) => {
       if (it.grabbed) return;
       const b = it.body;
 
@@ -815,7 +829,13 @@ export function initPerkField(scroll, modal) {
       acc = 0;
       return;
     }
-    acc += Math.min(dt, 100);
+    mobile = isMobile(); // once a frame, not four times a step (v0.2.9)
+    // Catch-up is capped at 2 steps (was 6, via a 100ms clamp). A frame that
+    // ran long used to buy itself SIX physics steps on the next one, which took
+    // even longer, which bought more steps: the classic spiral of death. Under
+    // load the sim now runs a hair slow instead of stampeding the CPU, and
+    // nobody can see 33ms of drift in a drifting bubble.
+    acc = Math.min(acc + dt, STEP * 2);
     let stepped = false;
     while (acc >= STEP) {
       applyForces();

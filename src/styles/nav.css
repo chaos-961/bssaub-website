@@ -120,9 +120,13 @@
   display: grid;
   place-content: center;
   row-gap: 6px;
+  /* The chip sits ON the opaque white bar, so its old backdrop-filter had
+     nothing to blur but flat #ffffff — an invisible effect that still forced
+     the compositor to snapshot and blur the region behind a FIXED element on
+     every frame the bar moved (and the bar hides/reveals on every scroll
+     direction change). Dropped at v0.2.9; the 62% paper tint over white is
+     the same color it always resolved to. */
   background: color-mix(in srgb, var(--nav-paper) 62%, transparent);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
   border: 1px solid var(--nav-line);
   border-radius: 999px;
   cursor: pointer;

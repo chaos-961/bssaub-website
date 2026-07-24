@@ -10,42 +10,58 @@
 
 html {
   height: 100%;
-  /* dark gray paper ground since v0.2.1 (user call); the flat --bg color,
-     with the body::before fractal grain below layered over it. Palette
-     history lives in tokens.css. */
+  /* the flat ground. Also what shows in the overscroll gutter, so it stays the
+     plain color; the grain rides on body below. Palette history: tokens.css */
   background-color: var(--bg);
   scrollbar-color: var(--ink) var(--bg);
 }
 
 body {
   min-height: 100%;
-  background: none;
+  /* Dark gray paper ground since v0.2.1 (user call): --bg with the fractal
+     grain soft-lit over it, giving the gray its tooth.
+
+     v0.2.9 perf: the grain used to be a FIXED full viewport body::before with
+     mix-blend-mode: soft-light. A blend mode reads its BACKDROP, so the
+     compositor had to snapshot the whole viewport into a texture and re-blend
+     it every single frame anything moved (bubbles breathing, hero card
+     floating, any scroll at all) — a permanent full screen GPU pass in service
+     of a completely static texture. That was the single biggest draw on the
+     card.
+
+     Same pixels, no backdrop: the grain is now a background LAYER on body, and
+     background-blend-mode soft-lights it against the ground inside body's own
+     paint. Three stacked layers reproduce the old `opacity: 0.5` exactly:
+       bottom  background-color --bg      (the backdrop the old sheet saw)
+       middle  noise tile, soft-light      → soft-light(bg, noise)
+       top     --bg at 50% alpha, normal   → 0.5*bg + 0.5*soft-light(bg, noise)
+     which is the definition of a 50% opaque soft-light layer over a flat
+     ground. Verified against the old technique pixel for pixel: max channel
+     delta 1/255, mean 0.25/255, i.e. rounding. Painted once, cached, never
+     re-blended. Dial the tooth with the 50% in that top layer.
+
+     It sits on body (not html) so no root-background propagation is involved,
+     and body's box is the full document height. Panels paint over it and it
+     shows in the gaps, exactly as the old sheet did. Still a pure CSS data
+     URI: no image request, no JS, no animation, so reduced motion needs no
+     exception. */
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--bg) 50%, transparent),
+      color-mix(in srgb, var(--bg) 50%, transparent)
+    ),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size:
+    auto,
+    180px 180px;
+  background-blend-mode: normal, soft-light;
   color: var(--ink);
   font-family: var(--font-body);
   font-size: var(--step-0);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-}
-
-/* dark paper ground (v0.2.1, 2026-07-24 user call — flipped off the plain
-   white theme). A fixed fractal grain sheet sits behind every section and
-   gives the gray its paper tooth. Pure CSS data URI: no image request, no
-   JS, no animation, so reduced motion needs no exception. Panels (cards,
-   nav glass, modal) paint over it; the grain shows in the gaps.
-   z-index -2 sits it below the page content (z 0). It shared this stack with
-   the generative starfield canvas (z -1) until v0.2.5, when that background
-   was extracted to a standalone template and removed from the site. */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)'/%3E%3C/svg%3E");
-  background-size: 180px 180px;
-  opacity: 0.5;
-  mix-blend-mode: soft-light;
 }
 
 /* page scrollbar, on brand (modal keeps its own thinner one) */

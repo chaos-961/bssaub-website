@@ -25,8 +25,12 @@ export function initJourney(scroll) {
   const track = section.querySelector('[data-journey-track]');
   const svg = section.querySelector('[data-journey-svg]');
   const basePath = svg.querySelector('[data-path-base]');
+  // halo + glow are the two faint wide strokes that fake the old blur filter
+  // (v0.2.9 perf, see journey.css) — they scrub on the same dashoffset as draw
+  const haloPath = svg.querySelector('[data-path-halo]');
   const glowPath = svg.querySelector('[data-path-glow]');
   const drawPath = svg.querySelector('[data-path-draw]');
+  const litPaths = [haloPath, glowPath, drawPath].filter(Boolean);
   const marker = section.querySelector('[data-journey-marker]');
   const nodes = Array.from(section.querySelectorAll('[data-node]'));
   const dots = nodes.map((n) => n.querySelector('.journey-node__dot'));
@@ -136,8 +140,7 @@ export function initJourney(scroll) {
       d += segs[i - 1];
     }
     basePath.setAttribute('d', d);
-    glowPath.setAttribute('d', d);
-    drawPath.setAttribute('d', d);
+    litPaths.forEach((p) => p.setAttribute('d', d));
     totalLen = drawPath.getTotalLength();
 
     // exact cumulative length at each checkpoint = prefix path length
@@ -152,15 +155,17 @@ export function initJourney(scroll) {
     svg.removeChild(probe);
     nodeLens = dotIdx.map((k) => cum[k - 1]);
 
-    drawPath.style.strokeDasharray = `${totalLen}`;
-    glowPath.style.strokeDasharray = `${totalLen}`;
+    litPaths.forEach((p) => {
+      p.style.strokeDasharray = `${totalLen}`;
+    });
   }
 
   function update(p) {
     lastProgress = p;
     const off = `${totalLen * (1 - p)}`;
-    drawPath.style.strokeDashoffset = off;
-    glowPath.style.strokeDashoffset = off;
+    litPaths.forEach((el) => {
+      el.style.strokeDashoffset = off;
+    });
     const at = totalLen * p;
     if (marker) {
       const pt = drawPath.getPointAtLength(at);
@@ -176,8 +181,9 @@ export function initJourney(scroll) {
 
   if (scroll.reduced) {
     // fully drawn, everything lit + revealed, no marker, no scrub (§7)
-    drawPath.style.strokeDashoffset = '0';
-    glowPath.style.strokeDashoffset = '0';
+    litPaths.forEach((el) => {
+      el.style.strokeDashoffset = '0';
+    });
     nodes.forEach((n) => n.classList.add('is-lit', 'is-in'));
     if (marker) marker.style.display = 'none';
     window.addEventListener('resize', debounce(buildPath, 250));
@@ -231,11 +237,25 @@ export function initJourney(scroll) {
     );
   });
 
+  // Section-on-screen flag (v0.2.9 perf). Everything decorative that loops
+  // forever hangs off this: the ember drifts below, and .is-onscreen in the CSS
+  // which gates the Join CTA's breathing glow. Without it those keep repainting
+  // for the whole session once passed, thousands of px out of view.
+  const drifts = [];
+  ScrollTrigger.create({
+    trigger: section,
+    start: 'top bottom',
+    end: 'bottom top',
+    onToggle: (self) => {
+      section.classList.toggle('is-onscreen', self.isActive);
+      drifts.forEach((tl) => (self.isActive ? tl.play() : tl.pause()));
+    },
+  });
+
   // ambient ember particles — paused whenever the section is off screen
   const pWrap = section.querySelector('[data-journey-particles]');
   if (pWrap) {
     const count = window.matchMedia('(max-width: 47.99rem)').matches ? 8 : 14;
-    const drifts = [];
     for (let i = 0; i < count; i++) {
       const s = document.createElement('span');
       s.className = 'journey__particle';
@@ -259,12 +279,6 @@ export function initJourney(scroll) {
         .to(s, { opacity: 0, duration: dur * 0.4, ease: 'power1.inOut' }, dur * 0.6);
       drifts.push(tl);
     }
-    ScrollTrigger.create({
-      trigger: section,
-      start: 'top bottom',
-      end: 'bottom top',
-      onToggle: (self) => drifts.forEach((tl) => (self.isActive ? tl.play() : tl.pause())),
-    });
   }
 
   // magnetic Join CTA — the path ends on this button, so it pulls back a little

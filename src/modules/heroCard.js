@@ -79,12 +79,26 @@ export function initHeroCard(scroll) {
     );
   }
 
+  // The idle float is an infinite timeline, so it never stops on its own: it
+  // used to keep animating (and keep the card + its blurred drop shadow layer
+  // recompositing every frame) for the whole session, including deep down the
+  // page where the hero is thousands of px away. v0.2.9 parks it whenever the
+  // hero leaves the viewport and resumes on the way back.
   const startIdle = () => {
-    gsap
+    const tl = gsap
       .timeline({ repeat: -1, yoyo: true, defaults: { ease: 'sine.inOut' } })
       .to(floater, { y: -11, duration: 3.4 }, 0)
       .to(floater, { rotation: 0.8, duration: 4.6 }, 0)
       .to(floater, { x: 5, duration: 5.2 }, 0);
+
+    if (!('IntersectionObserver' in window)) return;
+    new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) tl.play();
+        else tl.pause();
+      },
+      { rootMargin: '120px 0px' },
+    ).observe(root);
   };
 
   /* orchestrated entrance — one timeline, fired as the preloader wipes (§6.1→§6.3) */

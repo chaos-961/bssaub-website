@@ -36,8 +36,11 @@
   position: absolute;
   border-radius: 50%;
   background: var(--accent-2);
+  /* the 8px shadow already gives these embers their soft edge; the extra
+     `filter: blur(0.5px)` this used to carry cost a filter pass per particle
+     per frame, on elements 3px to 6px wide, for a sub pixel difference
+     nobody can see (v0.2.9 perf) */
   box-shadow: 0 0 8px rgba(231, 157, 172, 0.5);
-  filter: blur(0.5px);
   opacity: 0;
   will-change: transform, opacity;
 }
@@ -55,20 +58,32 @@
   stroke-width: 1.5;
 }
 
-/* luminous wake under the drawn stroke — same dashoffset, wider + blurred */
+/* Luminous wake under the drawn stroke — same dashoffset, wider and fainter.
+   v0.2.9 perf: this used to be one 7px stroke under `filter: blur(5px)`, with
+   a `drop-shadow(0 0 7px)` on the draw stroke on top. Both filter regions are
+   the path's bounding box, which is the whole track (~1080 x 2000px), and the
+   dashoffset changes on EVERY scroll frame — so the GPU re-ran two ~2 megapixel
+   Gaussian passes per frame for the length of the section. Replaced by three
+   plain stacked strokes that fake the falloff in the rasterizer: no filter
+   surface, no per-frame blur, same soft bloom around the bright core. */
+.journey__path--halo {
+  stroke: var(--accent-2);
+  stroke-width: 16;
+  stroke-linecap: round;
+  opacity: 0.06;
+}
+
 .journey__path--glow {
   stroke: var(--accent-2);
-  stroke-width: 7;
+  stroke-width: 8;
   stroke-linecap: round;
-  opacity: 0.2;
-  filter: blur(5px);
+  opacity: 0.14;
 }
 
 .journey__path--draw {
   stroke: var(--accent-2);
   stroke-width: 2;
   stroke-linecap: round;
-  filter: drop-shadow(0 0 7px rgba(231, 157, 172, 0.4));
 }
 
 /* the glowing orb — "you are here" (§6.5, card marker retired 2026-07-23).
@@ -109,13 +124,21 @@
   transform: scale(1);
 }
 
-/* breathing halo around the orb */
+/* breathing halo around the orb. The animation is scoped to .is-active (the
+   journey ScrollTrigger's on screen state) since v0.2.9: an infinite keyframe
+   animation never stops on its own, so this one kept the compositor awake for
+   the whole page even parked in the hero, several thousand px away. */
 .journey__marker-orb::before {
   content: '';
   position: absolute;
   inset: -16px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(231, 157, 172, 0.3), transparent 70%);
+  opacity: 0.65;
+  transform: scale(0.72);
+}
+
+.journey__marker.is-active .journey__marker-orb::before {
   animation: orb-pulse 2.6s ease-in-out infinite;
 }
 
@@ -411,8 +434,13 @@
   margin-top: 1.6rem;
 }
 
-/* soft breathing glow once revealed — the path literally ends on this button */
-.journey-node--join.is-in .journey__cta {
+/* Soft breathing glow once revealed — the path literally ends on this button.
+   .is-in is once-only and permanent, so before v0.2.9 this infinite keyframe
+   animated box-shadow (a PAINT property, so a full repaint plus texture
+   re-upload every frame) for the rest of the session the moment you scrolled
+   past Join, including back up in the hero. The .is-onscreen gate (journey.js)
+   limits it to the frames where the section is actually in the viewport. */
+.journey.is-onscreen .journey-node--join.is-in .journey__cta {
   animation: cta-breathe 3.4s ease-in-out 1.2s infinite;
 }
 

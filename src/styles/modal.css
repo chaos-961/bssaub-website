@@ -19,6 +19,14 @@
   position: absolute;
   inset: 0;
   background: rgba(34, 18, 25, 0.42);
+}
+
+/* A full viewport blur is the single most expensive thing on the page, so it
+   only exists while the dialog is actually open (v0.2.9). The closed modal is
+   visibility: hidden, but a declared backdrop-filter still asks the compositor
+   to keep a backdrop root standing by; scoping it to .is-open takes that off
+   the table entirely. */
+.sponsor-modal.is-open .sponsor-modal__backdrop {
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
 }
