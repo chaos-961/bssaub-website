@@ -297,6 +297,71 @@
   /* journey.js drives scale (Ken Burns margin) + yPercent (scroll parallax) */
 }
 
+/* Specular sweep (v0.3.8): a band of light chases the clip wipe across the
+   picture, the same gesture the sponsor coins make when they inflate, so the
+   two image treatments on the page read as one material.
+
+   It rides the clip rather than racing it: the wipe is 0.95s and this is
+   0.9s behind a 0.12s hold, so the light arrives just as the frame finishes
+   opening. Clipped by the frame's own `overflow: hidden`, idle opacity 0,
+   and a single composited translate with no filter anywhere near it. */
+.journey-node__media::after {
+  content: '';
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: -40%;
+  width: 26%;
+  z-index: 1;
+  opacity: 0;
+  pointer-events: none;
+  transform: rotate(14deg);
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.5) 48%,
+    rgba(255, 255, 255, 0.62) 56%,
+    transparent
+  );
+}
+
+.journey-node.is-in .journey-node__media::after {
+  animation: journey-sweep 0.9s cubic-bezier(0.32, 0.06, 0.2, 1) 0.12s backwards;
+}
+
+@keyframes journey-sweep {
+  0% {
+    opacity: 0;
+    transform: translateX(0) rotate(14deg);
+  }
+  20% {
+    opacity: 1;
+  }
+  76% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(560%) rotate(14deg);
+  }
+}
+
+/* The sweep is the one thing in this file that has to be muted in CSS rather
+   than in JS. Everything else reduced motion touches is a rest state journey.js
+   resolves by ADDING .is-in, and .is-in is exactly what triggers this, so
+   without the two rules below a reduced motion visitor would get a light band
+   flying across all three pictures. Both signals are covered: the OS setting
+   and the ?reduced-motion QA param, which index.html turns into a root class. */
+html.reduced-motion .journey-node.is-in .journey-node__media::after {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journey-node.is-in .journey-node__media::after {
+    animation: none;
+  }
+}
+
 /* ---- content: staggered reveal from the opposite side of the picture ---- */
 .journey-node__content > * {
   opacity: 0;

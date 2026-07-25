@@ -177,6 +177,21 @@
                   decoding="async"
                   data-preload
                 />
+                <!-- The NAME blank, written live (v0.3.9). viewBox IS the card
+                     asset's own 663x473 pixel grid, so x/y here are the pixels
+                     measured off the artwork and the fit is exact at every
+                     width with no breakpoint. Sits under the glare on purpose,
+                     so the light washes over the name like it does the print. -->
+                <svg
+                  class="hero-card__name"
+                  viewBox="0 0 663 473"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <text class="hero-card__name-text" x="362" y="422.8" data-card-name></text>
+                  <rect class="hero-card__name-caret" x="361.15" y="407.4" width="1.7" height="16.2" rx="0.85" data-card-caret></rect>
+                </svg>
                 <div class="hero-card__glare" aria-hidden="true"></div>
               </div>
             </div>
@@ -199,27 +214,27 @@
           <div class="perk-field__zones">
             <div class="perk-zone" data-zone="restaurants">
               <span class="perk-zone__rail" data-rail aria-hidden="true"></span>
-              <h3 class="perk-zone__title">Restaurants</h3>
+              <h3 class="perk-zone__title" data-reveal><span class="rv-mask"><span>Restaurants</span></span></h3>
               <div class="perk-zone__canvas" data-zone-canvas="restaurants"></div>
             </div>
             <div class="perk-zone" data-zone="clothing">
               <span class="perk-zone__rail" data-rail aria-hidden="true"></span>
-              <h3 class="perk-zone__title">Clothing</h3>
+              <h3 class="perk-zone__title" data-reveal><span class="rv-mask"><span>Clothing</span></span></h3>
               <div class="perk-zone__canvas" data-zone-canvas="clothing"></div>
             </div>
             <div class="perk-zone" data-zone="health-beauty">
               <span class="perk-zone__rail" data-rail aria-hidden="true"></span>
-              <h3 class="perk-zone__title">Health &amp; Beauty</h3>
+              <h3 class="perk-zone__title" data-reveal><span class="rv-mask"><span>Health &amp; Beauty</span></span></h3>
               <div class="perk-zone__canvas" data-zone-canvas="health-beauty"></div>
             </div>
             <div class="perk-zone" data-zone="fitness">
               <span class="perk-zone__rail" data-rail aria-hidden="true"></span>
-              <h3 class="perk-zone__title">Fitness</h3>
+              <h3 class="perk-zone__title" data-reveal><span class="rv-mask"><span>Fitness</span></span></h3>
               <div class="perk-zone__canvas" data-zone-canvas="fitness"></div>
             </div>
             <div class="perk-zone" data-zone="services">
               <span class="perk-zone__rail" data-rail aria-hidden="true"></span>
-              <h3 class="perk-zone__title">Services</h3>
+              <h3 class="perk-zone__title" data-reveal><span class="rv-mask"><span>Services</span></span></h3>
               <div class="perk-zone__canvas" data-zone-canvas="services"></div>
             </div>
           </div>
@@ -464,7 +479,7 @@
       <div class="site-footer__bottom">
         <div class="site-footer__bottom-inner">
           <p>© Business Student Society, AUB · CRN: 5014</p>
-          <span class="version-badge" data-version-badge>v0.3.7</span>
+          <span class="version-badge" data-version-badge>v0.3.9</span>
         </div>
       </div>
     </footer>

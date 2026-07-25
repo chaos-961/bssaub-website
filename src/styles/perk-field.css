@@ -109,6 +109,17 @@
   box-shadow: 0 14px 34px -14px rgba(34, 18, 25, 0.3);
 }
 
+/* The photo's own clipping circle (v0.3.8). Everything the image does lives
+   inside this, so it can overfill the coin without ever painting past its
+   edge, and the badge (which hangs outside at top left) is a sibling and
+   stays untouched. No blend, no filter: an ordinary rounded clip. */
+.perk-bubble__lens {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
 .perk-bubble img {
   position: absolute;
   inset: 0;
@@ -337,6 +348,100 @@ html.is-grabbing .perk-bubble {
   }
   100% {
     opacity: 0;
+  }
+}
+
+/* ------------------------------------------------------------------
+   The photo inside the coin (v0.3.8, user report that the images were
+   not animating). Twenty five sponsor pictures were the largest static
+   surface left on the page: the coin inflated and burst around them
+   while the artwork sat perfectly still, which is what made the field
+   read as moving stickers rather than moving objects.
+
+   Two moves, both CSS, both keyed off the lifecycle classes that already
+   exist, so this costs no JavaScript at all and cannot desync from the
+   burst it belongs to.
+
+   The image runs a SLOWER clock than its coin on purpose: the film
+   finishes settling at 0.62s and the photo is still easing until 0.95s,
+   so the artwork appears to keep drifting into place after the bubble
+   has stopped. Matching the two durations reads as one rigid object,
+   which is exactly the flatness being fixed.
+   ------------------------------------------------------------------ */
+.perk-bubble.is-emerging img {
+  animation: perk-develop 0.95s var(--ease-out) backwards;
+}
+
+/* Overfilled and turned, easing back to square. The lens clips it, so the
+   1.42 start is cropped rather than spilled, and what you see is the
+   picture pushing outward as the bubble inflates under it. */
+@keyframes perk-develop {
+  0% {
+    transform: scale(1.42) rotate(-7deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* On the way out the photo keeps going while the film collapses inward,
+   so the two separate for the last few frames. That opposition is what
+   sells a rupture: something got out. */
+.perk-bubble.is-bursting img {
+  animation: perk-undevelop 0.38s cubic-bezier(0.3, 0, 0.2, 1) forwards;
+}
+
+@keyframes perk-undevelop {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.3) rotate(4deg);
+  }
+}
+
+/* Specular sweep: a hard band of light that crosses the coin once as it
+   arrives, so the surface reads as glass rather than as paper. Lives on
+   the lens (clipped to the circle) and is a separate element from the
+   __scale soap film, which is a radial highlight and does not travel.
+   Idle opacity 0 and a single composited translate. */
+.perk-bubble__lens::after {
+  content: '';
+  position: absolute;
+  top: -60%;
+  bottom: -60%;
+  left: -70%;
+  width: 45%;
+  opacity: 0;
+  pointer-events: none;
+  transform: rotate(18deg);
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.72) 46%,
+    rgba(255, 255, 255, 0.86) 54%,
+    transparent
+  );
+}
+
+.perk-bubble.is-emerging .perk-bubble__lens::after {
+  animation: perk-sweep 0.86s cubic-bezier(0.32, 0.06, 0.2, 1) 0.16s backwards;
+}
+
+@keyframes perk-sweep {
+  0% {
+    opacity: 0;
+    transform: translateX(0) rotate(18deg);
+  }
+  22% {
+    opacity: 1;
+  }
+  78% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(340%) rotate(18deg);
   }
 }
 

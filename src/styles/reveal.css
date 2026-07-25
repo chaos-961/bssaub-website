@@ -30,6 +30,63 @@
   transform: none;
 }
 
+/* ------------------------------------------------------------------
+   Word split (v0.3.8, user report that the text "is just there").
+   A masked line lifting as one block is a slide. The same line lifting
+   word by word is typesetting, and it is the single change that lands on
+   every heading on the site at once.
+
+   reveal.js rewrites the inner span into one .rv-w per word and tags the
+   MASK with .is-split. That parent tag is what hands the clipping job
+   down to the words: the outer mask has to stop hiding its overflow,
+   because on a heading that wraps to two lines its bottom edge is a whole
+   line below the words on line one and would hide nothing at all.
+
+   Falls back cleanly. No split means the rules below match nothing and
+   the block lift above is still in force, which is what reduced motion,
+   a failed script, and the no-JS path all get.
+   ------------------------------------------------------------------ */
+.rv-mask.is-split,
+.jline.is-split {
+  overflow: visible;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.rv-mask.is-split > span,
+.jline.is-split > .jline__inner {
+  transform: none;
+  transition: none;
+}
+
+/* Each word now carries its own clip, and the same descender fix the mask
+   used to carry: `overflow: hidden` on an inline-block also moves its
+   baseline to the bottom margin edge, so the padding/negative-margin pair
+   is doing double duty here, keeping the tails of g and y and keeping the
+   line box exactly one line tall. `vertical-align: bottom` is what holds
+   the words on a common baseline once that has happened. */
+.rv-w {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+
+.rv-w > span {
+  display: inline-block;
+  transform: translateY(115%);
+  transition: transform 0.95s var(--ease-out);
+  /* --i is the block's place in its section's stagger and is inherited from
+     the mask; --w is the word's place in the line. Both compose here, so a
+     late heading full of words still cascades instead of arriving at once. */
+  transition-delay: calc(var(--i, 0) * 0.09s + var(--w, 0) * 0.065s);
+}
+
+.is-in .rv-w > span {
+  transform: none;
+}
+
 /* Rise and fade, for everything that is not a heading */
 .rv-up {
   opacity: 0;
@@ -98,6 +155,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .rv-mask > span,
+  .rv-w > span,
   .rv-up {
     transform: none;
     opacity: 1;

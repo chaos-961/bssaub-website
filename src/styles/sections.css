@@ -96,11 +96,44 @@
   will-change: transform;
 }
 
+/* The headline is word split too (v0.3.8), but heroCard.js drives it on the
+   entrance timeline rather than on a scroll class, so the .rv-w defaults from
+   reveal.css have to be handed over here: no rest offset, because GSAP sets
+   the start itself, and NO TRANSITION, because a transition on a property
+   GSAP rewrites every frame is two owners on one element and reads as lag.
+   The word boxes keep their clip, which is the part the hero actually wants. */
+.hero__headline .rv-w > span {
+  transform: none;
+  transition: none;
+}
+
+/* Once the words clip themselves they also carry their own descender room, so
+   .line has to give up its copy of it or the two stack. Measured at 375px,
+   where "A campus of perks." wraps: 162.28px split against 156.28px plain,
+   and the 6px is exactly the 0.12em this pair is worth at that size. Only
+   applies when the split actually happened, so the no-JS line keeps its own. */
+.hero__headline .line.is-split {
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
 /* hero membership card (§6.3) */
 .hero-card {
   width: min(100%, 520px);
   justify-self: center;
   perspective: 1000px;
+  /* v0.3.9, user brief: the card is interactive on a phone too, so a press and
+     a sideways drag swivel it. pan-y hands vertical gestures back to the
+     browser, which is what keeps the page scrolling normally through the hero
+     while horizontal movement reaches heroCard.js as pointermove instead of
+     being eaten by a scroll and answered with pointercancel.
+     The pair is a cascade fallback, not a duplicate: `pan-y pinch-zoom` is the
+     one that ships, and a browser that does not know the pinch-zoom keyword
+     drops that whole declaration and keeps the line above rather than silently
+     taking zoom away from the visitor. */
+  touch-action: pan-y;
+  touch-action: pan-y pinch-zoom;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Departure plane (v0.3.6). Exists only so the hero exit scrub in reveal.js
@@ -131,6 +164,82 @@
   border-radius: var(--radius);
   border: 2px solid var(--ink); /* black outline (user call 2026-07-23) */
   box-shadow: 0 30px 70px -25px rgba(34, 18, 25, 0.35);
+  /* the card is press-interactive on touch since v0.3.9, so a long press has
+     to stop being the OS "save image" sheet — same treatment the perk bubbles
+     already carry for the same reason */
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+/* ------------------------------------------------------------------
+   The NAME blank, written live (v0.3.9, user brief).
+
+   INSET 2px IS THE WHOLE ALIGNMENT STORY. The <img> is border-box with a 2px
+   border, so the artwork renders into its content box: the tilt's box less 2px
+   a side. Matching that inset here lands the SVG viewport exactly on the
+   picture, and because the viewBox is the asset's own 663x473 grid, every
+   coordinate in the markup is a pixel measured off the artwork. No
+   percentages, no breakpoints, nothing to re-tune per width.
+
+   preserveAspectRatio: none, so the viewBox maps corner to corner onto that
+   box rather than letterboxing inside it. The two ratios are the same to
+   within layout rounding (clientHeight is an integer, the ratio is not), so
+   `meet` would centre the whole overlay a third of a pixel off; `none` absorbs
+   that rounding into a 0.09% stretch nobody can see, and the name stays welded
+   to the rule at every size.
+
+   translateZ lifts it a hair off the image inside .hero-card__tilt's
+   preserve-3d space, which is what stops the two coplanar layers z-fighting
+   when the card turns. 0.05px against a 950px perspective is a 1/20000 scale
+   change, i.e. nothing.
+   ------------------------------------------------------------------ */
+.hero-card__name {
+  position: absolute;
+  inset: 2px;
+  width: auto; /* both from the insets, over base.css's img/svg block rules */
+  height: auto;
+  pointer-events: none;
+  transform: translateZ(0.05px);
+}
+
+.hero-card__name-text {
+  fill: #fff; /* the card band is the deep maroon print, not a token surface */
+  font-family: var(--font-body);
+  /* 19.5 user units puts the cap height at 14.04 against the printed NAME
+     label's measured 14, so the typed name shares its baseline AND its size */
+  font-size: 19.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-anchor: middle; /* re-centres on the rule as the name grows, per brief */
+}
+
+.hero-card__name-caret {
+  fill: #fff;
+  opacity: 0;
+}
+
+/* Only ever blinks while the card is actually on screen and the tab is
+   visible: cardName.js owns both classes, and this is the § GPU floor rule
+   about infinite animations, honoured for a 1.7px rect because the rule does
+   not have a size exemption. */
+.hero-card__name.is-awake .hero-card__name-caret {
+  animation: card-caret 1.06s steps(1, end) infinite;
+}
+
+.hero-card__name.is-awake.is-typing .hero-card__name-caret {
+  animation: none; /* solid while keys land, as a real caret is */
+  opacity: 0.9;
+}
+
+@keyframes card-caret {
+  0%,
+  50% {
+    opacity: 0.9;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
 }
 
 .hero-card__glare {

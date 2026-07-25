@@ -25,6 +25,7 @@ import { initScroll } from './modules/scroll.js';
 import { initOceanMesh } from './modules/oceanMesh.js';
 import { initNav } from './modules/nav.js';
 import { initHeroCard } from './modules/heroCard.js';
+import { initCardName } from './modules/cardName.js';
 import { initSponsorModal } from './modules/sponsorModal.js';
 import { initPerkField } from './modules/perkField.js';
 import { initJourney } from './modules/journey.js';
@@ -40,6 +41,9 @@ const scroll = initScroll();
 const ocean = initOceanMesh(scroll);
 initNav(scroll);
 const heroCard = initHeroCard(scroll);
+// straight after the card it writes into, and independent of the entrance:
+// heroCard returns early under reduced motion, cardName still fills the blank
+initCardName(scroll);
 const modal = initSponsorModal(scroll);
 const perkField = initPerkField(scroll, modal);
 const journey = initJourney(scroll);

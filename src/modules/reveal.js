@@ -22,6 +22,36 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
+/* Word split (v0.3.8). Rewrites one text-only element into one .rv-w box per
+   word so a heading can lift as type instead of as a slab. Exported because
+   heroCard.js splits the hero headline too, and a second copy of this in that
+   file is a second place for the &nbsp; rule below to be got wrong.
+
+   Splitting on a plain space and nothing else is the load bearing detail: \s
+   would also match the &nbsp; in "Become a sponsor", and breaking there would
+   throw away the non-breaking the copy explicitly asked for. The separating
+   spaces go back as real text nodes, so textContent is unchanged character
+   for character and a screen reader still reads one continuous phrase.
+
+   Returns the word boxes, or null when there was nothing worth splitting, so
+   the caller can fall back to whatever it already did to the whole line. */
+export function splitWords(el) {
+  const words = el.textContent.split(' ');
+  if (words.length < 2) return null;
+  el.textContent = '';
+  return words.map((word, w) => {
+    if (w) el.append(' ');
+    const outer = document.createElement('span');
+    outer.className = 'rv-w';
+    outer.style.setProperty('--w', w);
+    const inner = document.createElement('span');
+    inner.textContent = word;
+    outer.append(inner);
+    el.append(outer);
+    return inner;
+  });
+}
+
 export function initReveal(scroll) {
   const reveals = document.querySelectorAll('[data-reveal]');
   const rules = document.querySelectorAll('[data-rule]');
@@ -35,6 +65,18 @@ export function initReveal(scroll) {
     // section's own hairline, so at rest they simply stay invisible
     return;
   }
+
+  /* 0. Word split (v0.3.8). Every masked heading on the site, including the
+        journey's own .jline titles, lifts word by word rather than as a slab.
+        reveal.css owns the whole look; this only builds the boxes, and tags
+        the MASK so it can hand its clipping job down to them: on a heading
+        that wraps to two lines the outer mask's bottom edge is a whole line
+        below the words on line one and would hide nothing at all.
+
+        A single word gains nothing from this and keeps the block lift. */
+  document.querySelectorAll('.rv-mask > span, .jline__inner').forEach((el) => {
+    if (splitWords(el)) el.parentElement.classList.add('is-split');
+  });
 
   /* 1. Masked lift + rise. Section eyebrows, titles and notes climb out from
         behind their own edge, staggered by `--i`. Once only: a heading that
@@ -96,9 +138,32 @@ export function initReveal(scroll) {
         scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', scrub: 0.5 },
       });
       if (copy) tl.to(copy, { y: -64, opacity: 0.12, ease: 'none' }, 0);
-      // the card travels further and shrinks: nearer to the eye, so it exits
-      // faster, which is the whole illusion
-      if (drift) tl.to(drift, { y: -142, scale: 0.84, rotation: -3.4, opacity: 0.16, ease: 'none' }, 0);
+      /* the card travels further and shrinks: nearer to the eye, so it exits
+         faster, which is the whole illusion.
+
+         v0.3.8 adds the 3D turn. This matters most on a phone, where it is
+         the card's only scroll motion: the pointer tilt in heroCard.js is
+         gated behind `pointer: fine` and the gyro path behind a device that
+         needs no permission prompt, so a touch visitor previously watched a
+         flat rectangle slide away. Its own transformPerspective keeps it
+         self contained rather than depending on .hero-card's perspective
+         surviving the two wrapper elements in between, which is the same
+         reason heroCard.js sets one on .hero-card__tilt. */
+      if (drift)
+        tl.to(
+          drift,
+          {
+            y: -142,
+            scale: 0.84,
+            rotation: -3.4,
+            rotationY: 15,
+            rotationX: 7,
+            transformPerspective: 1100,
+            opacity: 0.16,
+            ease: 'none',
+          },
+          0,
+        );
     }
   }
 }

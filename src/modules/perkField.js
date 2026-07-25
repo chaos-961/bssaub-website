@@ -127,9 +127,16 @@ export function initPerkField(scroll, modal) {
             .filter(Boolean)
             .join(', '),
         );
+        // __lens (v0.3.8) is a clipping circle around the photo and nothing
+        // else. It exists so the image can be animated past the coin's edge
+        // (the develop settle + the specular sweep, both in perk-field.css)
+        // without spilling, and so that clip never touches the badge, which
+        // deliberately hangs outside the circle at top left.
         el.innerHTML = `
           <span class="perk-bubble__scale">
-            <img src="${s.image}" alt="" width="320" height="320" decoding="async" data-preload />
+            <span class="perk-bubble__lens">
+              <img src="${s.image}" alt="" width="320" height="320" decoding="async" data-preload />
+            </span>
             ${s.discount ? `<span class="perk-bubble__badge" aria-hidden="true">${s.discount}</span>` : ''}
           </span>`;
         if (hasDetails) el.addEventListener('click', () => modal.open(s, el));
