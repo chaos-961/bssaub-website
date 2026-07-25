@@ -97,6 +97,25 @@ const DRIFT_SPEED = 0.13;
    after a context restore. */
 const WAKE_S = 1.6;
 
+/* Scroll surge (v0.3.6, user brief: the motion should be dynamic to scroll).
+   Scrolling speeds the swell's CLOCK. It does NOT raise the amplitude, and
+   the distinction is the whole reason this is safe to ship:
+
+     - scripts/check-swell.mjs proves no facet inverts by sweeping 240s of
+       phase at a FIXED amplitude. Running the clock faster only reaches
+       states inside that same one dimensional family, sooner — states a long
+       idle session would reach anyway, since `clock` was already unbounded.
+       The proof is untouched.
+     - Raising uAmp instead would invalidate the gate outright, because the
+       whole no-inversion result is written in mesh units against that number.
+
+   Colour drift and the ramp slide read the same clock, so the entire
+   background leans into a flick and settles when the page settles. Cost: one
+   multiply per frame. No extra draw, no extra uniform, no extra state. */
+const SURGE_MAX = 1.5; // extra multiplier ceiling, so time never exceeds 2.5x
+const SURGE_K = 0.055; // lenis velocity (px per frame) -> extra multiplier
+const SURGE_DECAY = 0.94; // per drawn frame, ~1.2s back to still
+
 const VERT = `
 /* highp, not mediump: mesh coordinates run to 1400 and mediump carries only
    ~10 bits of mantissa, which quantises positions to whole units and makes
@@ -175,7 +194,7 @@ const smoothstep = (t) => {
   return k * k * (3 - 2 * k);
 };
 
-export function initOceanMesh() {
+export function initOceanMesh(scroll) {
   const host = document.querySelector('.site-bg');
   if (!host) return null;
 
@@ -340,6 +359,16 @@ export function initOceanMesh() {
   let acc = 0;
   let clock = 0; // seconds of animation time, independent of wall clock gaps
   let wakeFrom = 0; // clock value the swell last started rising from
+  let surge = 0; // extra time multiplier from scroll, decays every frame
+
+  /* Peak hold, not accumulate. Lenis fires ~60 scroll events a second while
+     this loop draws 30 frames, so adding on every event and decaying on every
+     frame would ratchet the surge upward during a long scroll. Taking the
+     peak gives a clean attack with a bounded ceiling. */
+  scroll?.lenis?.on('scroll', ({ velocity }) => {
+    const s = Math.min(SURGE_MAX, Math.abs(velocity) * SURGE_K);
+    if (s > surge) surge = s;
+  });
 
   function draw() {
     /* No resize() here on purpose: reading the canvas box forces a layout
@@ -364,7 +393,8 @@ export function initOceanMesh() {
     if (acc < FRAME_MS - FRAME_SLACK) return;
     acc = 0;
 
-    clock += FRAME_MS / 1000;
+    clock += (FRAME_MS / 1000) * (1 + surge);
+    surge *= SURGE_DECAY;
     draw();
   }
 

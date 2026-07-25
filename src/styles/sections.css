@@ -87,6 +87,16 @@
   perspective: 1000px;
 }
 
+/* Departure plane (v0.3.6). Exists only so the hero exit scrub in reveal.js
+   has an element of its own: heroCard.js already owns .hero-card (the
+   entrance) and .hero-card__floater (the infinite idle float), and a third
+   animation landing on either would be two modules writing one transform
+   every frame. Costs one div and buys total independence. */
+.hero-card__drift {
+  position: relative;
+  will-change: transform;
+}
+
 .hero-card__floater {
   position: relative;
   will-change: transform;

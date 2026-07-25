@@ -1,0 +1,105 @@
+/* ------------------------------------------------------------------
+   Scroll motion primitives (v0.3.6). The looks live here; reveal.js only
+   flips `.is-in` or scrubs one transform. Three classes cover every one
+   shot reveal on the site, and each one staggers off a single `--i` set in
+   the markup, so adding a line to a section costs one attribute and no
+   code at all.
+
+   Transform and opacity only. Nothing here reads its backdrop and nothing
+   loops, so none of it can put the compositor to work once it has landed.
+   ------------------------------------------------------------------ */
+
+/* Masked lift: the element climbs out from behind its own bottom edge.
+   The padding/margin pair is the Fraunces descender fix from the hero
+   headline — without it `overflow: hidden` shears the tails off g and y. */
+.rv-mask {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+
+.rv-mask > span {
+  display: block;
+  transform: translateY(115%);
+  transition: transform 1s var(--ease-out);
+  transition-delay: calc(var(--i, 0) * 0.09s);
+}
+
+.is-in .rv-mask > span {
+  transform: none;
+}
+
+/* Rise and fade, for everything that is not a heading */
+.rv-up {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.85s var(--ease-out),
+    transform 0.85s var(--ease-out);
+  transition-delay: calc(var(--i, 0) * 0.09s);
+}
+
+.is-in .rv-up {
+  opacity: 1;
+  transform: none;
+}
+
+/* Divider sweep: a thread of accent light that opens along a section's top
+   hairline and dims again, leaving the plain rule. Absolutely positioned
+   over the border it decorates, so it adds no height and cannot shift
+   layout by so much as the 1px it draws. */
+.rv-rule {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  transform: scaleX(0);
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--accent-2) 22%,
+    var(--accent) 50%,
+    var(--accent-2) 78%,
+    transparent
+  );
+}
+
+/* The sweep and the perk zone rails need a positioned host. These are the
+   four section boxes that carry a top hairline; .perk-field already sets
+   this for its own clip, and repeating it here keeps the dependency
+   visible from the file that relies on it. */
+.perk-field,
+.journey,
+.sponsor-cta,
+.site-footer {
+  position: relative;
+}
+
+/* .journey is the one host with `overflow: hidden` (its path glow must never
+   widen the page), and that clips to the PADDING box — so a sweep sitting on
+   the border row at -1px would be cut away entirely there. Dropping it to the
+   first row inside the border is a 1px difference nobody can see, and it is a
+   far smaller change than relaxing that section's clip. */
+.journey > .rv-rule {
+  top: 0;
+}
+
+/* Reduced motion, and the no-JS path: everything resolves to its finished
+   state. reveal.js also adds .is-drawn to the rails, since their rest
+   transform is scaleY(0) and a rule that never runs would leave them
+   invisible rather than merely still. */
+.is-drawn {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rv-mask > span,
+  .rv-up {
+    transform: none;
+    opacity: 1;
+  }
+}

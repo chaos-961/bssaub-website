@@ -39,6 +39,10 @@ export function initJourney(scroll) {
   let nodeLens = [];
   let lastProgress = 0;
 
+  // one reused tween each, not a fresh one per scroll event
+  const orbX = marker && !scroll.reduced ? gsap.quickTo(marker, 'scaleX', { duration: 0.4, ease: 'power2.out' }) : null;
+  const orbY = marker && !scroll.reduced ? gsap.quickTo(marker, 'scaleY', { duration: 0.4, ease: 'power2.out' }) : null;
+
   function buildPath() {
     // Checkpoints (user calls 2026-07-23): always vertically centered on
     // their image — desktop beside the frame (measured px), mobile ON the
@@ -161,6 +165,7 @@ export function initJourney(scroll) {
   }
 
   function update(p) {
+    const prev = lastProgress;
     lastProgress = p;
     const off = `${totalLen * (1 - p)}`;
     litPaths.forEach((el) => {
@@ -169,7 +174,26 @@ export function initJourney(scroll) {
     const at = totalLen * p;
     if (marker) {
       const pt = drawPath.getPointAtLength(at);
-      gsap.set(marker, { x: pt.x, y: pt.y });
+      /* Orb speed stretch (v0.3.6): the faster the draw front travels, the
+         more the orb elongates ALONG the path and pinches across it, like a
+         bead of light being pulled. Direction comes from the path tangent (a
+         probe 6 units ahead), not from travel direction, so scrolling back up
+         stretches it the same way instead of flipping it end over end.
+
+         The marker is a 0x0 box, so its transform origin sits exactly on the
+         path point and scale is symmetric about it — no correction needed.
+         quickSetter-free on purpose: quickTo owns the relaxation, so when
+         scrolling stops the orb eases back to a circle instead of freezing
+         mid-stretch on whatever the last delta happened to be. */
+      const ahead = drawPath.getPointAtLength(Math.min(totalLen, at + 6));
+      const v = Math.min(1, Math.abs(p - prev) * 46);
+      gsap.set(marker, {
+        x: pt.x,
+        y: pt.y,
+        rotation: (Math.atan2(ahead.y - pt.y, ahead.x - pt.x) * 180) / Math.PI,
+      });
+      orbX?.(1 + v * 0.85);
+      orbY?.(1 - v * 0.32);
     }
     // ignition = dot burst + frame glow only; content never keys off this
     nodes.forEach((n, i) => {
@@ -217,6 +241,25 @@ export function initJourney(scroll) {
       },
     });
   });
+
+  /* Depth parallax (v0.3.6): the text column drifts against its image instead
+     of travelling with it, so a journey card resolves into two planes as it
+     crosses the screen. The image already drifts +5% down its frame (below),
+     so sending the copy the other way doubles the separation for one extra
+     transform. It lands on .journey-node__content, the container — the
+     children keep their own once-only translateX reveal, and nested
+     transforms simply compose. */
+  section.querySelectorAll('.journey-node__content').forEach((el) =>
+    gsap.fromTo(
+      el,
+      { y: 24 },
+      {
+        y: -24,
+        ease: 'none',
+        scrollTrigger: { trigger: el.closest('[data-node]'), start: 'top bottom', end: 'bottom top', scrub: true },
+      },
+    ),
+  );
 
   // slow parallax drift inside each clipped frame (the 1.12 scale is the crop margin)
   section.querySelectorAll('[data-journey-media] img').forEach((img) => {

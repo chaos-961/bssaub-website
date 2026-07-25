@@ -8,11 +8,28 @@
 // Reduced motion: physics off, same packed cluster rendered statically.
 import Matter from 'matter-js';
 import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { sponsors, categories } from '../data/sponsors.js';
 
 const { Engine, Bodies, Body, Composite, Events } = Matter;
 
 const STEP = 1000 / 60; // fixed timestep, accumulator-driven (§6.4)
+
+// Bubble lifecycle (v0.3.6, user brief: bubbles pop into existence as you
+// scroll near them, then pop like a soap bubble and vanish as you scroll on).
+// Bands are fractions of the viewport height, measured against each bubble's
+// own CENTRE. The burst band is strictly WIDER than the emerge band on both
+// sides: that gap is hysteresis, and it is the only thing stopping a bubble
+// parked exactly on a threshold from strobing in and out on scroll jitter.
+const LIFE = {
+  inTop: 0.16,     // emerge once the centre is this far below the top edge
+  inBot: 0.86,     //   ...and this far above the bottom edge
+  outTop: 0.06,    // burst once it climbs past here (still fully on screen,
+  outBot: 0.99,    //   so the pop is something you SEE, not an edge event)
+  minAliveMs: 220, // a flick that emerges and bursts inside this skips the
+                   //   droplets: 14 droplet rings in three frames is confetti,
+                   //   not a pop. The bubble still deflates.
+};
 
 // Feel knobs — tuned live with the user (exit criterion). Desktop / mobile.
 const TUNING = {
@@ -242,6 +259,8 @@ export function initPerkField(scroll, modal) {
     it.homing = null;                                   // active return glide, or null
     it.hitAt = 0;
     it.grabbed = false;
+    it.alive = true;                                    // lifecycle state (v0.3.6)
+    it.bornAt = 0;                                      // simT of its last emerge
     it.body = Bodies.circle(it.home.x, it.home.y + zone.offsetY, it.r, {
       restitution: 0.2,
       frictionAir: 0.09,
@@ -473,9 +492,120 @@ export function initPerkField(scroll, modal) {
   }
   allItems.forEach((it) =>
     it.el.addEventListener('animationend', (e) => {
-      if (e.animationName === 'perk-hit') it.el.classList.remove('is-hit');
+      const n = e.animationName;
+      if (n === 'perk-hit') it.el.classList.remove('is-hit');
+      else if (n === 'perk-burst') {
+        // the film has finished collapsing: park it dormant for real
+        it.el.classList.remove('is-bursting');
+        if (!it.alive) it.el.classList.add('is-dormant');
+      } else if (n === 'perk-emerge') it.el.classList.remove('is-emerging');
     }),
   );
+
+  /* -------- lifecycle: bubbles pop into being, and pop out (v0.3.6) --------
+     User brief: scrolling near a bubble should inflate it into existence, and
+     scrolling on should burst it like soap. Driven by each bubble's OWN centre
+     in viewport space rather than by its zone, so a tall zone materialises as a
+     wave rising from the bottom and bursts one at a time off the top. The
+     stagger is the physics layout itself, not a hand written delay list, which
+     is why it never looks mechanical and never needs retuning when a sponsor
+     is added.
+
+     PURELY VISUAL. It writes classes and nothing else — no body, no force, no
+     velocity — so the field's tuned feel (springs, clamps, drag, homing, the
+     travel ceiling) is bit for bit what it was at v0.3.5. renderItem() owns
+     .perk-bubble's transform every frame, so every lifecycle animation lives on
+     the inner .perk-bubble__scale, which JS never touches.
+
+     Position comes from the section's DOCUMENT offset minus the current scroll,
+     so the per frame path reads no layout at all. That is the ocean mesh lesson
+     applied here: a getBoundingClientRect inside a ticker that also writes
+     styles is a forced synchronous layout on every single frame. */
+  const burstPool = Array.from({ length: 5 }, () => {
+    const b = document.createElement('div');
+    b.className = 'perk-burst';
+    b.innerHTML = '<span class="perk-burst__ring"></span>' + '<i></i>'.repeat(10);
+    b.addEventListener('animationend', (e) => {
+      if (e.animationName === 'burst-hold') b.classList.remove('is-on');
+    });
+    sparkLayer.appendChild(b);
+    return b;
+  });
+
+  let sectionTop = 0; // section's top edge in DOCUMENT space
+  const measure = () => {
+    sectionTop = section.getBoundingClientRect().top + window.scrollY;
+  };
+  measure();
+  // every refresh re-measures: fonts swapping in and zone heights settling both
+  // move this section, and a stale offset would pop bubbles at the wrong line
+  ScrollTrigger.addEventListener('refresh', measure);
+
+  const scrollNow = () => scroll.lenis?.scroll ?? window.scrollY;
+
+  function droplets(it) {
+    const b = burstPool.find((el) => !el.classList.contains('is-on'));
+    if (!b) return; // five at once is already more than the eye resolves
+    b.style.setProperty('--r', `${it.r.toFixed(0)}px`);
+    b.style.left = `${(it.body.position.x + it.zone.offsetX).toFixed(1)}px`;
+    b.style.top = `${it.body.position.y.toFixed(1)}px`;
+    b.classList.add('is-on');
+  }
+
+  // instant: apply the state with no animation. Used for the very first pass
+  // and whenever the section has been away, so coming back to it never fires a
+  // wave of bursts for bubbles nobody watched leave.
+  function setAlive(it, on, instant) {
+    if (it.alive === on) return;
+    it.alive = on;
+    const el = it.el;
+    // swapping between two DIFFERENT animation names restarts cleanly on its
+    // own, so an interrupted burst needs no offsetWidth reflow hack here
+    el.classList.remove('is-emerging', 'is-bursting');
+    if (instant) {
+      el.classList.toggle('is-dormant', !on);
+      return;
+    }
+    if (on) {
+      el.classList.remove('is-dormant');
+      el.classList.add('is-emerging');
+      it.bornAt = simT;
+    } else {
+      el.classList.add('is-bursting'); // is-dormant lands on animationend
+      if (simT - it.bornAt > LIFE.minAliveMs) droplets(it);
+    }
+  }
+
+  // a bubble the keyboard is sitting on is never popped out from under it
+  let focusIt = null;
+  section.addEventListener('focusin', (e) => {
+    const el = e.target.closest('.perk-bubble');
+    focusIt = (el && byEl.get(el)) || null;
+    if (focusIt && !focusIt.alive) setAlive(focusIt, true, false);
+  });
+  section.addEventListener('focusout', (e) => {
+    if (e.target.closest('.perk-bubble')) focusIt = null;
+  });
+
+  function lifecycle(instant) {
+    const vh = window.innerHeight;
+    const top = sectionTop - scrollNow();
+    const inA = vh * LIFE.inTop;
+    const inB = vh * LIFE.inBot;
+    const outA = vh * LIFE.outTop;
+    const outB = vh * LIFE.outBot;
+    for (const it of allItems) {
+      // in hand, gliding home, or focused: leave it alone. Bursting a bubble
+      // someone is dragging would be a bug, not a flourish.
+      if (it.grabbed || it.homing || it === focusIt) continue;
+      const y = top + it.body.position.y; // body y is already section-local
+      if (it.alive) {
+        if (y < outA || y > outB) setAlive(it, false, instant);
+      } else if (y > inA && y < inB) {
+        setAlive(it, true, instant);
+      }
+    }
+  }
 
   function spark(a, b) {
     const s = sparkPool.find((el) => !el.classList.contains('is-on'));
@@ -832,9 +962,16 @@ export function initPerkField(scroll, modal) {
   const busy = () => !!grab || allItems.some((it) => it.homing);
   const running = () => (sectionNear || busy()) && !document.hidden;
 
+  // false = the next lifecycle pass applies its states with no animation. Set
+  // whenever the field has been parked or relaid out, so returning to the
+  // section never plays a burst for a bubble that left while nobody was looking.
+  let warm = false;
+  lifecycle(true); // nothing below the fold is allowed to flash in on load
+
   gsap.ticker.add((t, dt) => {
     if (!running()) {
       acc = 0;
+      warm = false;
       return;
     }
     mobile = isMobile(); // once a frame, not four times a step (v0.2.9)
@@ -852,7 +989,11 @@ export function initPerkField(scroll, modal) {
       acc -= STEP;
       stepped = true;
     }
-    if (stepped) render();
+    if (stepped) {
+      render();
+      lifecycle(!warm);
+      warm = true;
+    }
   });
 
   /* -------- activation: only near-viewport zones simulate (§6.4) -------- */
@@ -890,6 +1031,10 @@ export function initPerkField(scroll, modal) {
           it.el.style.transform = 'translate3d(0px, 0px, 0)';
         });
       });
+      // every bubble just teleported to a new seat, so the next lifecycle pass
+      // has to snap rather than animate the difference
+      measure();
+      warm = false;
       if (window.ScrollTrigger) window.ScrollTrigger.refresh();
     }, 250),
   );
@@ -926,6 +1071,13 @@ export function initPerkField(scroll, modal) {
       },
       flash,
       spark,
+      // lifecycle hooks: the pop bands are the one thing here that cannot be
+      // judged from a screenshot, so they are drivable outside the ticker
+      lifecycle,
+      setAlive,
+      get sectionTop() {
+        return sectionTop;
+      },
     },
   };
 }

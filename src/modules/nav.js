@@ -21,9 +21,24 @@ export function initNav(scroll) {
 
   const REVEAL_AT = 90; // never hide within the first stretch of the page
 
+  /* --- scroll meter (v0.3.6): the bar's bottom edge fills with page progress.
+     The scrollable height is cached and re-read only on ScrollTrigger refresh,
+     never per scroll event: reading scrollHeight forces a layout flush, and
+     doing it on every tick of a smooth scroll is exactly the kind of thing
+     that turns a 2px decoration into the most expensive line on the page. --- */
+  const meter = header.querySelector('[data-nav-meter]');
+  const setMeter = meter ? gsap.quickSetter(meter, 'scaleX') : null;
+  let maxScroll = 1;
+  const remeasure = () => {
+    maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+  };
+  remeasure();
+  ScrollTrigger.addEventListener('refresh', remeasure);
+
   /* --- scrolled state + hide-on-scroll (+ close the menu on scroll) --- */
   const onScroll = (y) => {
     const delta = y - lastY;
+    setMeter?.(Math.min(1, Math.max(0, y / maxScroll)));
     header.classList.toggle('is-scrolled', y > 80);
     // Slide the bar up when scrolling down, drop it back when scrolling up.
     // Never hide at the top or while the menu is open; a small deadzone keeps

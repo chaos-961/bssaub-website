@@ -7,6 +7,7 @@ import '@fontsource-variable/instrument-sans';
 
 import './styles/tokens.css';
 import './styles/base.css';
+import './styles/reveal.css';
 import './styles/site-bg.css';
 import './styles/nav.css';
 import './styles/sections.css';
@@ -29,11 +30,14 @@ import { initPerkField } from './modules/perkField.js';
 import { initJourney } from './modules/journey.js';
 import { initSponsorCta } from './modules/sponsorCta.js';
 import { initAgencyCredit } from './modules/agencyCredit.js';
+import { initReveal } from './modules/reveal.js';
 import { initPreloader } from './modules/preloader.js';
 import { initFooterVersion } from './modules/footerVersion.js';
 
 const scroll = initScroll();
-const ocean = initOceanMesh(); // background layer, independent of everything below it
+// the ocean takes scroll only to read its velocity (v0.3.6 surge); it still
+// runs on its own clock and owns no part of the page's scroll behaviour
+const ocean = initOceanMesh(scroll);
 initNav(scroll);
 const heroCard = initHeroCard(scroll);
 const modal = initSponsorModal(scroll);
@@ -41,6 +45,9 @@ const perkField = initPerkField(scroll, modal);
 const journey = initJourney(scroll);
 initSponsorCta(scroll);
 initAgencyCredit(scroll);
+// reveal last of the animated modules: its triggers measure elements the
+// field and the journey have already laid out
+initReveal(scroll);
 initFooterVersion();
 scroll.refresh();
 initPreloader({

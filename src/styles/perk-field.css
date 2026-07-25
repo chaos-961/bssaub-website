@@ -31,8 +31,34 @@
 }
 
 /* ---- zones ---- */
+.perk-zone {
+  position: relative;
+  padding-left: 22px; /* room for the rail, identical at every width */
+}
+
 .perk-zone + .perk-zone {
   margin-top: clamp(1.5rem, 4vw, 3rem);
+}
+
+/* Zone rail (v0.3.6): a hairline that draws downward as you scroll through
+   its zone. Replaces the mobile only edge rail that used to live on
+   .perk-field__zones::before, so desktop and phone now run the same mechanic.
+
+   The leading edge carries the accent because the gradient scales WITH the
+   stroke: origin is the top, so the drawn segment's bottom is always the draw
+   front, and putting the colour at the gradient's bottom keeps the brightest
+   ink exactly where the line is being laid down. One composited transform,
+   no JS colour maths, nothing to keep in sync. */
+.perk-zone__rail {
+  position: absolute;
+  left: 0;
+  top: 0.35rem;
+  bottom: 0.35rem;
+  width: 1px;
+  transform: scaleY(0);
+  transform-origin: top center;
+  background: linear-gradient(to bottom, var(--line) 0%, var(--line) 74%, var(--accent-2) 100%);
+  pointer-events: none;
 }
 
 .perk-zone__title {
@@ -186,6 +212,232 @@ html.is-grabbing .perk-bubble {
   }
 }
 
+/* ------------------------------------------------------------------
+   Bubble lifecycle (v0.3.6, user brief): each sponsor inflates into
+   existence as you scroll to it and bursts like soap as you scroll on.
+
+   ALL OF IT LIVES ON .perk-bubble__scale, never on .perk-bubble, because
+   perkField.js writes the outer element's transform every single frame
+   (position + jelly + breathing) and would overwrite anything set here.
+   The inner wrapper is JS free, so the two never fight.
+
+   Composited properties only: transform and opacity. No filter, no blend,
+   nothing that reads its backdrop (§ GPU floor). A dormant bubble is a
+   fully transparent layer, which the compositor skips outright.
+
+   Default state is ALIVE and unstyled, so no-JS and reduced-motion visitors
+   get the plain field with none of this attached.
+   ------------------------------------------------------------------ */
+.perk-bubble.is-dormant,
+.perk-bubble.is-bursting {
+  pointer-events: none; /* nothing half popped is clickable */
+}
+
+.perk-bubble.is-dormant .perk-bubble__scale {
+  opacity: 0;
+  transform: scale(0.05);
+  transition: none; /* dormancy is a state, not a move */
+}
+
+/* emerge: a film blows up from nothing, overshoots, and settles */
+.perk-bubble.is-emerging .perk-bubble__scale {
+  animation: perk-emerge 0.62s var(--ease-out) backwards;
+}
+
+@keyframes perk-emerge {
+  0% {
+    opacity: 0;
+    transform: scale(0.05);
+  }
+  34% {
+    opacity: 1;
+  }
+  58% {
+    transform: scale(1.14);
+  }
+  78% {
+    transform: scale(0.975);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* burst: the film stretches, ruptures, and the remnant collapses inward.
+   That order is what reads as a POP rather than a fade: the stretch sells
+   surface tension, and the collapse is what tension does when it fails. */
+.perk-bubble.is-bursting .perk-bubble__scale {
+  animation: perk-burst 0.38s cubic-bezier(0.3, 0, 0.2, 1) forwards;
+}
+
+@keyframes perk-burst {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  42% {
+    opacity: 1;
+    transform: scale(1.16);
+  }
+  56% {
+    opacity: 0.55;
+    transform: scale(1.21);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+/* the soap film itself: an off centre highlight plus a rose counter sheen,
+   flashed on at both ends of a bubble's life. Idle opacity is 0, so this
+   costs nothing for the 99% of the time it is not running. */
+.perk-bubble__scale::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.34) 26%, transparent 58%),
+    radial-gradient(circle at 72% 76%, rgba(176, 74, 103, 0.55), transparent 62%);
+}
+
+.perk-bubble.is-emerging .perk-bubble__scale::after {
+  animation: perk-film 0.68s var(--ease-out);
+}
+
+.perk-bubble.is-bursting .perk-bubble__scale::after {
+  animation: perk-film-pop 0.34s var(--ease-out);
+}
+
+@keyframes perk-film {
+  0% {
+    opacity: 0;
+  }
+  26% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes perk-film-pop {
+  0% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ---- burst debris: one shock ring plus ten droplets, pooled ----
+   Pooled five deep and parked at opacity 0, so the whole rig is 55 idle
+   elements that paint nothing. --r (the popped bubble's radius) is the only
+   value JS writes, which keeps a burst to three style writes total. */
+.perk-burst {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* holds the group alive for exactly as long as the longest child animation,
+   and is what tells JS the slot is free again */
+.perk-burst.is-on {
+  animation: burst-hold 0.6s linear;
+}
+
+@keyframes burst-hold {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.perk-burst__ring {
+  position: absolute;
+  left: calc(var(--r) * -1);
+  top: calc(var(--r) * -1);
+  width: calc(var(--r) * 2);
+  height: calc(var(--r) * 2);
+  border-radius: 50%;
+  border: 2px solid rgba(176, 74, 103, 0.75);
+  opacity: 0;
+}
+
+.perk-burst.is-on .perk-burst__ring {
+  animation: burst-ring 0.5s cubic-bezier(0.16, 0.84, 0.44, 1);
+}
+
+@keyframes burst-ring {
+  0% {
+    opacity: 0.95;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.55);
+  }
+}
+
+.perk-burst i {
+  position: absolute;
+  left: -3.5px;
+  top: -3.5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  opacity: 0;
+  background: radial-gradient(circle at 35% 32%, rgba(255, 255, 255, 0.95), var(--accent-2) 55%, var(--accent) 100%);
+}
+
+.perk-burst.is-on i {
+  animation: burst-drop 0.56s cubic-bezier(0.16, 0.84, 0.44, 1);
+}
+
+/* Angles and throw distances are spread unevenly on purpose: ten droplets on
+   an even 36 degree ring reads as a machine part, not a splash. */
+.perk-burst i:nth-of-type(1) { --a: 6deg; --f: 1.44; }
+.perk-burst i:nth-of-type(2) { --a: 47deg; --f: 1.18; }
+.perk-burst i:nth-of-type(3) { --a: 79deg; --f: 1.52; }
+.perk-burst i:nth-of-type(4) { --a: 121deg; --f: 1.26; }
+.perk-burst i:nth-of-type(5) { --a: 154deg; --f: 1.47; }
+.perk-burst i:nth-of-type(6) { --a: 191deg; --f: 1.15; }
+.perk-burst i:nth-of-type(7) { --a: 224deg; --f: 1.5; }
+.perk-burst i:nth-of-type(8) { --a: 263deg; --f: 1.3; }
+.perk-burst i:nth-of-type(9) { --a: 297deg; --f: 1.55; }
+.perk-burst i:nth-of-type(10) { --a: 335deg; --f: 1.22; }
+
+@keyframes burst-drop {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateX(calc(var(--r) * 0.62)) scale(0.45);
+  }
+  16% {
+    opacity: 1;
+    transform: rotate(var(--a)) translateX(calc(var(--r) * 0.9)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateX(calc(var(--r) * var(--f))) scale(0.2);
+  }
+}
+
 /* contact sparks — pooled, decorative */
 .perk-sparks {
   position: absolute;
@@ -220,20 +472,7 @@ html.is-grabbing .perk-bubble {
   }
 }
 
-/* ---- mobile: thin edge rail keeps the zones anchored ---- */
-@media (max-width: 47.99rem) {
-  .perk-field__zones {
-    position: relative;
-    padding-left: 14px;
-  }
-
-  .perk-field__zones::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background: var(--line);
-  }
-}
+/* The mobile only edge rail that used to live here (a static
+   .perk-field__zones::before hairline) was replaced at v0.3.6 by the
+   per zone .perk-zone__rail above, which draws on scroll and runs at
+   every width — the user's brief asked for one behaviour on both. */
