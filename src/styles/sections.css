@@ -19,6 +19,22 @@
   margin-bottom: 1.2rem;
 }
 
+/* CRN sits beside the society name (v0.3.7, user call). The separator is a
+   pseudo-element so the text node stays clean for screen readers and copy
+   paste, and the colour stays --ink-soft: this line sits on the mesh, where
+   4.76:1 is the whole contrast budget and there is nothing to spend on a
+   lighter tint. `nowrap` only on the CRN itself, so a narrow phone breaks
+   between the two parts instead of inside "CRN: 5014". */
+.hero__crn {
+  white-space: nowrap;
+}
+
+.hero__crn::before {
+  content: '·';
+  margin: 0 0.5em 0 0.15em;
+  opacity: 0.55;
+}
+
 .hero__headline {
   font-size: var(--step-5);
   font-weight: 590;
