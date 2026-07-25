@@ -136,16 +136,9 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Departure plane (v0.3.6). Exists only so the hero exit scrub in reveal.js
-   has an element of its own: heroCard.js already owns .hero-card (the
-   entrance) and .hero-card__floater (the infinite idle float), and a third
-   animation landing on either would be two modules writing one transform
-   every frame. Costs one div and buys total independence. */
-.hero-card__drift {
-  position: relative;
-  will-change: transform;
-}
-
+/* The .hero-card__drift departure plane that sat here from v0.3.6 is gone at
+   v0.4.0 with the scroll exit it existed for (user's word; see reveal.js for
+   why the fade read as the card turning to glass on a phone). */
 .hero-card__floater {
   position: relative;
   will-change: transform;

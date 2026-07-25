@@ -97,6 +97,20 @@ const DRIFT_SPEED = 0.13;
    after a context restore. */
 const WAKE_S = 1.6;
 
+/* Swell rate (v0.4.0, user: "slow down the movement of the background by
+   25%"). Applied to the time fed to the SHADER only, not to `clock` itself,
+   so the colour cycle and the ramp slide keep their own pace. That split is
+   deliberate: 96s a lap was rejected as not registering as a change at all
+   (user, v0.3.4) and 64s was chosen against it, so slowing the shared clock
+   would have quietly walked the colour back toward the thing that was already
+   turned down. "Movement" is the swell, and only the swell moves slower.
+
+   Safe by the same argument the scroll surge is safe, run the other way:
+   check-swell.mjs proves no facet inverts by sweeping 240s of phase at a
+   FIXED amplitude, so a slower clock visits states inside that same family,
+   later. Amplitude is untouched, which is what the proof is written in. */
+const SWELL_RATE = 0.75;
+
 /* Scroll surge (v0.3.6, user brief: the motion should be dynamic to scroll).
    Scrolling speeds the swell's CLOCK. It does NOT raise the amplitude, and
    the distinction is the whole reason this is safe to ship:
@@ -376,7 +390,7 @@ export function initOceanMesh(scroll) {
        most expensive thing on the page. Size is recomputed only on the
        debounced ResizeObserver. */
     setStops(cycleBase(clock / CYCLE_S));
-    gl.uniform1f(u.uTime, clock);
+    gl.uniform1f(u.uTime, clock * SWELL_RATE);
     gl.uniform1f(u.uAmp, AMP * ampScale * smoothstep((clock - wakeFrom) / WAKE_S));
     gl.uniform1f(u.uDrift, DRIFT_AMP * Math.sin(clock * DRIFT_SPEED));
     gl.drawArrays(gl.TRIANGLES, 0, n);

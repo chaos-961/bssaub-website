@@ -121,49 +121,107 @@ export function initReveal(scroll) {
     ),
   );
 
-  /* 4. Hero departure. The copy and the card leave at different rates and
-        settle at different depths, so scrolling out of the hero reads as a
-        camera pulling back rather than a page sliding up.
+  /* 4. Hero departure — THE COPY ONLY since v0.4.0.
 
-        The card writes to .hero-card__drift, a wrapper that exists purely so
-        this never shares an element with heroCard.js: that module owns the
-        entrance (on .hero-card) and the infinite idle float (on
-        .hero-card__floater), and a scrub tween landing on either would fight
-        it every frame. Three modules, three elements, one transform each. */
+        The card used to leave on this same scrub, travelling further and
+        shrinking (v0.3.6) and turning in 3D (v0.3.8), through a
+        .hero-card__drift wrapper that existed purely to keep this off the
+        elements heroCard.js owns. All of that is gone on the user's word
+        (2026-07-26: "there is a weird animation for the card, I dont want
+        that when I scroll", plus a report of transparency artifacts on a
+        phone), and the wrapper element went with it.
+
+        WHY IT LOOKED BROKEN, because this is the trap to avoid if a card
+        exit is ever wanted again: the tween faded the wrapper to opacity
+        0.16, and that wrapper is an ancestor of .hero-card__tilt, which
+        declares transform-style: preserve-3d. Opacity below 1 is a grouping
+        property, so the browser can no longer keep the 3D subtree in one
+        plane and composites the card's layers separately. On a phone the
+        result was the background mesh reading straight through the card's
+        white face and its maroon band, measured mid scroll at 0.505 and 0.558
+        — a card you can see the page through, which is not a fade, it is a
+        glass sheet. On a phone it was worse than on a desktop for a reason
+        that has nothing to do with the GPU: the hero stacks, so the card sits
+        low enough that scrolling it into view had ALREADY started fading it.
+
+        Any future exit has to fade something that is not an ancestor of the
+        preserve-3d subtree, or drop the 3D entirely. */
   if (hero) {
     const copy = hero.querySelector('.hero__copy');
-    const drift = hero.querySelector('.hero-card__drift');
-    if (copy || drift) {
-      const tl = gsap.timeline({
+    if (copy)
+      gsap.to(copy, {
+        y: -64,
+        opacity: 0.12,
+        ease: 'none',
         scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', scrub: 0.5 },
       });
-      if (copy) tl.to(copy, { y: -64, opacity: 0.12, ease: 'none' }, 0);
-      /* the card travels further and shrinks: nearer to the eye, so it exits
-         faster, which is the whole illusion.
-
-         v0.3.8 adds the 3D turn. This matters most on a phone, where it is
-         the card's only scroll motion: the pointer tilt in heroCard.js is
-         gated behind `pointer: fine` and the gyro path behind a device that
-         needs no permission prompt, so a touch visitor previously watched a
-         flat rectangle slide away. Its own transformPerspective keeps it
-         self contained rather than depending on .hero-card's perspective
-         surviving the two wrapper elements in between, which is the same
-         reason heroCard.js sets one on .hero-card__tilt. */
-      if (drift)
-        tl.to(
-          drift,
-          {
-            y: -142,
-            scale: 0.84,
-            rotation: -3.4,
-            rotationY: 15,
-            rotationX: 7,
-            transformPerspective: 1100,
-            opacity: 0.16,
-            ease: 'none',
-          },
-          0,
-        );
-    }
   }
+
+  /* 5. Picture in and out (v0.4.0, user brief: the images should animate
+        dynamically with the scroll, in AND out, plus a constant simple one,
+        all optimised).
+
+        ONE timeline per picture, scrubbed across its whole pass through the
+        viewport, two halves: it rises and resolves on the way in, then sinks
+        and softens on the way out. `ease: 'none'` on both, because the scroll
+        position IS the easing — a curve on top of a scrub only makes the
+        picture lag the finger.
+
+        WHERE IT LANDS IS THE CAREFUL PART. On the journey this drives the
+        FRAME (`.journey-node__media`), never the `<img>` inside it, because
+        journey.js already owns that image's transform for the 1.12 crop scale
+        and the ±5% parallax. Frame and picture moving at different rates is
+        the depth you actually see; two owners on one transform is the bug this
+        codebase keeps not having.
+
+        Unlike the masked headings above (once only, the v0.1.x lesson), these
+        are deliberately reversible. That lesson was about CONTENT vanishing;
+        a picture breathing as it leaves the screen takes nothing away. */
+  document.querySelectorAll('[data-img-io]').forEach((el) => {
+    /* `data-img-io="in"` arrives and then STAYS, no leaving half.
+       That is not a taste option, it is for anything the page cannot actually
+       scroll past. The out half is written against `bottom top`, i.e. the
+       picture having fully cleared the top of the screen, and the last content
+       block on the page never gets there: only the footer is below it. The
+       agency badge measured **0.849 opacity stranded at maximum scroll on a
+       phone** with the full treatment, which is a logo left permanently dimmed
+       rather than an animation. Anything added near the page end wants this. */
+    const tl = gsap
+      .timeline({
+        scrollTrigger: {
+          trigger: el,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 0.55,
+          /* The constant float is CSS, and this is what keeps it from running
+             forever off screen (§ GPU floor). Free: the trigger already
+             exists, so gating costs one class toggle instead of a second
+             IntersectionObserver per picture. */
+          onToggle: ({ isActive }) => el.classList.toggle('is-near', isActive),
+        },
+        defaults: { ease: 'none' },
+      })
+      /* Absolute positions, not a two key sequence: the gap between 0.35 and
+         0.65 is a HOLD, and it is the whole difference between a picture that
+         arrives, sits still to be looked at, and then leaves, and one that is
+         only ever fully resolved for the single instant it crosses the middle
+         of the screen. */
+      .fromTo(
+        el,
+        { y: 40, scale: 0.95, opacity: 0.55 },
+        { y: 0, scale: 1, opacity: 1, duration: 0.35 },
+        0,
+      )
+      /* Pads the timeline to a TOTAL of 1, and it is load bearing, not
+         decoration. A scrub maps the trigger's 0..1 onto the timeline's total
+         duration, so without this the "in" variant's arrival would stretch to
+         fill the entire pass and the picture would only finish arriving as it
+         left the top of the screen. Measured: the badge went from 1.0 to 0.804
+         at maximum scroll purely from dropping the leaving half. Both variants
+         run to 1, so 0.35 means the same moment in either. */
+      .to({}, { duration: 0.65 }, 0.35);
+
+    if (el.dataset.imgIo !== 'in')
+      tl.to(el, { y: -40, scale: 0.95, opacity: 0.55, duration: 0.35 }, 0.65);
+  });
 }

@@ -161,3 +161,40 @@
     opacity: 1;
   }
 }
+
+/* ------------------------------------------------------------------
+   Picture in/out + the constant float (v0.4.0, user brief).
+
+   THE CONSTANT ANIMATION USES `translate`, NOT `transform`, AND THAT IS THE
+   ENTIRE TRICK. reveal.js scrubs `transform` on this same element, and the
+   individual transform properties (`translate`, `rotate`, `scale`) are a
+   separate, independently animatable channel that the browser composes ahead
+   of `transform` (final = translate · rotate · scale · transform). So the two
+   animations share one element, both stay on the compositor, and neither can
+   overwrite the other. The alternative was a wrapper div per picture, which
+   is what this codebase used to do and is one more box to keep in sync.
+
+   Gated on `.is-near`, which the scrub's own ScrollTrigger toggles, so this
+   never loops off screen (§ GPU floor) and costs no second observer. Reduced
+   motion needs no guard here for once: that class is only ever added by a
+   ScrollTrigger, and reveal.js creates none on the reduced path.
+   ------------------------------------------------------------------ */
+[data-img-io] {
+  will-change: transform, opacity;
+}
+
+[data-img-io].is-near {
+  animation: img-float 7.5s ease-in-out infinite alternate;
+  /* staggered off `--i` so three pictures in one section breathe out of step
+     with each other instead of rising and falling as one slab */
+  animation-delay: calc(var(--i, 0) * -1.9s);
+}
+
+@keyframes img-float {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: 0 -7px;
+  }
+}

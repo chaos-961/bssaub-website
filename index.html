@@ -161,39 +161,38 @@
           </p>
         </div>
         <div class="hero-card" data-hero-card>
-          <!-- __drift is owned solely by the hero departure scrub in reveal.js.
-               heroCard.js owns .hero-card (entrance) and .hero-card__floater
-               (idle float), so no two modules ever write one transform. -->
-          <div class="hero-card__drift">
-            <div class="hero-card__floater">
-              <div class="hero-card__shadow" aria-hidden="true"></div>
-              <div class="hero-card__tilt">
-                <img
-                  src="assets/card/card-front.webp"
-                  alt="BSS membership card"
-                  width="663"
-                  height="473"
-                  fetchpriority="high"
-                  decoding="async"
-                  data-preload
-                />
-                <!-- The NAME blank, written live (v0.3.9). viewBox IS the card
-                     asset's own 663x473 pixel grid, so x/y here are the pixels
-                     measured off the artwork and the fit is exact at every
-                     width with no breakpoint. Sits under the glare on purpose,
-                     so the light washes over the name like it does the print. -->
-                <svg
-                  class="hero-card__name"
-                  viewBox="0 0 663 473"
-                  preserveAspectRatio="none"
-                  aria-hidden="true"
-                  focusable="false"
-                >
-                  <text class="hero-card__name-text" x="362" y="422.8" data-card-name></text>
-                  <rect class="hero-card__name-caret" x="361.15" y="407.4" width="1.7" height="16.2" rx="0.85" data-card-caret></rect>
-                </svg>
-                <div class="hero-card__glare" aria-hidden="true"></div>
-              </div>
+          <!-- heroCard.js owns .hero-card (entrance) and .hero-card__floater
+               (idle float), so no two modules ever write one transform. The
+               .hero-card__drift wrapper that sat between them held the scroll
+               departure scrub and went with it at v0.4.0 (see reveal.js). -->
+          <div class="hero-card__floater">
+            <div class="hero-card__shadow" aria-hidden="true"></div>
+            <div class="hero-card__tilt">
+              <img
+                src="assets/card/card-front.webp"
+                alt="BSS membership card"
+                width="663"
+                height="473"
+                fetchpriority="high"
+                decoding="async"
+                data-preload
+              />
+              <!-- The NAME blank, written live (v0.3.9). viewBox IS the card
+                   asset's own 663x473 pixel grid, so x/y here are the pixels
+                   measured off the artwork and the fit is exact at every
+                   width with no breakpoint. Sits under the glare on purpose,
+                   so the light washes over the name like it does the print. -->
+              <svg
+                class="hero-card__name"
+                viewBox="0 0 663 473"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <text class="hero-card__name-text" x="362" y="422.8" data-card-name></text>
+                <rect class="hero-card__name-caret" x="361.15" y="407.4" width="1.7" height="16.2" rx="0.85" data-card-caret></rect>
+              </svg>
+              <div class="hero-card__glare" aria-hidden="true"></div>
             </div>
           </div>
         </div>
@@ -263,7 +262,7 @@
             <li class="journey-node" data-node>
               <span class="journey-node__dot" aria-hidden="true"></span>
               <article class="journey-node__card">
-                <figure class="journey-node__media" data-journey-media>
+                <figure class="journey-node__media" data-journey-media data-img-io style="--i: 0">
                   <img
                     src="assets/journey/story.webp"
                     alt="Members of the Commerce Students' Society seated around a meeting table, archive photograph in black and white"
@@ -291,7 +290,7 @@
             <li class="journey-node" data-node>
               <span class="journey-node__dot" aria-hidden="true"></span>
               <article class="journey-node__card">
-                <figure class="journey-node__media" data-journey-media>
+                <figure class="journey-node__media" data-journey-media data-img-io style="--i: 1">
                   <img
                     src="assets/journey/mission.webp"
                     alt="BSS members in maroon vests handing a membership card to a student on campus"
@@ -319,7 +318,7 @@
             <li class="journey-node" data-node>
               <span class="journey-node__dot" aria-hidden="true"></span>
               <article class="journey-node__card">
-                <figure class="journey-node__media" data-journey-media>
+                <figure class="journey-node__media" data-journey-media data-img-io style="--i: 2">
                   <img
                     src="assets/journey/vision.webp"
                     alt="BSS members at the Suliman S. Olayan School of Business celebrating 125 years of business education"
@@ -400,7 +399,7 @@
             rel="noopener"
             aria-label="Nerve Media, opens nervemedia.agency"
           >
-            <span class="agency-credit__badge">
+            <span class="agency-credit__badge" data-img-io="in">
               <img src="assets/brand/nerve-media.webp" alt="" width="96" height="96" loading="lazy" decoding="async" />
             </span>
             <span class="agency-credit__text">
@@ -479,7 +478,7 @@
       <div class="site-footer__bottom">
         <div class="site-footer__bottom-inner">
           <p>© Business Student Society, AUB · CRN: 5014</p>
-          <span class="version-badge" data-version-badge>v0.3.9</span>
+          <span class="version-badge" data-version-badge>v0.4.0</span>
         </div>
       </div>
     </footer>
