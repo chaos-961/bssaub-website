@@ -1,0 +1,209 @@
+/* Agency credit — "Brought to you by Nerve Media" promoted from the footer
+   bottom bar to its own section between Partners and the footer
+   (user call 2026-07-23). Reworked into a crafted signature lockup on the
+   user's word (2026-07-24): logo chip + Fraunces wordmark + factual
+   nervemedia.agency link cue with an animated arrow, a soft maroon
+   spotlight behind it, and a sheen sweep on hover. The "team behind this
+   site" note was removed in the same pass. account.html keeps the small
+   footer credit. */
+.agency-credit {
+  border-top: 1px solid var(--line);
+  padding-block: clamp(4rem, 9vw, 7rem);
+}
+
+.agency-credit__inner {
+  position: relative;
+  isolation: isolate;
+  max-width: min(var(--container), 640px);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: clamp(1.6rem, 4vw, 2.2rem);
+}
+
+/* soft maroon spotlight cradling the lockup; fades in with the reveal */
+.agency-credit__inner::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  left: 50%;
+  top: 58%;
+  width: min(560px, 96%);
+  height: 240px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    58% 58% at 50% 50%,
+    color-mix(in srgb, var(--accent) 18%, transparent),
+    transparent 72%
+  );
+  filter: blur(34px);
+  opacity: 0;
+  transition: opacity 1.1s var(--ease-out);
+  pointer-events: none;
+}
+
+.agency-credit.is-in .agency-credit__inner::before {
+  opacity: 0.7;
+}
+
+/* same one-shot stagger as the sponsor CTA; scroll.reduced adds .is-in
+   immediately, so nothing is ever stuck hidden */
+.agency-credit__inner > * {
+  position: relative;
+  z-index: 1;
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
+}
+
+.agency-credit.is-in .agency-credit__inner > * {
+  opacity: 1;
+  transform: none;
+}
+
+.agency-credit.is-in .agency-credit__inner > :nth-child(2) {
+  transition-delay: 0.1s;
+}
+
+/* eyebrow flanked by hairlines that ignite toward the text */
+.agency-credit__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.7rem, 2.5vw, 1.1rem);
+  margin: 0;
+}
+
+.agency-credit__eyebrow::before,
+.agency-credit__eyebrow::after {
+  content: '';
+  height: 1px;
+  width: clamp(26px, 7vw, 52px);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 55%, var(--line)));
+}
+
+.agency-credit__eyebrow::after {
+  transform: scaleX(-1);
+}
+
+.agency-credit__lockup {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(1rem, 3vw, 1.5rem);
+  padding: clamp(1.05rem, 3vw, 1.45rem) clamp(1.5rem, 4.5vw, 2.4rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface) 62%, var(--bg)),
+    var(--bg)
+  );
+  box-shadow: 0 12px 30px rgba(34, 18, 25, 0.07);
+  transition: transform var(--dur-quick) var(--ease-out), border-color var(--dur-quick),
+    box-shadow var(--dur-quick);
+}
+
+/* diagonal sheen clipped to the card, sweeps across on hover */
+.agency-credit__lockup::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 34%,
+    color-mix(in srgb, var(--accent-2) 24%, transparent) 50%,
+    transparent 66%
+  );
+  transform: translateX(-130%);
+  transition: transform 0.9s var(--ease-out);
+  pointer-events: none;
+}
+
+.agency-credit__lockup:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--accent-2) 55%, var(--line));
+  box-shadow: 0 24px 48px rgba(136, 21, 50, 0.16);
+}
+
+.agency-credit__lockup:hover::after {
+  transform: translateX(130%);
+}
+
+.agency-credit__badge {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+
+.agency-credit__badge img {
+  display: block;
+  width: clamp(58px, 12vw, 74px);
+  height: clamp(58px, 12vw, 74px);
+  border-radius: 16px;
+  box-shadow: 0 8px 18px rgba(34, 18, 25, 0.16), 0 0 0 1px rgba(34, 18, 25, 0.05);
+}
+
+.agency-credit__text {
+  display: grid;
+  gap: 0.4rem;
+  text-align: left;
+}
+
+.agency-credit__name {
+  font-family: var(--font-display);
+  font-variation-settings: 'opsz' 144;
+  font-size: var(--step-2);
+  font-weight: 590;
+  color: var(--ink);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+
+.agency-credit__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--accent);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.005em;
+}
+
+.agency-credit__arrow {
+  flex-shrink: 0;
+  transition: transform var(--dur-quick) var(--ease-out);
+}
+
+.agency-credit__lockup:hover .agency-credit__arrow {
+  transform: translate(2px, -2px);
+}
+
+@media (max-width: 26rem) {
+  .agency-credit__name {
+    font-size: var(--step-1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agency-credit__lockup,
+  .agency-credit__lockup::after,
+  .agency-credit__arrow {
+    transition: none;
+  }
+
+  .agency-credit__lockup:hover {
+    transform: none;
+  }
+
+  .agency-credit__lockup:hover::after {
+    transform: translateX(-130%);
+  }
+
+  .agency-credit__lockup:hover .agency-credit__arrow {
+    transform: none;
+  }
+}

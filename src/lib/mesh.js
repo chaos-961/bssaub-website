@@ -24,16 +24,25 @@ export const DEFAULT_BASE = [235, 206, 217]; // #ebced9
 /* The near white the ramp starts from (top left of the mesh). */
 export const TOP = [254, 252, 253];
 
-/* The slow colour drift (v0.3.2). Three deep stops in the same rose family,
-   held at near equal luminance so the page breathes hue rather than
-   brightness — a background that visibly lightens and darkens reads as a
-   fault, and it would also swing the text contrast. The cycle is ~96s, far
-   below the threshold where motion draws the eye.
-   All three are contrast checked; see readability() and the build gate. */
+/* The colour drift (v0.3.2, widened at v0.3.4 on the user's word: the change
+   was too quiet to notice).
+
+   THE ONE CONSTRAINT: equal luminance. Body copy sits on this, so the deep
+   stop's brightness IS the contrast budget and it cannot move. Every stop
+   here is within ~0.01 relative luminance of the others (rose 0.675, lavender
+   0.675, apricot 0.685, mauve 0.684), which is why the walk can be this wide
+   in HUE and still never darken the page past AA.
+
+   Four stops now, not three, and spread across the wheel rather than nudged:
+   rose to a cool lavender to a warm apricot to a soft mauve. That ordering is
+   deliberate. Every crossfade MIDPOINT lands back in the rose family
+   (lavender+apricot mixes to ~[232,209,218], which is rose), so the extremes
+   read as the page leaning warm or cool and the crossings read as home. */
 export const PALETTE_CYCLE = [
   [235, 206, 217], // rose (the shipped still, and DEFAULT_BASE)
-  [228, 208, 220], // cooler mauve
-  [237, 206, 207], // warmer blush
+  [216, 211, 240], // cool lavender
+  [248, 207, 196], // warm apricot
+  [229, 210, 228], // soft mauve
 ];
 
 export const MESH = {
@@ -226,6 +235,87 @@ export function buildGeometry() {
 
 /** Diagonal ramp position for a point: light top left, deepest bottom right. */
 export const gradientT = (x, y) => (x / MESH.W + y / MESH.H) / 2;
+
+/* ---- the swell (v0.3.4) -------------------------------------------
+   Defined ONCE, as data, because two things have to agree about it: the
+   vertex shader that runs it, and scripts/check-swell.mjs which proves it
+   never inverts a facet. The GLSL is generated from this table rather than
+   hand written beside it, so "the shader drifted from the thing we
+   verified" cannot happen.
+
+   Each term is [gain, kx, ky, speed, phase] and evaluates to
+     gain * sin(kx*x + ky*y + speed*t + phase)
+
+   WHY THESE WAVELENGTHS. Every k here puts one wave across roughly one to
+   three mesh widths (k = 2*pi/lambda; 0.0052 is a 1208 unit wave on a 1400
+   unit mesh). That is what lets the amplitude be large: neighbouring
+   vertices see almost the same phase, so they travel TOGETHER and the
+   surface heaves as one body. Facets tangle on the local shear (the
+   gradient of this field), not on how far it moves, and the gradient here
+   peaks around 0.13 at AMP, i.e. a facet's shape changes by ~13% while it
+   slides most of a cell. Shorten the wavelengths and that trade collapses:
+   the same displacement then reads as per triangle noise. */
+export const SWELL = {
+  X: [
+    [1.0, 0.0, 0.0036, 0.8, 0.0],
+    [0.62, 0.0026, 0.0, -0.6, 0.0],
+    [0.34, 0.0015, 0.0018, 0.44, 1.9],
+  ],
+  Y: [
+    [1.0, 0.0032, 0.0, 0.68, 1.5707963],
+    [0.62, 0.002, 0.002, 0.48, 1.5707963],
+    [0.34, 0.0017, -0.0013, -0.4, 0.6],
+  ],
+};
+
+/* Swell amplitude in mesh units (a cell is 70). Gains sum to 1.96 per axis,
+   so worst case per axis travel is ~35 units and measured peak displacement
+   is 49, about 70% of a cell: a facet slides most of its own width.
+   Raised from 7.0 at v0.3.4 (user: make the movement more powerful), which
+   is 3.1x the v0.3.2 motion. The ceiling is not this number on its own, it
+   is this number against the wavelengths above; scripts/check-swell.mjs is
+   the arbiter and it FAILED the first attempt at this amplitude on short
+   waves. Re-run it after touching either. */
+export const AMP = 18.0;
+
+/* Small viewports render the same mesh at a smaller scale, so the identical
+   motion lands in roughly half the pixels: `cover` on a 375px phone is scale
+   ~0.58 against ~1.03 on a 1440px desktop. This is the ceiling on the
+   compensation that buys the phone its motion back in PIXELS. Capped rather
+   than exact because the mesh unit amplitude is what the inversion budget is
+   written against. */
+export const AMP_SCALE_MAX = 1.15;
+
+/* The mesh is drawn larger than `cover` needs so displaced vertices on the
+   outer ring can never pull a gap in at the screen edge. The margin is
+   MESH.W * (OVERSCAN - 1) / 2 mesh units a side: 1.08 gives 56 units against
+   a worst case per axis displacement of AMP * 1.96 * AMP_SCALE_MAX = 41. */
+export const OVERSCAN = 1.08;
+
+/** The displacement field, unscaled by AMP. Mirrors the generated GLSL exactly. */
+export function swellAt(x, y, t) {
+  const sum = (terms) => {
+    let v = 0;
+    for (const [g, kx, ky, sp, ph] of terms) v += g * Math.sin(kx * x + ky * y + sp * t + ph);
+    return v;
+  };
+  return [sum(SWELL.X), sum(SWELL.Y)];
+}
+
+/** GLSL source for the same field, emitted from the table above. */
+export function swellGlsl() {
+  const f = (n) => (Number.isInteger(n) ? n.toFixed(1) : String(n));
+  const sum = (terms) =>
+    terms
+      .map(([g, kx, ky, sp, ph]) => `${f(g)}*sin(p.x*${f(kx)} + p.y*${f(ky)} + t*${f(sp)} + ${f(ph)})`)
+      .join('\n    + ');
+  return `vec2 swell(vec2 p, float t) {
+  return vec2(
+    ${sum(SWELL.X)},
+    ${sum(SWELL.Y)}
+  );
+}`;
+}
 
 /** The static SVG: a base colour in, the mesh markup out. */
 export function buildMeshSvg(base = DEFAULT_BASE) {

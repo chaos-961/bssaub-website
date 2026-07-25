@@ -1,6 +1,8 @@
 /* ------------------------------------------------------------------
    Ocean mesh (v0.3.2, user brief): the low poly background swells like a
    slow sea and its colour drifts through the rose family.
+   v0.3.4 (user brief): make the swell and the colour drift MORE POWERFUL,
+   and make both actually happen on a phone.
 
    WHY WEBGL, given this repo's history of ripping WebGL backgrounds out.
    The brief asks for ~2400 moving vertices and a per facet colour that
@@ -14,6 +16,8 @@
        shader. The GPU does what it is built for and the main thread does
        essentially nothing.
    So WebGL is chosen here BECAUSE of the perf constraint, not despite it.
+   Note that the v0.3.4 amplitude and palette changes cost exactly nothing:
+   they are different numbers in the same uniforms, not more work per frame.
 
    WHAT KEEPS IT CHEAP (all of this is load bearing):
      - One draw call per frame. No per frame allocation, no buffer re-upload:
@@ -26,41 +30,72 @@
        fragments for no perceptible loss.
      - The fragment shader is a varying plus one hash. Effectively a screen
        fill.
-     - Fully parked when the tab is hidden, and torn down on context loss.
+     - Fully parked when the tab is hidden.
      - prefers-reduced-motion never creates it at all.
+
+   MOBILE (v0.3.4). Three things were between a phone and this animation, and
+   only the first was ever a hard stop:
+     1. CONTEXT LOSS WAS TERMINAL. Mobile GPUs drop WebGL contexts routinely
+        when you leave the tab or the app; iOS is especially quick about it.
+        The old handler stopped the loop and revealed the static mesh, and
+        nothing ever brought it back, so a phone typically animated once and
+        then looked permanently still. The context is now rebuilt on
+        `webglcontextrestored`.
+     2. A 30Hz DEVICE FELL TO 15Hz. Low Power Mode and battery savers cap rAF
+        at 30fps, which lands a hair under this module's own 30fps gate once
+        timer coarsening is applied, so every second frame was rejected. See
+        FRAME_SLACK.
+     3. THE MOTION WAS HALF SIZE IN PIXELS. `cover` renders the mesh at scale
+        ~0.58 on a 375px viewport against ~1.03 on a desktop, so identical
+        mesh unit motion arrived in barely half the pixels. Amplitude now
+        compensates for the fit scale, capped (see AMP_SCALE_MAX).
 
    FALLBACK. The static mesh.svg stays as the CSS background underneath and
    is what paints before the bundle arrives, when JS is off, when motion is
-   reduced, and when WebGL is unavailable. The canvas is built from the SAME
-   lattice (src/lib/mesh.js), so its rest state is the same mesh and the
-   fade in is seamless rather than a jump.
+   reduced, and when WebGL is unavailable or its context is gone. The canvas
+   is built from the SAME lattice (src/lib/mesh.js), and the swell now eases
+   up from zero, so the first painted frame is the static mesh exactly and
+   the reveal is a true crossfade rather than a nudge.
    ------------------------------------------------------------------ */
 import {
   MESH,
+  AMP,
+  AMP_SCALE_MAX,
+  OVERSCAN,
   buildGeometry,
   gradientT,
   rampStops,
   cycleBase,
+  swellGlsl,
 } from '../lib/mesh.js';
 
 const FPS = 30;
 const FRAME_MS = 1000 / FPS;
 
-/* Swell amplitude in mesh units. A cell is 70, so peak displacement of
-   ~11 units is about 16% of a cell: the surface breathes, facets never
-   tangle or invert. Past roughly 25% the triangles start crossing each
-   other and it reads as static noise rather than water. */
-const AMP = 7.0;
+/* Slack on the frame gate. A device whose own refresh is capped at 30Hz
+   delivers frames a whisker under FRAME_MS apart once the browser's timer
+   coarsening is applied; without this the gate rejects every one of them and
+   the ocean runs at 15fps on exactly the hardware with the least to spare. */
+const FRAME_SLACK = 2;
 
-/* The mesh is drawn slightly larger than `cover` requires so that vertices
-   on the outer ring can move without ever pulling a gap in at the screen
-   edge. Must exceed peak displacement: 4% of 1400 is 28 units a side
-   against a peak of ~11. */
-const OVERSCAN = 1.04;
+/* Seconds for one full trip around PALETTE_CYCLE. 96s over three stops was
+   too slow to register as a change at all (user, v0.3.4); 64s over four
+   stops is 16s a stop, still far below the rate at which motion pulls the
+   eye, but now something you can actually notice happening. */
+const CYCLE_S = 64;
 
-/* Seconds for one full trip around PALETTE_CYCLE. Long enough that the
-   colour change is felt rather than watched. */
-const CYCLE_S = 96;
+/* The ramp itself slides across the page so the light appears to travel over
+   the surface rather than the facets merely wobbling in place. Bounded: the
+   ramp clamps at both ends, so sliding it can never push a facet past the
+   deep stop the contrast gate is written against. */
+const DRIFT_AMP = 0.15;
+const DRIFT_SPEED = 0.13;
+
+/* Seconds for the swell to rise from flat to full. At clock 0 displacement is
+   zero, which makes frame zero pixel identical to the static mesh underneath,
+   so the 0.7s opacity crossfade has nothing to reveal but colour. Also re-run
+   after a context restore. */
+const WAKE_S = 1.6;
 
 const VERT = `
 /* highp, not mediump: mesh coordinates run to 1400 and mediump carries only
@@ -80,14 +115,12 @@ uniform vec3 uS0, uS1, uS2, uS3;
 
 varying vec3 vCol;
 
-/* Two crossed swells per axis at different frequencies and speeds. Phase
-   comes from the vertex's own position, so neighbours move together and the
-   whole thing reads as one surface instead of per triangle jitter. */
-vec2 swell(vec2 p, float t) {
-  float a = sin(p.y * 0.0052 + t * 0.55) + 0.6 * sin(p.x * 0.0037 - t * 0.41);
-  float b = cos(p.x * 0.0045 + t * 0.47) + 0.6 * cos((p.x + p.y) * 0.0029 + t * 0.33);
-  return vec2(a, b);
-}
+/* GENERATED from SWELL in src/lib/mesh.js — do not hand edit this function
+   here. It is emitted from the same table that scripts/check-swell.mjs runs
+   the inversion proof against, so the thing that ships and the thing that was
+   verified cannot drift apart. Phase comes from the vertex's own position, so
+   neighbours move together and it reads as one surface. */
+${swellGlsl()}
 
 vec3 ramp(float t) {
   t = clamp(t, 0.0, 1.0);
@@ -137,6 +170,11 @@ function compile(gl, type, src) {
   return sh;
 }
 
+const smoothstep = (t) => {
+  const k = Math.min(1, Math.max(0, t));
+  return k * k * (3 - 2 * k);
+};
+
 export function initOceanMesh() {
   const host = document.querySelector('.site-bg');
   if (!host) return null;
@@ -166,24 +204,10 @@ export function initOceanMesh() {
   }
   if (!gl) return null; // static mesh.svg stays, which is a complete background
 
-  let program;
-  try {
-    program = gl.createProgram();
-    gl.attachShader(program, compile(gl, gl.VERTEX_SHADER, VERT));
-    gl.attachShader(program, compile(gl, gl.FRAGMENT_SHADER, FRAG));
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      throw new Error('link: ' + gl.getProgramInfoLog(program));
-    }
-  } catch (err) {
-    if (import.meta.env.DEV) console.warn('[oceanMesh]', err);
-    return null;
-  }
-
-  host.appendChild(canvas);
-  gl.useProgram(program);
-
-  /* ---- buffers, uploaded once and never touched again ---- */
+  /* ---- CPU side vertex data, built once and kept ----
+     Held outside the GPU state on purpose: a context restore has to re-upload
+     these, and regenerating them there would mean rebuilding the whole
+     lattice on a phone that is already busy coming back to life. */
   const { triangles } = buildGeometry();
   const n = triangles.length * 3;
   const pos = new Float32Array(n * 2);
@@ -204,29 +228,57 @@ export function initOceanMesh() {
     }
   }
 
-  const mkBuf = (data, size, name) => {
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
-    const loc = gl.getAttribLocation(program, name);
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
-    return buf;
-  };
-  mkBuf(pos, 2, 'aPos');
-  mkBuf(ramp, 1, 'aRamp');
-  mkBuf(sca, 1, 'aScatter');
+  /* ---- GPU state. Everything here dies with the context and is rebuilt by
+     buildGpu(), which is why it is one function and not inline setup. ---- */
+  let program = null;
+  let u = null;
+  let ready = false;
 
-  const u = {};
-  for (const name of ['uA', 'uB', 'uTime', 'uAmp', 'uDrift', 'uS0', 'uS1', 'uS2', 'uS3']) {
-    u[name] = gl.getUniformLocation(program, name);
+  function buildGpu() {
+    try {
+      program = gl.createProgram();
+      gl.attachShader(program, compile(gl, gl.VERTEX_SHADER, VERT));
+      gl.attachShader(program, compile(gl, gl.FRAGMENT_SHADER, FRAG));
+      gl.linkProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        throw new Error('link: ' + gl.getProgramInfoLog(program));
+      }
+    } catch (err) {
+      if (import.meta.env.DEV) console.warn('[oceanMesh]', err);
+      program = null;
+      return false;
+    }
+
+    gl.useProgram(program);
+
+    // buffers, uploaded once per context and never touched again
+    const mkBuf = (data, size, name) => {
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+      const loc = gl.getAttribLocation(program, name);
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
+    };
+    mkBuf(pos, 2, 'aPos');
+    mkBuf(ramp, 1, 'aRamp');
+    mkBuf(sca, 1, 'aScatter');
+
+    u = {};
+    for (const name of ['uA', 'uB', 'uTime', 'uAmp', 'uDrift', 'uS0', 'uS1', 'uS2', 'uS3']) {
+      u[name] = gl.getUniformLocation(program, name);
+    }
+    ready = true;
+    return true;
   }
-  gl.uniform1f(u.uAmp, AMP);
 
   /* ---- viewport fit: `cover` plus overscan, mesh space to clip space ---- */
   let w = 0;
   let h = 0;
+  let ampScale = 1;
+
   function resize() {
+    if (!ready) return;
     const dpr = 1; // see the header: extra resolution buys nothing here
     /* Measure the CANVAS's own rendered box, not the host's clientWidth. The
        host is `position: fixed; inset: 0`, whose clientWidth can come back
@@ -243,7 +295,16 @@ export function initOceanMesh() {
     canvas.height = h;
     gl.viewport(0, 0, w, h);
 
-    const scale = Math.max(w / MESH.W, h / MESH.H) * OVERSCAN;
+    /* `fit` is the plain cover scale, before overscan: mesh units to CSS
+       pixels. A phone sits near 0.58 and a desktop near 1.03, which is the
+       whole reason the same swell used to feel like half the movement on a
+       phone. Amplitude buys that back, but only up to AMP_SCALE_MAX, because
+       the no-inversion proof is written in MESH units and this is the number
+       that inflates them. */
+    const fit = Math.max(w / MESH.W, h / MESH.H);
+    ampScale = Math.min(AMP_SCALE_MAX, Math.max(1, 1 / fit));
+
+    const scale = fit * OVERSCAN;
     const ox = (w - MESH.W * scale) / 2;
     const oy = (h - MESH.H * scale) / 2;
     // clip = pos * uA + uB, with y flipped
@@ -263,12 +324,34 @@ export function initOceanMesh() {
     }
   }
 
+  /* The canvas must be in the DOM before resize() runs: getBoundingClientRect
+     on a detached element is all zeros, which would silently drop us onto the
+     host.clientWidth fallback the comment above warns about. */
+  host.appendChild(canvas);
+  if (!buildGpu()) {
+    canvas.remove(); // static mesh.svg stays, which is a complete background
+    return null;
+  }
+
   /* ---- the loop ---- */
   let raf = 0;
   let running = false;
   let last = 0;
   let acc = 0;
   let clock = 0; // seconds of animation time, independent of wall clock gaps
+  let wakeFrom = 0; // clock value the swell last started rising from
+
+  function draw() {
+    /* No resize() here on purpose: reading the canvas box forces a layout
+       flush, and doing that every frame would make a static background the
+       most expensive thing on the page. Size is recomputed only on the
+       debounced ResizeObserver. */
+    setStops(cycleBase(clock / CYCLE_S));
+    gl.uniform1f(u.uTime, clock);
+    gl.uniform1f(u.uAmp, AMP * ampScale * smoothstep((clock - wakeFrom) / WAKE_S));
+    gl.uniform1f(u.uDrift, DRIFT_AMP * Math.sin(clock * DRIFT_SPEED));
+    gl.drawArrays(gl.TRIANGLES, 0, n);
+  }
 
   function frame(now) {
     if (!running) return;
@@ -278,28 +361,15 @@ export function initOceanMesh() {
     last = now;
     // a backgrounded or stalled tab must not fast forward the ocean on return
     acc += Math.min(dt, 250);
-    if (acc < FRAME_MS) return;
-    acc %= FRAME_MS;
+    if (acc < FRAME_MS - FRAME_SLACK) return;
+    acc = 0;
 
     clock += FRAME_MS / 1000;
-
-    /* No resize() here on purpose: reading host.clientWidth forces a layout
-       flush, and doing that every frame would make a static background the
-       most expensive thing on the page. Size is recomputed only on the
-       debounced resize event. */
-    setStops(cycleBase(clock / CYCLE_S));
-    gl.uniform1f(u.uTime, clock);
-    /* The ramp itself slides slowly across the page, so the light seems to
-       move over the surface rather than the facets merely wobbling in place.
-       Bounded to ±0.06: the deep end still clamps to the same stop, so this
-       cannot darken the page past the contrast budget. */
-    gl.uniform1f(u.uDrift, 0.06 * Math.sin(clock * 0.08));
-
-    gl.drawArrays(gl.TRIANGLES, 0, n);
+    draw();
   }
 
   function start() {
-    if (running) return;
+    if (running || !ready) return;
     running = true;
     last = 0;
     acc = 0;
@@ -335,18 +405,33 @@ export function initOceanMesh() {
     window.addEventListener('resize', onResize, { passive: true });
   }
 
+  /* Context loss is ROUTINE on mobile, not an error path: leave the tab, take
+     a call, let the GPU reclaim memory, and it goes. preventDefault is what
+     makes the browser promise a `webglcontextrestored` afterwards. Until then
+     the static mesh is showing and is a complete background. */
   const onLost = (e) => {
     e.preventDefault();
     stop();
+    ready = false;
+    program = null;
     canvas.classList.remove('is-live'); // reveal the static mesh again
   };
+  const onRestored = () => {
+    if (!buildGpu()) return; // static mesh keeps the page; nothing is broken
+    w = 0;
+    h = 0;
+    resize();
+    // ease the swell up from flat again so the crossfade back has no jump
+    wakeFrom = clock;
+    draw();
+    canvas.classList.add('is-live');
+    if (!document.hidden) start();
+  };
   canvas.addEventListener('webglcontextlost', onLost);
+  canvas.addEventListener('webglcontextrestored', onRestored);
 
   resize();
-  setStops(cycleBase(0));
-  gl.uniform1f(u.uTime, 0);
-  gl.uniform1f(u.uDrift, 0);
-  gl.drawArrays(gl.TRIANGLES, 0, n); // paint frame zero before revealing
+  draw(); // clock is 0, so this frame IS the static mesh: paint before revealing
   canvas.classList.add('is-live');
   if (!document.hidden) start();
 
@@ -365,6 +450,7 @@ export function initOceanMesh() {
       if (ro) ro.disconnect();
       else window.removeEventListener('resize', onResize);
       canvas.removeEventListener('webglcontextlost', onLost);
+      canvas.removeEventListener('webglcontextrestored', onRestored);
       canvas.remove();
     },
   };
