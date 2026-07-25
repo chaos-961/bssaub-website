@@ -269,14 +269,15 @@ export const SWELL = {
 };
 
 /* Swell amplitude in mesh units (a cell is 70). Gains sum to 1.96 per axis,
-   so worst case per axis travel is ~35 units and measured peak displacement
-   is 49, about 70% of a cell: a facet slides most of its own width.
-   Raised from 7.0 at v0.3.4 (user: make the movement more powerful), which
-   is 3.1x the v0.3.2 motion. The ceiling is not this number on its own, it
-   is this number against the wavelengths above; scripts/check-swell.mjs is
-   the arbiter and it FAILED the first attempt at this amplitude on short
-   waves. Re-run it after touching either. */
-export const AMP = 18.0;
+   so worst case per axis travel is ~26 units and measured peak displacement
+   is 37, about 53% of a cell: a facet slides half its own width.
+   Raised 7.0 → 18.0 at v0.3.4 (user: make the movement more powerful), then
+   trimmed 25% to 13.5 at v0.3.5 (user call, it was slightly too much) — still
+   2.3x the v0.3.2 motion. The ceiling is not this number on its own, it is
+   this number against the wavelengths above; scripts/check-swell.mjs is the
+   arbiter and it FAILED the first v0.3.4 attempt at 18 on short waves. Re-run
+   it after touching either. */
+export const AMP = 13.5;
 
 /* Small viewports render the same mesh at a smaller scale, so the identical
    motion lands in roughly half the pixels: `cover` on a 375px phone is scale
@@ -289,7 +290,7 @@ export const AMP_SCALE_MAX = 1.15;
 /* The mesh is drawn larger than `cover` needs so displaced vertices on the
    outer ring can never pull a gap in at the screen edge. The margin is
    MESH.W * (OVERSCAN - 1) / 2 mesh units a side: 1.08 gives 56 units against
-   a worst case per axis displacement of AMP * 1.96 * AMP_SCALE_MAX = 41. */
+   a worst case per axis displacement of AMP * 1.96 * AMP_SCALE_MAX = 30. */
 export const OVERSCAN = 1.08;
 
 /** The displacement field, unscaled by AMP. Mirrors the generated GLSL exactly. */

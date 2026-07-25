@@ -301,15 +301,23 @@ export function initPerkField(scroll, modal) {
   function setTarget(e) {
     const r = section.getBoundingClientRect();
     const it = grab.it;
-    const w = it.zone.canvas.clientWidth;
     // pointer → body frame (X is canvas-local, Y is section-local), then CLAMP
-    // to the canvas box horizontally and the section box vertically. A dragged
-    // bubble can no longer be flung off-screen or pushed past the page edge
-    // into a sideways scrollbar; wherever the finger goes it stays somewhere it
-    // can glide home from. 2026-07-24 user report: drag + scroll sent bubbles
-    // far away, they glitched and locked, and opened a horizontal scrollbar.
+    // to the SECTION box on both axes. A dragged bubble can no longer be flung
+    // off-screen or pushed past the page edge into a sideways scrollbar;
+    // wherever the finger goes it stays somewhere it can glide home from.
+    // 2026-07-24 user report: drag + scroll sent bubbles far away, they
+    // glitched and locked, and opened a horizontal scrollbar.
+    // 2026-07-25 (user: let me drag further to the side, screen edge is the
+    // max): X was clamped to the ZONE CANVAS, which is the max-width container
+    // minus its gutter, so on a wide screen the bubble stopped well short of
+    // the glass. It now clamps to the full-bleed section, i.e. the viewport,
+    // which is the furthest it can go without a horizontal scrollbar. Nothing
+    // else needed changing: the canvas does not clip (only .perk-field does,
+    // at exactly this box, via overflow-x: clip) and the grabbed body skips
+    // the spring, the travel ceiling and the speed cap while it is held.
+    const cx = gsap.utils.clamp(r.left + it.r, Math.max(r.right - it.r, r.left + it.r), e.clientX);
     grab.target = {
-      x: gsap.utils.clamp(it.r, Math.max(w - it.r, it.r), e.clientX - r.left - it.zone.offsetX),
+      x: cx - r.left - it.zone.offsetX,
       y: gsap.utils.clamp(it.r, Math.max(r.height - it.r, it.r), e.clientY - r.top),
     };
   }
