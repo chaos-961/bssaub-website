@@ -117,7 +117,9 @@ export function initNav(scroll) {
   menu.querySelectorAll('a[data-overlay-link]').forEach((a) => {
     a.addEventListener('click', (e) => {
       const hash = a.getAttribute('href');
-      // only pure in-page anchors — "./#section" URLs (account page) navigate normally
+      // only pure in-page anchors — "./#section" URLs navigate normally. Index
+      // is the sole page with this menu since v0.4.1, but the guard is what
+      // lets a future second page reuse it unchanged.
       const el = hash && hash.startsWith('#') && hash.length > 1 ? document.querySelector(hash) : null;
       if (!el) return;
       e.preventDefault();

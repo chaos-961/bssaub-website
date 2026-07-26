@@ -100,22 +100,9 @@
   color: var(--ink-soft);
 }
 
-/* agency credit (user call 2026-07-23) */
-.site-footer__credit {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6em;
-  color: var(--ink-soft);
-  transition: color 0.25s;
-}
-
-.site-footer__credit img {
-  display: block;
-  height: 24px;
-  width: 24px;
-  border-radius: 6px;
-}
-
-.site-footer__credit:hover {
-  color: var(--ink);
-}
+/* The small footer bar variant of the agency credit (user call 2026-07-23)
+   lived here. Its only host was account.html, deleted at v0.4.1 with the rest
+   of the account system, so the rules had no page left to style. The credit
+   ITSELF is untouched: index keeps its own section (agency-credit.css), which
+   is the user controlled block and stays. Recover these rules from the v0.4.0
+   tree if a second page ever wants the compact version. */

@@ -91,7 +91,6 @@
         <img class="site-nav__logo" src="assets/brand/logo.webp" alt="" width="233" height="108" decoding="async" />
       </a>
       <div class="site-nav__right">
-        <a class="site-nav__account" href="account">Account</a>
         <button
           class="site-nav__burger"
           type="button"
@@ -127,11 +126,6 @@
           <li>
             <a class="nav-menu__link" data-overlay-link href="#become-a-sponsor">
               <span class="nav-menu__index">04</span><span class="nav-menu__label">Become a Sponsor</span>
-            </a>
-          </li>
-          <li>
-            <a class="nav-menu__link" href="account">
-              <span class="nav-menu__index">05</span><span class="nav-menu__label">Account</span>
             </a>
           </li>
         </ul>
@@ -369,62 +363,64 @@
           <h2 class="section__title" id="sponsor-cta-title">
             <span class="rv-mask"><span>Have your own business? Become&nbsp;a&nbsp;sponsor.</span></span>
           </h2>
-          <dl class="sponsor-cta__stats">
-            <div class="sponsor-cta__stat">
-              <dt>Sponsors on the card</dt>
-              <dd data-stat-count>—</dd>
-            </div>
-            <div class="sponsor-cta__stat">
-              <dt>Top discount</dt>
-              <dd data-stat-top>—</dd>
-            </div>
-            <div class="sponsor-cta__stat">
-              <dt>Categories</dt>
-              <dd data-stat-cats>—</dd>
-            </div>
-          </dl>
           <!-- CTA interim target: verified society email (§14 key links). Swaps to the
                Become-a-Sponsor Google Form URL the moment it's supplied (§0 blockers). -->
           <a class="btn btn--primary" href="mailto:aubbusinesssociety@gmail.com?subject=Sponsorship">Become a sponsor</a>
         </div>
       </section>
 
+      <!-- Agency credit. The eyebrow and the wordmark are .rv-mask lines, so
+           reveal.js splits them into per word boxes exactly like every other
+           heading on the site (§ image and type pass). The lockup carries
+           data-agency-lockup: the module writes --px/--py onto it and
+           agency-credit.css does the rest. -->
       <section class="agency-credit" aria-label="Site credit" data-agency-credit>
+        <span class="rv-rule" data-rule aria-hidden="true"></span>
         <div class="agency-credit__inner">
-          <p class="eyebrow agency-credit__eyebrow"><span>Brought to you by</span></p>
-          <a
-            class="agency-credit__lockup"
-            href="https://nervemedia.agency/"
-            target="_blank"
-            rel="noopener"
-            aria-label="Nerve Media, opens nervemedia.agency"
-          >
-            <span class="agency-credit__badge" data-img-io="in">
-              <img src="assets/brand/nerve-media.webp" alt="" width="96" height="96" loading="lazy" decoding="async" />
-            </span>
-            <span class="agency-credit__text">
-              <span class="agency-credit__name">Nerve Media</span>
-              <span class="agency-credit__link">
-                nervemedia.agency
-                <svg
-                  class="agency-credit__arrow"
-                  viewBox="0 0 16 16"
-                  width="15"
-                  height="15"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.7"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                  focusable="false"
-                >
-                  <path d="M5 11 11 5" />
-                  <path d="M6 5h5v5" />
-                </svg>
+          <p class="eyebrow agency-credit__eyebrow">
+            <span class="agency-credit__hair" aria-hidden="true"></span>
+            <span class="rv-mask"><span>Brought to you by</span></span>
+            <span class="agency-credit__hair" aria-hidden="true"></span>
+          </p>
+          <div class="agency-credit__plate">
+            <a
+              class="agency-credit__lockup"
+              href="https://nervemedia.agency/"
+              target="_blank"
+              rel="noopener"
+              aria-label="Nerve Media, opens nervemedia.agency"
+              data-agency-lockup
+            >
+              <span class="agency-credit__glow" aria-hidden="true"></span>
+              <span class="agency-credit__badge" data-img-io="in">
+                <img src="assets/brand/nerve-media.webp" alt="" width="96" height="96" loading="lazy" decoding="async" />
               </span>
-            </span>
-          </a>
+              <span class="agency-credit__text">
+                <span class="agency-credit__name">
+                  <span class="rv-mask"><span>Nerve Media</span></span>
+                </span>
+                <span class="agency-credit__link">
+                  <span class="agency-credit__url">nervemedia.agency</span>
+                  <svg
+                    class="agency-credit__arrow"
+                    viewBox="0 0 16 16"
+                    width="15"
+                    height="15"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path d="M5 11 11 5" />
+                    <path d="M6 5h5v5" />
+                  </svg>
+                </span>
+              </span>
+            </a>
+          </div>
         </div>
       </section>
     </main>
@@ -453,7 +449,6 @@
             <li><a href="#sponsors">Sponsors</a></li>
             <li><a href="#journey">Our Journey</a></li>
             <li><a href="#become-a-sponsor">Become a Sponsor</a></li>
-            <li><a href="account">Account</a></li>
           </ul>
         </nav>
         <div class="rv-up" style="--i: 2">
@@ -478,7 +473,7 @@
       <div class="site-footer__bottom">
         <div class="site-footer__bottom-inner">
           <p>© Business Student Society, AUB · CRN: 5014</p>
-          <span class="version-badge" data-version-badge>v0.4.0</span>
+          <span class="version-badge" data-version-badge>v0.4.1</span>
         </div>
       </div>
     </footer>

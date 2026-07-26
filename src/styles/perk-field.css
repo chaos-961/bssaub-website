@@ -302,8 +302,14 @@ html.is-grabbing .perk-bubble {
 }
 
 /* the soap film itself: an off centre highlight plus a rose counter sheen,
-   flashed on at both ends of a bubble's life. Idle opacity is 0, so this
-   costs nothing for the 99% of the time it is not running. */
+   flashed on as a bubble bursts. Idle opacity is 0, so this costs nothing
+   for the 99% of the time it is not running.
+
+   It used to flash on ARRIVAL too, and that half was removed on the user's
+   word (2026-07-26): a white bloom at 0.9 opacity over a sponsor's photo
+   blew the artwork out for the first fifth of a second it was visible. The
+   burst flash stays, because there the coin is on its way out and washing
+   it is the point. */
 .perk-bubble__scale::after {
   content: '';
   position: absolute;
@@ -316,24 +322,8 @@ html.is-grabbing .perk-bubble {
     radial-gradient(circle at 72% 76%, rgba(176, 74, 103, 0.55), transparent 62%);
 }
 
-.perk-bubble.is-emerging .perk-bubble__scale::after {
-  animation: perk-film 0.68s var(--ease-out);
-}
-
 .perk-bubble.is-bursting .perk-bubble__scale::after {
   animation: perk-film-pop 0.34s var(--ease-out);
-}
-
-@keyframes perk-film {
-  0% {
-    opacity: 0;
-  }
-  26% {
-    opacity: 0.9;
-  }
-  100% {
-    opacity: 0;
-  }
 }
 
 @keyframes perk-film-pop {

@@ -1,5 +1,5 @@
-// Light entry for the stub pages (account.html, 404.html).
-// No Lenis/GSAP here — these pages stay tiny (§6.8, §6.9).
+// Light entry for 404.html (account.html shared it until v0.4.1).
+// No Lenis/GSAP here — this page stays tiny (§6.9).
 import '@fontsource-variable/fraunces/full.css';
 import '@fontsource-variable/instrument-sans';
 
