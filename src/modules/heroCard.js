@@ -124,6 +124,30 @@ export function initHeroCard(scroll) {
     ).observe(root);
   };
 
+  /* The headline's permanent swell (v0.4.5) is entirely CSS; the only thing
+     this owns is WHEN it is allowed to run, and both gates matter.
+
+     It starts on the entrance timeline's completion, not on load, because
+     until then GSAP is writing the words in and a second motion underneath
+     that reads as a stumble rather than as a swell. It parks whenever the
+     headline is off screen, because §GPU floor rule 2 is that nothing loops
+     forever out of sight, and a headline at the top of a page thousands of px
+     tall is out of sight for most of a session.
+
+     Dropping and re-adding the class restarts the cycle rather than resuming
+     its phase, which is free and invisible: the only moment it can happen is
+     one where nobody is looking at the element. */
+  const liveHeadline = () => {
+    const headline = document.querySelector('.hero__headline');
+    if (!headline) return;
+    headline.classList.add('is-alive');
+    if (!('IntersectionObserver' in window)) return;
+    new IntersectionObserver(
+      ([entry]) => headline.classList.toggle('is-alive', entry.isIntersecting),
+      { rootMargin: '120px 0px' },
+    ).observe(headline);
+  };
+
   /* orchestrated entrance — one timeline, fired as the preloader wipes (§6.1→§6.3) */
   const enter = () => {
     if (entered) return;
@@ -162,6 +186,7 @@ export function initHeroCard(scroll) {
         onComplete: () => {
           entered = true;
           startIdle();
+          liveHeadline();
         },
       })
       .to(eyebrow, { autoAlpha: 1, y: 0, duration: 0.6 }, 0.05)

@@ -19,25 +19,23 @@
   margin-bottom: 1.2rem;
 }
 
-/* CRN sits beside the society name (v0.3.7, user call). The separator is a
-   pseudo-element so the text node stays clean for screen readers and copy
-   paste, and the colour stays --ink-soft: this line sits on the mesh, where
-   4.76:1 is the whole contrast budget and there is nothing to spend on a
-   lighter tint. `nowrap` only on the CRN itself, so a narrow phone breaks
-   between the two parts instead of inside "CRN: 5014". */
-.hero__crn {
-  white-space: nowrap;
-}
+/* The CRN rode beside the society name here from v0.3.7 and left with that
+   eyebrow at v0.4.5, when the line became the greeting "Welcome to" on the
+   user's word. It is not lost: the footer's bottom bar still carries
+   "© Business Student Society, AUB · CRN: 5014", which is the line it was
+   always anchored to. `.hero__crn` and its "·" pseudo-element went with it
+   rather than sitting here matching nothing. */
 
-.hero__crn::before {
-  content: '·';
-  margin: 0 0.5em 0 0.15em;
-  opacity: 0.55;
-}
-
+/* The headline is the society's own name since v0.4.5, so it is bigger and
+   heavier than the old two line tagline: its own clamp rather than --step-5
+   (which every other display heading still uses, and which stays where it is),
+   and weight 700 on the Fraunces axis. Checked at both ends, since a single
+   long word is the thing that overflows: "Business" is the widest at ~0.58em a
+   character, so 252px of the 335px a 375px phone leaves inside the gutter, and
+   475px of the ~580px column at 1440. */
 .hero__headline {
-  font-size: var(--step-5);
-  font-weight: 590;
+  font-size: clamp(3.4rem, 2.2rem + 5.6vw, 6.4rem);
+  font-weight: 700;
   font-variation-settings: 'opsz' 144, 'WONK' 1;
   letter-spacing: -0.03em;
 }
@@ -109,12 +107,64 @@
 
 /* Once the words clip themselves they also carry their own descender room, so
    .line has to give up its copy of it or the two stack. Measured at 375px,
-   where "A campus of perks." wraps: 162.28px split against 156.28px plain,
+   where "A campus of perks." wrapped: 162.28px split against 156.28px plain,
    and the 6px is exactly the 0.12em this pair is worth at that size. Only
-   applies when the split actually happened, so the no-JS line keeps its own. */
+   applies when the split actually happened, so the no-JS line keeps its own.
+
+   `overflow: visible` joins it at v0.4.5, and it is what lets the swell below
+   exist at all: the clip was the mask's job, the words took that job over when
+   they were split, and a line box that still clips would shear the top off
+   every word the moment the swell lifted one above it. Exactly the handover
+   .rv-mask.is-split has made in reveal.css since v0.3.8. The unsplit line, the
+   one reduced motion and a failed script get, keeps its clip and never moves. */
 .hero__headline .line.is-split {
+  overflow: visible;
   padding-bottom: 0;
   margin-bottom: 0;
+}
+
+/* ------------------------------------------------------------------
+   The headline never stops moving (v0.4.5, user brief: "bold and big AUB's
+   Business Society and have a permeant effect/animation to it").
+
+   A slow swell travels through the words, which is the background ocean's
+   language applied to type: same sine, same unhurried clock, so the title
+   reads as part of the same water rather than as a separate gimmick. It is
+   deliberately NOT a light sweeping across the letters, because that is the
+   one permanent effect this user has already rejected twice (the coin
+   specular at v0.4.4, "there is like an animation of light reflection ...
+   remove that animation").
+
+   THREE THINGS KEEP IT CHEAP AND KEEP IT OUT OF GSAP'S WAY, all load bearing:
+
+   1. It animates `translate`, not `transform`, and it lands on `.rv-w`, the
+      OUTER word box, while GSAP's entrance writes `transform` on the inner
+      span. So the two owners are on different elements AND on different
+      channels (the browser composes translate before transform), which means
+      neither can overwrite the other even mid entrance. This is the v0.4.0
+      picture float trick, and it is the whole reason this needs no wrapper.
+   2. A composited property with no layout read, so Chrome promotes the three
+      word boxes on its own for the run and the main thread does nothing.
+   3. It only runs under `.is-alive`, which heroCard.js adds when the entrance
+      finishes and removes whenever the headline leaves the viewport. §GPU
+      floor rule 2: nothing loops forever off screen. Reduced motion never
+      splits the words and never gets the class, so it gets a still headline.
+
+   The stagger is a NEGATIVE delay, i.e. a phase offset into a cycle that is
+   already running, not a wait: a positive delay would hold the later words
+   flat for the first pass and the wave would only appear on the way back. */
+.hero__headline.is-alive .rv-w {
+  animation: hero-swell 5.4s ease-in-out infinite alternate;
+  animation-delay: calc(var(--w, 0) * -1.35s);
+}
+
+@keyframes hero-swell {
+  from {
+    translate: 0 0.055em;
+  }
+  to {
+    translate: 0 -0.055em;
+  }
 }
 
 /* hero membership card (§6.3)

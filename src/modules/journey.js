@@ -39,10 +39,6 @@ export function initJourney(scroll) {
   let nodeLens = [];
   let lastProgress = 0;
 
-  // one reused tween each, not a fresh one per scroll event
-  const orbX = marker && !scroll.reduced ? gsap.quickTo(marker, 'scaleX', { duration: 0.4, ease: 'power2.out' }) : null;
-  const orbY = marker && !scroll.reduced ? gsap.quickTo(marker, 'scaleY', { duration: 0.4, ease: 'power2.out' }) : null;
-
   function buildPath() {
     // Checkpoints (user calls 2026-07-23): always vertically centered on
     // their image — desktop beside the frame (measured px), mobile ON the
@@ -196,7 +192,6 @@ export function initJourney(scroll) {
   }
 
   function update(p) {
-    const prev = lastProgress;
     lastProgress = p;
     const off = `${totalLen * (1 - p)}`;
     litPaths.forEach((el) => {
@@ -204,27 +199,26 @@ export function initJourney(scroll) {
     });
     const at = totalLen * p;
     if (marker) {
-      const pt = drawPath.getPointAtLength(at);
-      /* Orb speed stretch (v0.3.6): the faster the draw front travels, the
-         more the orb elongates ALONG the path and pinches across it, like a
-         bead of light being pulled. Direction comes from the path tangent (a
-         probe 6 units ahead), not from travel direction, so scrolling back up
-         stretches it the same way instead of flipping it end over end.
+      /* The orb RIDES the draw front and does nothing else. It is a plain
+         x/y write, and it stays a circle at every speed.
 
-         The marker is a 0x0 box, so its transform origin sits exactly on the
-         path point and scale is symmetric about it — no correction needed.
-         quickSetter-free on purpose: quickTo owns the relaxation, so when
-         scrolling stops the orb eases back to a circle instead of freezing
-         mid-stretch on whatever the last delta happened to be. */
-      const ahead = drawPath.getPointAtLength(Math.min(totalLen, at + 6));
-      const v = Math.min(1, Math.abs(p - prev) * 46);
-      gsap.set(marker, {
-        x: pt.x,
-        y: pt.y,
-        rotation: (Math.atan2(ahead.y - pt.y, ahead.x - pt.x) * 180) / Math.PI,
-      });
-      orbX?.(1 + v * 0.85);
-      orbY?.(1 - v * 0.32);
+         The v0.3.6 "speed stretch" is gone at v0.4.5 on the user's word ("the
+         Our Journey timeline circle that is moving I want it to stay a circle,
+         no weird change to it when its moving"). It scaled the marker along
+         the path tangent in proportion to how fast the front was travelling
+         (scaleX up to 1.85, scaleY down to 0.68, relaxed by a pair of
+         quickTos) and turned it to face the tangent, which took a second
+         getPointAtLength probe per frame with it. All of that went; the
+         rotation went too, since it existed only to orient the stretch and a
+         circle cannot show it.
+
+         Do not rebuild it without a fresh brief. If some marker treatment is
+         ever wanted again, note that this element is a 0x0 anchor whose
+         transform GSAP owns for positioning, so the visible orb inside it
+         (.journey__marker-orb, which CSS already scales and pulses) is the
+         element to touch, not this one. */
+      const pt = drawPath.getPointAtLength(at);
+      gsap.set(marker, { x: pt.x, y: pt.y });
     }
     // ignition = dot burst + frame glow only; content never keys off this
     nodes.forEach((n, i) => {

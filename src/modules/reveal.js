@@ -53,114 +53,44 @@ export function splitWords(el) {
 }
 
 /* ------------------------------------------------------------------
-   SCRUBBED TEXT (v0.4.4, user report: "there are not enough animations for
-   the text and its not dynamic to the scroll and its just bad so fix it all
-   on all devices and make sure its sync to the mobile too").
+   SCRUBBED TEXT (v0.4.4) IS GONE AT v0.4.5, on the user's word: "can you fix
+   this like text being cut off, its a weird animation u added, remove it bcz
+   its bad", against a screenshot of the Clothing zone title with its lower
+   third sheared away.
 
-   What changed: text used to arrive on a CSS transition that a one shot class
-   fired. It looked identical every time and it had no relationship to the
-   scroll at all — you crossed a line and 0.95s of animation played on its own
-   clock while you kept moving. Now every text block is SCRUBBED across its own
-   entry band, so the words are literally being pulled up by the finger or the
-   wheel, and stopping halfway leaves them halfway.
+   WHY IT CUT TEXT OFF, because the mechanism is the lesson and not the taste
+   call. A masked line reveals by sliding out from behind its own bottom edge,
+   so at any point before it finishes, the part still below that edge is
+   CLIPPED — that is the whole effect. A one shot class runs that slide to
+   completion on its own 1s clock no matter what the reader does, so the clipped
+   state exists for under a second and nobody ever sees it parked. A SCRUB ties
+   the same slide to scroll position, which means stopping mid band is not a
+   pause, it is a resting state: the heading simply stays half cut for as long
+   as the reader sits there, and a phone reader who thumbs down a little and
+   reads is exactly the case that parks it. Single word headings are worst hit
+   (`Clothing`, `Fitness`, `Services`) because v0.3.8's word split declines to
+   split them, so they keep the whole-block mask and the whole word disappears
+   into it rather than a per word offset.
 
-   WHY THIS IS NOT THE v0.1.x DISAPPEARING CARD. That lesson (headings must be
-   once only) was about content keyed to the journey's DRAW FRONT, which lagged
-   the scroll and hid cards sitting in the middle of the screen. These triggers
-   are keyed to each block's OWN position, so a block is fully resolved from the
-   moment its top passes 56% of the viewport and stays that way for the rest of
-   its pass. The only way to un-reveal one is to put it back down near the
-   bottom edge of the screen, which is where it came from.
+   THE GENERAL RULE THIS LEAVES BEHIND: never scrub an animation whose
+   intermediate frames hide content. Scrub things that are still legible at
+   every point of their travel (the pictures, the rails, the divider sweep, the
+   drift) and let anything CLIPPING run on its own clock.
 
-   IT IS THE SAME ON A PHONE BY CONSTRUCTION. Every number here is a fraction
-   of the viewport, there is no width query anywhere in this file, and the
-   scrub is deliberately short (0.3s) so it tracks a finger rather than
-   floating after it the way a long smoothing does on a flick.
-
-   COST. GSAP owns transform and opacity on these elements now, so reveal.css
-   hands both over under `html.motion-scrub` — a CSS transition on a property
-   GSAP writes every frame is two owners on one element and reads as lag. Only
-   timelines whose trigger is in range tick; the rest are inert bookkeeping.
-
-   `clamp()` IS LOAD BEARING AND IT IS NOT DECORATION. A block near the page
-   end may never reach 56% of the viewport: measured at 1280x600, the footer's
-   top sits at 202px at MAXIMUM scroll against the 336px this band asks for, so
-   without the clamp its three columns would be stuck at opacity 0 with no way
-   to finish — an invisible footer on any short, wide window. ScrollTrigger's
-   clamp prefix pulls a range that runs off the end of the document back inside
-   it, so every block completes wherever it sits. This is the same failure the
-   v0.4.0 picture pass hit from the other direction, where the agency badge
-   stranded at 0.849 opacity; that one was solved by dropping the leaving half,
-   and this is the general tool for it.
+   Removed with it, all of it a v0.4.4 addition and none of it older: the
+   TEXT_BAND / scrubText pair, the `motion-scrub` handover on <html> (the
+   matching block in reveal.css went too), the journey's matchMedia entry
+   vector, the sponsor CTA kid walk, and the `data-drift` container parallax.
+   Text is back to the once only `.is-in` class that ran from v0.3.6 to v0.4.3,
+   which is still the entire look and still lives in reveal.css. Do not rebuild
+   the scrub without a fresh brief, and if a brief ever asks for text tied to
+   the scroll again, move something that does not clip.
    ------------------------------------------------------------------ */
-const TEXT_BAND = { start: 'clamp(top 92%)', end: 'clamp(top 56%)', scrub: 0.3 };
-
-/* One text block → one scrubbed timeline.
-
-   A mask hands its motion to its words when reveal.js has split it, which is
-   why nothing here ever animates a `.rv-mask` itself: the outer box gave up
-   its clip to the word boxes at v0.3.8 and animating both would double the
-   travel. Words move on yPercent inside their own clip (no opacity needed,
-   the clip IS the reveal); everything else rises and fades.
-
-   The stagger is capped at 0.45 of the timeline so a heading with twelve words
-   still finishes inside the band instead of trailing out the bottom of it. No
-   padding to a fixed total on purpose: a scrub maps the trigger's 0..1 onto
-   whatever the total is, so every block, long or short, completes at exactly
-   the same point on screen and only its internal grain differs. */
-function scrubText(block, { trigger = block, kids = null, axis = 'y', dist = 24, sign = 1 } = {}) {
-  const bits = [];
-  const fromMask = (el) => {
-    const words = el.querySelectorAll('.rv-w > span');
-    if (words.length) return words.forEach((w) => bits.push({ el: w, word: true }));
-    const span = el.firstElementChild;
-    if (span) bits.push({ el: span, word: true });
-  };
-
-  if (kids) {
-    block.querySelectorAll(kids).forEach((el) => {
-      // a child that holds a masked line (a journey title, the sponsor CTA
-      // heading) lets the words carry it and does not move as a slab
-      const mask = el.querySelector('.rv-mask, .jline');
-      if (mask) fromMask(mask);
-      // The Join CTA is the one child whose transform belongs to somebody
-      // else: journey.js drives x and y on it for the magnetic pull. It
-      // arrives on opacity alone, because two owners on one transform is
-      // exactly the bug this file's shape exists to avoid.
-      else bits.push({ el, word: false, still: el.hasAttribute('data-journey-cta') });
-    });
-  } else {
-    block.querySelectorAll('.rv-mask, .rv-up').forEach((el) => {
-      if (el.classList.contains('rv-mask')) fromMask(el);
-      else bits.push({ el, word: false });
-    });
-  }
-
-  if (!bits.length) return;
-
-  const tl = gsap.timeline({
-    scrollTrigger: { trigger, start: TEXT_BAND.start, end: TEXT_BAND.end, scrub: TEXT_BAND.scrub },
-    defaults: { ease: 'none' },
-  });
-  bits.forEach((b, i) => {
-    const at = Math.min(i * 0.05, 0.45);
-    if (b.word) tl.fromTo(b.el, { yPercent: 115 }, { yPercent: 0, duration: 0.55 }, at);
-    else if (b.still) tl.fromTo(b.el, { opacity: 0 }, { opacity: 1, duration: 0.55 }, at);
-    else
-      tl.fromTo(
-        b.el,
-        { [axis]: dist * sign, opacity: 0 },
-        { [axis]: 0, opacity: 1, duration: 0.55 },
-        at,
-      );
-  });
-}
 
 export function initReveal(scroll) {
   const reveals = document.querySelectorAll('[data-reveal]');
   const rules = document.querySelectorAll('[data-rule]');
   const rails = document.querySelectorAll('[data-rail]');
-  const hero = document.querySelector('.hero');
 
   if (scroll.reduced) {
     reveals.forEach((el) => el.classList.add('is-in'));
@@ -182,74 +112,18 @@ export function initReveal(scroll) {
     if (splitWords(el)) el.parentElement.classList.add('is-split');
   });
 
-  /* 1. Text, scrubbed (v0.4.4 — see the header comment). The class goes on
-        <html> BEFORE any timeline is built, so the CSS transitions are off the
-        moment GSAP writes its first from-state and the two can never overlap.
-
-        The once only `.is-in` triggers stay underneath, and they are not
-        vestigial: they still drive everything in these blocks that is NOT
-        text (the agency plate, the journey frames), and they are the safety
-        net for any reveal element a future edit adds outside a block this
-        function walks — GSAP's inline styles win wherever both apply. */
-  document.documentElement.classList.add('motion-scrub');
-
-  reveals.forEach((el) => {
-    scrubText(el);
+  /* 1. Text, once only. One class, and reveal.css is the entire look including
+        the per element stagger. Everything that used to be scrubbed here went
+        at v0.4.5 (see the header comment); the class based path underneath it
+        never left, which is why the removal was a deletion rather than a
+        rebuild. */
+  reveals.forEach((el) =>
     ScrollTrigger.create({
       trigger: el,
       start: 'top 88%',
       once: true,
       onEnter: () => el.classList.add('is-in'),
-    });
-  });
-
-  /* 1a. The two blocks that describe their motion through their CHILDREN
-         rather than through reveal classes. Both had a bespoke rest state and
-         stagger in their own stylesheet long before the .rv-* primitives
-         existed, so rather than rewrite their markup the selector is named
-         here and reveal.css hands the rest state over under `motion-scrub`. */
-  document
-    .querySelectorAll('.sponsor-cta__inner')
-    .forEach((block) => scrubText(block, { kids: ':scope > *', axis: 'y', dist: 20 }));
-
-  /* The journey is the one block whose ENTRY VECTOR is a layout decision and
-     not a taste one, which is why it is the only thing in this file that knows
-     a breakpoint exists. On desktop the copy sits beside its picture and slides
-     in from its own side, alternating with the layout; on a phone the card is
-     stacked, and journey.css has entered that copy vertically since v0.1.x
-     because a sideways slide on a full width column reads as a wobble.
-
-     gsap.matchMedia rather than one matchMedia read: it reverts the timelines
-     it built and rebuilds the other set when the query flips, so a window
-     dragged across 60rem gets the right vector instead of the one that
-     happened to be true at load. */
-  const journeyText = (axis, dist) => () =>
-    document.querySelectorAll('.journey-node__content').forEach((block) => {
-      const node = block.closest('[data-node]');
-      const even = node && [...node.parentElement.children].indexOf(node) % 2 === 1;
-      scrubText(block, { kids: ':scope > *', axis, dist, sign: even ? -1 : 1 });
-    });
-  const mm = gsap.matchMedia();
-  mm.add('(min-width: 60rem)', journeyText('x', 30));
-  mm.add('(max-width: 59.99rem)', journeyText('y', 26));
-
-  /* 1b. Slow drift, so a block keeps answering the scroll after it has
-         arrived instead of parking dead. It lands on the CONTAINER while the
-         arrival above lands on its children, which is why the two compose
-         instead of fighting: one transform, one owner, per element. ±18px is
-         small enough that it never reads as a second animation, only as the
-         text sitting on a slightly different plane from the section around
-         it. */
-  document.querySelectorAll('[data-drift]').forEach((el) =>
-    gsap.fromTo(
-      el,
-      { y: 18 },
-      {
-        y: -18,
-        ease: 'none',
-        scrollTrigger: { trigger: el, start: 'top bottom', end: 'bottom top', scrub: 0.6 },
-      },
-    ),
+    }),
   );
 
   /* 2. Divider sweep. A thread of accent light opens outward from the centre
@@ -283,41 +157,38 @@ export function initReveal(scroll) {
     ),
   );
 
-  /* 4. Hero departure — THE COPY ONLY since v0.4.0.
+  /* 4. Hero departure — GONE ENTIRELY AT v0.4.5, and this is the second half
+        of a removal that started at v0.4.0, so it is worth one paragraph
+        rather than a silent deletion.
 
-        The card used to leave on this same scrub, travelling further and
-        shrinking (v0.3.6) and turning in 3D (v0.3.8), through a
-        .hero-card__drift wrapper that existed purely to keep this off the
-        elements heroCard.js owns. All of that is gone on the user's word
-        (2026-07-26: "there is a weird animation for the card, I dont want
-        that when I scroll", plus a report of transparency artifacts on a
-        phone), and the wrapper element went with it.
+        What it was: the hero copy lifted 64px and faded to opacity 0.12 on a
+        scrub from `top top` to `bottom top`, i.e. the headline and everything
+        under it dissolved as you left the section. The card left with it until
+        v0.4.0 (travelling and shrinking since v0.3.6, turning in 3D since
+        v0.3.8, through a .hero-card__drift wrapper that existed purely to keep
+        this off the elements heroCard.js owns). The user's word both times was
+        the same, a year apart in version numbers and a day apart in fact:
+        2026-07-26 "there is a weird animation for the card, I dont want that
+        when I scroll", and 2026-07-27 "there is weird effect of like fading
+        away when I scroll, remove it". The hero now simply scrolls away.
 
-        WHY IT LOOKED BROKEN, because this is the trap to avoid if a card
-        exit is ever wanted again: the tween faded the wrapper to opacity
-        0.16, and that wrapper is an ancestor of .hero-card__tilt, which
-        declares transform-style: preserve-3d. Opacity below 1 is a grouping
-        property, so the browser can no longer keep the 3D subtree in one
-        plane and composites the card's layers separately. On a phone the
-        result was the background mesh reading straight through the card's
-        white face and its maroon band, measured mid scroll at 0.505 and 0.558
-        — a card you can see the page through, which is not a fade, it is a
-        glass sheet. On a phone it was worse than on a desktop for a reason
-        that has nothing to do with the GPU: the hero stacks, so the card sits
-        low enough that scrolling it into view had ALREADY started fading it.
+        THE TRAP THE CARD HALF LEFT BEHIND, which is the part that must not be
+        lost with the code: that tween faded a wrapper that was an ancestor of
+        .hero-card__tilt, which then declared transform-style: preserve-3d.
+        Opacity below 1 is a grouping property, so the browser stopped keeping
+        the 3D subtree in one plane and composited the card's layers
+        separately. On a phone the background mesh read straight through the
+        card's white face and its maroon band, measured mid scroll at 0.505 and
+        0.558: not a fade, a glass sheet. Worse on a phone for a layout reason
+        and not a GPU one, since the hero stacks there and the card sat low
+        enough that scrolling it into view had already begun fading it. The 3D
+        went with the tilt at v0.4.4, so the trap is retired, but any future
+        exit still has to fade something that is not an ancestor of a
+        preserve-3d subtree.
 
-        Any future exit has to fade something that is not an ancestor of the
-        preserve-3d subtree, or drop the 3D entirely. */
-  if (hero) {
-    const copy = hero.querySelector('.hero__copy');
-    if (copy)
-      gsap.to(copy, {
-        y: -64,
-        opacity: 0.12,
-        ease: 'none',
-        scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', scrub: 0.5 },
-      });
-  }
+        Nothing replaces this. The headline's own permanent swell (v0.4.5,
+        sections.css) is unrelated to scroll and lives on .rv-w's `translate`,
+        so there is no scrub left anywhere in the hero. */
 
   /* 5. Picture in and out (v0.4.0, user brief: the images should animate
         dynamically with the scroll, in AND out, plus a constant simple one,

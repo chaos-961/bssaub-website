@@ -129,11 +129,11 @@
               <span class="nav-menu__index">04</span><span class="nav-menu__label">Become a Sponsor</span>
             </a>
           </li>
-          <li>
-            <a class="nav-menu__link" href="account">
-              <span class="nav-menu__index">05</span><span class="nav-menu__label">Account</span>
-            </a>
-          </li>
+          <!-- No item 05 for Account since v0.4.5, on the user's word: the
+               Account link sits beside the burger that opens this dropdown, so
+               listing it inside costs a tap to reach a link that was already
+               on screen. The nav link and the footer Explore entry are the two
+               ways in. -->
         </ul>
       </nav>
     </div>
@@ -141,11 +141,15 @@
     <main id="main">
       <section class="hero" id="top">
         <div class="hero__copy">
-          <p class="eyebrow hero__eyebrow">AUB Business Student Society <span class="hero__crn">CRN: 5014</span></p>
-          <!-- Headline: §6.3 option 1, locked in-session per the user's no-questions directive (§15) -->
+          <!-- v0.4.5, user call: the eyebrow is a greeting and the headline is
+               the society's own name, big and bold, with a permanent swell on
+               it (see .hero__headline in sections.css and heroCard.js for the
+               two gates that decide when that swell may run). The CRN left the
+               hero with the old eyebrow and still rides in the footer's bottom
+               bar, which is the line that was always its home. -->
+          <p class="eyebrow hero__eyebrow">Welcome to</p>
           <h1 class="hero__headline">
-            <span class="line"><span class="line__inner">One card.</span></span>
-            <span class="line"><span class="line__inner">A campus of perks.</span></span>
+            <span class="line"><span class="line__inner">AUB&#8217;s Business Society</span></span>
           </h1>
           <p class="hero__sub">Student discounts across restaurants, clothing, health &amp; beauty, fitness and services.</p>
           <div class="hero__ctas">
@@ -200,11 +204,7 @@
 
       <section class="perk-field" id="sponsors" aria-labelledby="sponsors-title" data-perk-field>
         <span class="rv-rule" data-rule aria-hidden="true"></span>
-        <!-- data-drift (v0.4.4): the container drifts slowly against the
-             section while its children arrive, so the block keeps answering
-             the scroll after it has landed. Container and children, never the
-             same element twice — see reveal.js. -->
-        <div class="perk-field__intro" data-reveal data-drift>
+        <div class="perk-field__intro" data-reveal>
           <p class="eyebrow section__eyebrow rv-up">The Perk Field</p>
           <h2 class="section__title" id="sponsors-title">
             <span class="rv-mask" style="--i: 1"><span>Sponsors</span></span>
@@ -246,7 +246,7 @@
 
       <section class="journey" id="journey" aria-labelledby="journey-title" data-journey>
         <span class="rv-rule" data-rule aria-hidden="true"></span>
-        <div class="journey__intro" data-reveal data-drift>
+        <div class="journey__intro" data-reveal>
           <p class="eyebrow section__eyebrow rv-up">Story · Mission · Vision</p>
           <h2 class="section__title" id="journey-title">
             <span class="rv-mask" style="--i: 1"><span>Our Journey</span></span>
@@ -368,7 +368,7 @@
 
       <section class="sponsor-cta" id="become-a-sponsor" aria-labelledby="sponsor-cta-title" data-sponsor-cta>
         <span class="rv-rule" data-rule aria-hidden="true"></span>
-        <div class="sponsor-cta__inner" data-drift>
+        <div class="sponsor-cta__inner">
           <p class="eyebrow section__eyebrow">Partners</p>
           <h2 class="section__title" id="sponsor-cta-title">
             <span class="rv-mask"><span>Have your own business? Become&nbsp;a&nbsp;sponsor.</span></span>
@@ -386,11 +386,10 @@
            agency-credit.css does the rest. -->
       <section class="agency-credit" aria-label="Site credit" data-agency-credit>
         <span class="rv-rule" data-rule aria-hidden="true"></span>
-        <!-- data-reveal (v0.4.4) so the two masked lines in here join the
-             scrubbed text system like every other heading on the page. It also
-             adds .is-in to THIS element, which nothing styles: the section's
-             own plate and hairlines key off `.agency-credit.is-in`, which
-             agencyCredit.js still owns. -->
+        <!-- data-reveal (v0.4.4) so the two masked lines in here reveal like
+             every other heading on the page. It adds .is-in to THIS element,
+             which nothing styles: the section's own plate and hairlines key
+             off `.agency-credit.is-in`, which agencyCredit.js still owns. -->
         <div class="agency-credit__inner" data-reveal>
           <p class="eyebrow agency-credit__eyebrow">
             <span class="agency-credit__hair" aria-hidden="true"></span>
@@ -489,7 +488,7 @@
       <div class="site-footer__bottom">
         <div class="site-footer__bottom-inner">
           <p>© Business Student Society, AUB · CRN: 5014</p>
-          <span class="version-badge" data-version-badge>v0.4.4</span>
+          <span class="version-badge" data-version-badge>v0.4.5</span>
         </div>
       </div>
     </footer>

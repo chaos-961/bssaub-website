@@ -146,64 +146,26 @@
 }
 
 /* ------------------------------------------------------------------
-   HANDOVER TO THE SCRUB (v0.4.4). reveal.js adds `motion-scrub` to <html>
-   before it builds a single timeline, and from that point GSAP owns
-   transform and opacity on every text primitive: the words, the risers, and
-   the two blocks whose stagger was written in their own stylesheet long
-   before these classes existed.
+   THE SCRUB HANDOVER (v0.4.4) IS GONE AT v0.4.5. It handed transform,
+   transition and opacity on every text primitive over to GSAP under an
+   `html.motion-scrub` class; the timelines it existed for were removed on the
+   user's word because tying a CLIPPING reveal to scroll position leaves a
+   heading parked half cut whenever the reader stops. The full reasoning, and
+   the general rule it leaves behind, is in the header comment of reveal.js.
 
-   THREE THINGS ARE HANDED OVER, AND ALL THREE MATTER.
+   What that restores here: the transitions and rest transforms above are the
+   whole system again, exactly as they were from v0.3.6 to v0.4.3, and no
+   element on the site has two owners on its transform.
 
-   The TRANSITION goes, because a CSS transition on a property GSAP rewrites
-   every frame is two owners on one element and reads as lag — the same rule
-   sections.css applies to the hero headline.
-
-   The REST TRANSFORM goes, and this one is not tidying, it is a measured bug.
-   GSAP reads an element's CURRENT computed transform when it first touches it
-   and stores it as x/y in PIXELS. A `translateY(115%)` rest state therefore
-   becomes `y: 74.6px` on a 81px heading, and a tween that animates yPercent
-   115 → 0 leaves that parsed y sitting underneath it: the heading finishes its
-   reveal 74px BELOW where it belongs, permanently. sections.css has carried
-   the same `transform: none` for the hero headline since v0.3.8 for exactly
-   this reason, which is the tell that this trap has been sprung before.
-
-   The REST OPACITY goes for the two kid blocks, because their children are
-   hidden by CSS until a class lands, and the ones GSAP does NOT animate (a
-   title, whose words move instead) would otherwise sit at opacity 0 forever.
-
-   None of this can strand an element that IS animated: GSAP writes its own
-   from-state inline the moment each timeline is built, and an inline style
-   beats every rule below.
-
-   Without the class — reduced motion, or no JS at all — none of this applies
-   and the class based reveals above are still the entire system.
+   One measured detail worth keeping if a handover is ever wanted again, since
+   it cost a debugging session: GSAP reads an element's CURRENT computed
+   transform when it first touches it and stores it as x/y in PIXELS, so a
+   `translateY(115%)` rest state becomes `y: 74.6px` on an 81px heading and
+   sits underneath any yPercent tween, landing the heading 74px low
+   permanently. Whatever hands over has to clear the rest transform first.
+   sections.css carries exactly that `transform: none` for the hero headline,
+   which GSAP does own.
    ------------------------------------------------------------------ */
-html.motion-scrub .rv-mask > span,
-html.motion-scrub .rv-w > span,
-html.motion-scrub .rv-up,
-html.motion-scrub .jline__inner,
-html.motion-scrub .sponsor-cta__inner > * {
-  transition: none;
-  transform: none;
-}
-
-/* The journey carries an extra `.journey-node` qualifier for one reason, and
-   it is a measured one: journey.css sets the even node's rest transform
-   through `.journey-node:nth-child(even) .journey-node__content > *`, which is
-   three classes, and the plain form of the rule above is two classes plus a
-   type. It LOST, so at v0.4.4 in progress the even nodes' titles sat 26px low
-   on a phone until the once only `.is-in` landed and snapped them into place.
-   Three classes plus a type beats it, and beats the mobile media query copy of
-   the same selector too, since a media query adds no specificity. */
-html.motion-scrub .journey-node .journey-node__content > * {
-  transition: none;
-  transform: none;
-}
-
-html.motion-scrub .journey-node .journey-node__content > *,
-html.motion-scrub .sponsor-cta__inner > * {
-  opacity: 1;
-}
 
 /* Reduced motion, and the no-JS path: everything resolves to its finished
    state. reveal.js also adds .is-drawn to the rails, since their rest
