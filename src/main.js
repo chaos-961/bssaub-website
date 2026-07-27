@@ -16,6 +16,7 @@ import './styles/modal.css';
 import './styles/journey.css';
 import './styles/sponsor-cta.css';
 import './styles/agency-credit.css';
+import './styles/toast.css';
 import './styles/footer.css';
 
 import gsap from 'gsap';
@@ -34,6 +35,7 @@ import { initAgencyCredit } from './modules/agencyCredit.js';
 import { initReveal } from './modules/reveal.js';
 import { initPreloader } from './modules/preloader.js';
 import { initFooterVersion } from './modules/footerVersion.js';
+import { initLoginToast } from './modules/loginToast.js';
 
 const scroll = initScroll();
 // the ocean takes scroll only to read its velocity (v0.3.6 surge); it still
@@ -58,6 +60,13 @@ initPreloader({
   scroll,
   onComplete: () => {
     heroCard.enter();
+    /* The greeting waits for the curtain (§6.1 covers the whole viewport at
+       z-index 300, so a toast fired at load would simply be painted over and
+       be half gone by the time it was visible), then for the hero entrance to
+       have the stage to itself for a beat. It reads the session cookie and
+       returns immediately if there is none, so a signed out visitor never
+       pays for the timer. */
+    initLoginToast({ delay: 900 });
   },
 });
 

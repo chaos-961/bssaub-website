@@ -5,12 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "node scripts/check-admin-payload.mjs && vite build",
+    "preview": "vite preview",
+    "admin:payload": "node scripts/build-admin-payload.mjs"
   },
   "dependencies": {
     "@fontsource-variable/fraunces": "^5.2.0",
     "@fontsource-variable/instrument-sans": "^5.2.0",
+    "firebase": "^12.16.0",
     "gsap": "^3.12.5",
     "lenis": "^1.1.20",
     "matter-js": "^0.20.0"

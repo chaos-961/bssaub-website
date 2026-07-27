@@ -120,11 +120,33 @@
   gap: clamp(0.9rem, 2.5vw, 1.75rem);
 }
 
-/* The Account link sat beside the burger here until v0.4.1, when the account
-   system was removed sitewide on the user's word. The bar's right side is the
-   burger alone now, so the gap above only ever separates it from the edge. */
+/* The Account link, beside the burger. Removed with the account system at
+   v0.4.1 and back at v0.4.2 on the user's word ("beside the hamburger button
+   put Account button, maybe just text is good enough"), unchanged: text, not a
+   chip, because the burger already owns the one filled control the bar can
+   carry without the right side turning into a button cluster. */
+.site-nav__account {
+  /* The flex box and min-height are the tap target, not decoration: as bare
+     text this link measured 65x18, and 18px tall is a miss on a phone next to
+     a 44px burger. Vertical only, so the hit area reaches 44px without taking
+     any of the 9px that separates it from the burger at 350px, and the bar's
+     own height is fixed so nothing moves. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: var(--step--1);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--nav-ink-soft);
+  transition: color var(--dur-quick);
+}
 
-/* very narrow screens: keep the logo from crowding the burger */
+.site-nav__account:hover,
+.site-nav__account[aria-current='page'] {
+  color: var(--nav-ink);
+}
+
+/* very narrow screens: keep Account in the bar without crowding the logo */
 @media (max-width: 22.5rem) {
   .site-nav__logo {
     height: 34px;
@@ -132,6 +154,11 @@
 
   .site-nav__right {
     gap: 0.55rem;
+  }
+
+  .site-nav__account {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
   }
 }
 

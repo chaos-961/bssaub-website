@@ -1,0 +1,383 @@
+/* ------------------------------------------------------------------
+   Auth surfaces (v0.4.2). Shared by the member account page and the admin
+   gate, which is why the primitives here are named for what they are
+   (card, field, tab) and not for either page.
+
+   THE CARD IS OPAQUE ON PURPOSE. The mesh behind it is the animated one,
+   whose whole contrast budget is spent on body copy sitting DIRECTLY on
+   it (§Design system: 4.76:1 for --ink-soft at the worst instant of the
+   cycle). A translucent card would drag the form's labels, hints and
+   error text into that same budget, on top of a surface that moves. An
+   opaque --surface sheet takes the mesh out of the equation entirely:
+   measured on #f8f3f5, --ink-soft holds 7.4:1 and --ink 16.4:1, fixed at
+   every instant. The mesh still frames the card, which is the look the
+   brief asked for; it just no longer has a vote on legibility.
+
+   No backdrop-filter anywhere here, per the §GPU floor: a viewport
+   spanning blur over a live WebGL background is the single most expensive
+   thing this page could do.
+   ------------------------------------------------------------------ */
+.auth {
+  min-height: 100svh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1rem;
+  padding: calc(var(--nav-h) + 2.5rem) var(--gutter) 3rem;
+}
+
+.auth__card {
+  width: min(27rem, 100%);
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  border-radius: var(--radius-lg);
+  padding: clamp(1.4rem, 4.5vw, 2.1rem);
+  box-shadow:
+    0 1px 2px rgba(34, 18, 25, 0.05),
+    0 30px 70px -34px rgba(34, 18, 25, 0.62);
+  position: relative;
+  overflow: hidden;
+}
+
+/* a thread of brand light along the top edge, the same gesture as the
+   §5 divider sweeps, held still because nothing scrolls past it here */
+.auth__card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--accent) 70%, transparent) 30%,
+    var(--accent-2) 50%,
+    color-mix(in srgb, var(--accent) 70%, transparent) 70%,
+    transparent
+  );
+  opacity: 0.85;
+}
+
+.auth__title {
+  font-size: var(--step-3);
+  font-variation-settings: 'opsz' 144, 'WONK' 1;
+  margin-top: 0.35rem;
+}
+
+.auth__note {
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+  margin-top: 0.5rem;
+}
+
+/* --- segmented tabs --------------------------------------------------- */
+.auth__tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  margin-top: 1.35rem;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.auth__tab {
+  padding: 0.6em 0.9em;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-quick),
+    color var(--dur-quick),
+    box-shadow var(--dur-quick);
+}
+
+.auth__tab:hover:not(.is-active) {
+  color: var(--ink);
+}
+
+.auth__tab.is-active {
+  background: var(--bg);
+  color: var(--accent);
+  box-shadow: 0 1px 2px rgba(34, 18, 25, 0.1);
+}
+
+/* --- fields ----------------------------------------------------------- */
+.auth__form {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 1.25rem;
+}
+
+.auth__field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.auth__field > span {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.auth__wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth__input {
+  width: 100%;
+  padding: 0.82em 1em;
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--step-0);
+  transition:
+    border-color var(--dur-quick),
+    box-shadow var(--dur-quick);
+}
+
+.auth__wrap .auth__input {
+  padding-right: 4.2em;
+}
+
+.auth__input::placeholder {
+  color: color-mix(in srgb, var(--ink-soft) 60%, transparent);
+}
+
+.auth__input:focus {
+  outline: none;
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-2) 22%, transparent);
+}
+
+.auth__input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.auth__reveal {
+  position: absolute;
+  right: 0.45em;
+  padding: 0.4em 0.6em;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color var(--dur-quick), background-color var(--dur-quick);
+}
+
+.auth__reveal:hover {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+
+.auth__submit {
+  width: 100%;
+  justify-content: center;
+  margin-top: 0.35rem;
+}
+
+.auth__aux {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.15rem;
+}
+
+.auth__link {
+  border: 0;
+  background: transparent;
+  padding: 0.3em;
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--ink-soft) 45%, transparent);
+  cursor: pointer;
+  transition: color var(--dur-quick);
+}
+
+.auth__link:hover {
+  color: var(--accent);
+}
+
+.auth__hint {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+/* --- status line ------------------------------------------------------ */
+.auth__status {
+  min-height: 1.4em;
+  margin-top: 0.9rem;
+  font-size: var(--step--1);
+  line-height: 1.45;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.auth__status[data-tone='error'] {
+  color: var(--accent);
+  font-weight: 550;
+}
+
+.auth__status[data-tone='ok'] {
+  color: var(--ink);
+}
+
+.is-busy .auth__submit {
+  opacity: 0.72;
+}
+
+/* --- signed in panel -------------------------------------------------- */
+.auth__identity {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.9rem 0;
+  margin-top: 0.5rem;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.auth__mark {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-content: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.auth__who {
+  min-width: 0;
+}
+
+.auth__name {
+  display: block;
+  font-size: var(--step-1);
+  font-weight: 620;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.auth__email {
+  display: block;
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+  overflow-wrap: anywhere;
+}
+
+.auth__actions {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 1.1rem;
+}
+
+.auth__actions .btn {
+  justify-content: center;
+}
+
+/* --- page furniture --------------------------------------------------- */
+.auth__foot {
+  margin-top: 1.4rem;
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+  text-align: center;
+}
+
+.auth__foot a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--ink) 35%, transparent);
+}
+
+.auth__foot a:hover {
+  color: var(--accent);
+}
+
+/* --- admin variant ---------------------------------------------------- */
+/* The admin gate reuses every primitive above; it only needs a narrower
+   card, a lock chip, and no tabs. Nothing here duplicates a rule. */
+.auth--admin .auth__card {
+  width: min(23rem, 100%);
+}
+
+.auth__lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3em 0.7em;
+  border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
+  border-radius: 999px;
+  color: var(--ink-soft);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+}
+
+.auth__lock svg {
+  width: 12px;
+  height: 12px;
+}
+
+.admin-panel__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+.admin-panel__row b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* idle lock warning, appended inside the unlocked panel rather than floated
+   over the viewport: it belongs to the thing that is about to disappear */
+.admin-warn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1.1rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  color: var(--accent);
+  font-size: var(--step--1);
+  font-weight: 550;
+}
+
+.admin-warn .auth__link {
+  color: var(--accent);
+  font-weight: 600;
+}

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin · BSS AUB</title>
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <meta name="theme-color" content="#f8f3f5" />
+    <meta name="referrer" content="no-referrer" />
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/favicon-16.png" />
+    <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png" />
+    <!-- No canonical, no OG tags and no manifest on purpose: this page is not
+         meant to be found, shared or installed. It is also linked from nowhere
+         on the site. That is obscurity, not security, and it is not what
+         protects it: see src/admin.js and scripts/build-admin-payload.mjs.
+         No inline <script> either, so the built CSP can run script-src
+         'self' blob: with no 'unsafe-inline'. -->
+    <script type="module" src="/src/admin.js"></script>
+  </head>
+  <body>
+    <div class="site-bg" aria-hidden="true"></div>
+
+    <main class="auth auth--admin" id="main">
+      <div class="auth__card" data-admin>
+        <section data-admin-gate>
+          <p class="eyebrow">Business Student Society</p>
+          <h1 class="auth__title">Admin</h1>
+          <p class="auth__note">
+            <span class="auth__lock">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="4" y="11" width="16" height="9" rx="2" />
+                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+              </svg>
+              Encrypted
+            </span>
+          </p>
+
+          <form class="auth__form" data-admin-form autocomplete="off" novalidate>
+            <label class="auth__field">
+              <span>Password</span>
+              <span class="auth__wrap">
+                <input
+                  class="auth__input"
+                  id="admin-pass"
+                  type="password"
+                  autocomplete="current-password"
+                  placeholder="Admin password"
+                  required
+                />
+                <button
+                  class="auth__reveal"
+                  type="button"
+                  data-admin-reveal="admin-pass"
+                  aria-pressed="false"
+                  aria-label="Show password"
+                >
+                  Show
+                </button>
+              </span>
+            </label>
+            <button class="btn btn--primary auth__submit" type="submit" data-admin-submit>Unlock</button>
+          </form>
+
+          <p class="auth__status" data-admin-status role="status" aria-live="polite"></p>
+        </section>
+
+        <div data-admin-mount hidden></div>
+
+        <p class="auth__foot"><a data-home-link href="./">Back to the site</a></p>
+      </div>
+    </main>
+  </body>
+</html>

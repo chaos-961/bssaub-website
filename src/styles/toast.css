@@ -1,0 +1,107 @@
+/* ------------------------------------------------------------------
+   Login toast (v0.4.2). A paper pill that slides out from behind the
+   navbar. See src/modules/loginToast.js for why it sits BELOW the bar in
+   the stack rather than above it.
+
+   Two transitioned properties, both composited (transform and opacity),
+   on one element that exists only while it is on screen. No filter, no
+   blend, nothing that would trip the §GPU floor.
+   ------------------------------------------------------------------ */
+.login-toast {
+  position: fixed;
+  top: calc(var(--nav-h) + 10px);
+  left: 50%;
+  /* below the bar (110) so it emerges from behind it, and below the dropdown
+     (100) so a menu opened while it is up is never covered */
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: calc(100vw - 1.75rem);
+  padding: 0.42rem 0.5rem 0.42rem 0.42rem;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  box-shadow:
+    0 1px 2px rgba(34, 18, 25, 0.06),
+    0 18px 42px -22px rgba(34, 18, 25, 0.55);
+  /* parked far enough up to clear its own height plus the bar it hides behind */
+  transform: translate(-50%, calc(-100% - var(--nav-h) - 22px));
+  opacity: 0;
+  transition:
+    transform 0.55s var(--ease-out),
+    opacity 0.35s var(--ease-out);
+}
+
+.login-toast.is-in {
+  transform: translate(-50%, 0);
+  opacity: 1;
+}
+
+.login-toast__mark {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-content: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.login-toast__copy {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  min-width: 0;
+  padding-right: 0.15rem;
+}
+
+.login-toast__label {
+  flex: none;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  color: var(--ink-soft);
+}
+
+.login-toast__name {
+  font-size: var(--step--1);
+  font-weight: 620;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.login-toast__close {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-quick),
+    color var(--dur-quick);
+}
+
+.login-toast__close:hover {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+}
+
+/* the label is the first thing to go when there is no room for it */
+@media (max-width: 26rem) {
+  .login-toast__label {
+    display: none;
+  }
+}

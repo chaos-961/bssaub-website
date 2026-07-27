@@ -1,0 +1,32 @@
+<!-- Encrypted admin dashboard markup (v0.4.2).
+
+     This file is NOT served. It is encrypted into public/admin-payload.json by
+     scripts/build-admin-payload.mjs and only exists as plaintext in the repo
+     and in the browser of whoever typed the password. Re-run the encryptor
+     after every edit here, or the build gate fails.
+
+     Deliberately empty of features: the brief is a working gate with nothing
+     behind it but a way out. Everything added here in future is encrypted for
+     free, which is the whole point of the shape. -->
+<section class="admin-panel">
+  <p class="eyebrow">Business Student Society</p>
+  <h1 class="auth__title">Admin</h1>
+  <p class="auth__note">You are unlocked. Nothing is wired up back here yet.</p>
+
+  <div class="admin-panel__row">
+    <span>Session</span>
+    <b>Unlocked</b>
+  </div>
+  <div class="admin-panel__row">
+    <span>Locks after</span>
+    <b data-admin-lock></b>
+  </div>
+  <div class="admin-panel__row">
+    <span>Payload built</span>
+    <b data-admin-built></b>
+  </div>
+
+  <div class="auth__actions">
+    <button class="btn btn--ghost" type="button" data-admin-signout>Sign out</button>
+  </div>
+</section>
