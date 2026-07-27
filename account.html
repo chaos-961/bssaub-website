@@ -132,7 +132,7 @@
                 inputmode="email"
                 autocomplete="username"
                 spellcheck="false"
-                placeholder="you@mail.aub.edu"
+                placeholder="you@email.com"
                 required
               />
             </label>
@@ -195,7 +195,7 @@
                 inputmode="email"
                 autocomplete="username"
                 spellcheck="false"
-                placeholder="you@mail.aub.edu"
+                placeholder="you@email.com"
                 required
               />
             </label>
@@ -223,8 +223,33 @@
                 </button>
               </span>
             </label>
+            <label class="auth__field">
+              <span>Confirm password</span>
+              <span class="auth__wrap">
+                <input
+                  class="auth__input"
+                  id="re-pass2"
+                  type="password"
+                  autocomplete="new-password"
+                  minlength="8"
+                  placeholder="Type it again"
+                  required
+                />
+                <button
+                  class="auth__reveal"
+                  type="button"
+                  data-auth-reveal="re-pass2"
+                  data-auth-always
+                  aria-pressed="false"
+                  aria-label="Show password"
+                >
+                  Show
+                </button>
+              </span>
+            </label>
             <p class="auth__hint">
-              Use at least 8 characters. Something you do not use anywhere else is best.
+              Use at least 8 characters. Any email address works. Something you do not use
+              anywhere else is best.
             </p>
             <button class="btn btn--primary auth__submit" type="submit">Create account</button>
           </form>
@@ -312,7 +337,7 @@
       <div class="site-footer__bottom">
         <div class="site-footer__bottom-inner">
           <p>© Business Student Society, AUB · CRN: 5014</p>
-          <span class="version-badge" data-version-badge>v0.4.2</span>
+          <span class="version-badge" data-version-badge>v0.4.3</span>
         </div>
       </div>
     </footer>

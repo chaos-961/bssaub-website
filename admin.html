@@ -21,54 +21,62 @@
   <body>
     <div class="site-bg" aria-hidden="true"></div>
 
-    <main class="auth auth--admin" id="main">
-      <div class="auth__card" data-admin>
-        <section data-admin-gate>
-          <p class="eyebrow">Business Student Society</p>
-          <h1 class="auth__title">Admin</h1>
-          <p class="auth__note">
-            <span class="auth__lock">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="4" y="11" width="16" height="9" rx="2" />
-                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-              </svg>
-              Encrypted
-            </span>
-          </p>
-
-          <form class="auth__form" data-admin-form autocomplete="off" novalidate>
-            <label class="auth__field">
-              <span>Password</span>
-              <span class="auth__wrap">
-                <input
-                  class="auth__input"
-                  id="admin-pass"
-                  type="password"
-                  autocomplete="current-password"
-                  placeholder="Admin password"
-                  required
-                />
-                <button
-                  class="auth__reveal"
-                  type="button"
-                  data-admin-reveal="admin-pass"
-                  aria-pressed="false"
-                  aria-label="Show password"
-                >
-                  Show
-                </button>
+    <!-- Two states, SIBLINGS rather than nested (v0.4.3, user call): locked is
+         the centred card, unlocked is a bare background with a button row. The
+         unlocked stage sits outside the card so it cannot inherit its width,
+         padding or centring. -->
+    <div data-admin>
+      <main class="auth auth--admin" id="main" data-admin-gate>
+        <div class="auth__card">
+          <section>
+            <p class="eyebrow">Business Student Society</p>
+            <h1 class="auth__title">Admin</h1>
+            <p class="auth__note">
+              <span class="auth__lock">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="4" y="11" width="16" height="9" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+                Encrypted
               </span>
-            </label>
-            <button class="btn btn--primary auth__submit" type="submit" data-admin-submit>Unlock</button>
-          </form>
+            </p>
 
-          <p class="auth__status" data-admin-status role="status" aria-live="polite"></p>
-        </section>
+            <form class="auth__form" data-admin-form autocomplete="off" novalidate>
+              <label class="auth__field">
+                <span>Password</span>
+                <span class="auth__wrap">
+                  <input
+                    class="auth__input"
+                    id="admin-pass"
+                    type="password"
+                    autocomplete="current-password"
+                    placeholder="Admin password"
+                    required
+                  />
+                  <button
+                    class="auth__reveal"
+                    type="button"
+                    data-admin-reveal="admin-pass"
+                    aria-pressed="false"
+                    aria-label="Show password"
+                  >
+                    Show
+                  </button>
+                </span>
+              </label>
+              <button class="btn btn--primary auth__submit" type="submit" data-admin-submit>Unlock</button>
+            </form>
 
-        <div data-admin-mount hidden></div>
+            <p class="auth__status" data-admin-status role="status" aria-live="polite"></p>
+          </section>
 
-        <p class="auth__foot"><a data-home-link href="./">Back to the site</a></p>
-      </div>
-    </main>
+          <p class="auth__foot"><a data-home-link href="./">Back to the site</a></p>
+        </div>
+      </main>
+
+      <!-- Unlocked stage. Empty in the served page on purpose: everything that
+           goes here arrives from the encrypted payload. -->
+      <div data-admin-mount hidden></div>
+    </div>
   </body>
 </html>

@@ -64,6 +64,19 @@ body {
   color: var(--ink);
 }
 
+/* [hidden] MUST beat any display a component sets. This is not defensive
+   tidying, it is a fix for a shipped bug (v0.4.3): the account page toggled
+   its two forms with `el.hidden = true`, `.auth__form` declares
+   `display: grid`, and an AUTHOR declaration beats the UA sheet's
+   `[hidden] { display: none }` regardless of specificity — so both the sign in
+   and the create account forms rendered at once, stacked, and the tabs looked
+   broken. Any rule that sets display on an element JS also hides has the same
+   trap, which is why this is global and carries !important rather than being
+   patched per component. */
+[hidden] {
+  display: none !important;
+}
+
 img,
 svg,
 video {

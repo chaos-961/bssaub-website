@@ -1,4 +1,4 @@
-/* Encrypted admin dashboard code (v0.4.2).
+/* Encrypted admin dashboard code (v0.4.3).
 
    Like its markup, this file is never served. It is encrypted into
    public/admin-payload.json and reaches the browser only as an AES-GCM
@@ -12,20 +12,18 @@
    argument. That is a real constraint on what belongs here, and it is also
    why the api object is the seam to widen when the admin grows.
 
+   `api.homeUrl` rather than a hardcoded path: this module cannot read
+   import.meta.env, so the Vite base has to be handed in. Getting that wrong
+   is invisible on a custom domain and a 404 on GitHub Pages.
+
    Returns a teardown. The mount's own DOM is destroyed on lock, so listeners
    ON IT die with it; the return value is for anything attached to document,
    window or a timer, which is exactly the leak Pavia's admin had to fix once
    already. Returning it now costs one line and means the next feature has
    somewhere obvious to put its cleanup. */
 export default function mount(root, api) {
-  const lock = root.querySelector('[data-admin-lock]');
-  if (lock) lock.textContent = `${api.lockAfterMinutes} minutes idle`;
-
-  const built = root.querySelector('[data-admin-built]');
-  if (built) {
-    // generatedAt is an ISO string from the encryptor; show the date only
-    built.textContent = api.generatedAt ? api.generatedAt.slice(0, 10) : 'unknown';
-  }
+  const home = root.querySelector('[data-admin-home]');
+  if (home) home.href = api.homeUrl;
 
   root.querySelector('[data-admin-signout]')?.addEventListener('click', () => {
     api.lock('Signed out.');

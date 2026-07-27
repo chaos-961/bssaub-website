@@ -108,22 +108,48 @@ export function initAccount() {
     });
   };
 
-  const showTab = (key) => {
+  const showTab = (key, { focusPanel = true } = {}) => {
     tabs.forEach((tab) => {
       const active = tab.dataset.authTab === key;
       tab.classList.toggle('is-active', active);
       tab.setAttribute('aria-selected', String(active));
+      // roving tabindex: only the selected tab is in the page's tab order, and
+      // the arrow keys below are what reach the other one. Both halves are
+      // required — see the keydown handler.
       tab.tabIndex = active ? 0 : -1;
     });
     forms.forEach((form, name) => {
+      // `hidden` only actually hides because base.css forces it to beat
+      // `.auth__form { display: grid }`. Without that rule both forms render
+      // at once and this whole control does nothing visible (v0.4.3 fix).
       form.hidden = name !== key;
     });
     setStatus('');
-    forms.get(key)?.querySelector('input')?.focus({ preventScroll: true });
+    if (focusPanel) forms.get(key)?.querySelector('input')?.focus({ preventScroll: true });
   };
 
-  tabs.forEach((tab) => {
+  /* Tabs: click, plus the arrow keys the ARIA tablist pattern requires.
+     The roving tabindex above takes the unselected tab OUT of the page's tab
+     order, which is correct for the pattern and completely broken without a
+     key handler to put focus back — a keyboard visitor could not reach
+     "Create account" at all (measured on the live v0.4.2 page: tabIndex -1,
+     not in the focusable set, no handler). Automatic activation, so moving
+     focus switches the panel, which is the expected behaviour for two tabs
+     whose panels are already loaded. */
+  tabs.forEach((tab, index) => {
     tab.addEventListener('click', () => showTab(tab.dataset.authTab));
+    tab.addEventListener('keydown', (event) => {
+      const last = tabs.length - 1;
+      let next = null;
+      if (event.key === 'ArrowRight') next = tabs[index === last ? 0 : index + 1];
+      else if (event.key === 'ArrowLeft') next = tabs[index === 0 ? last : index - 1];
+      else if (event.key === 'Home') next = tabs[0];
+      else if (event.key === 'End') next = tabs[last];
+      if (!next) return;
+      event.preventDefault();
+      showTab(next.dataset.authTab, { focusPanel: false });
+      next.focus();
+    });
   });
 
   // reveal toggles: swap the input type and keep the button's label honest
@@ -215,11 +241,18 @@ export function initAccount() {
     const name = sanitizeName(rawName);
     const email = root.querySelector('#re-email').value.trim();
     const password = root.querySelector('#re-pass').value;
+    const confirm = root.querySelector('#re-pass2').value;
 
     if (name.length < 2) return setStatus('Enter the name you want on your account.', 'error');
     if (!email) return setStatus(MESSAGES['auth/missing-email'], 'error');
     if (password.length < MIN_PASSWORD) {
       return setStatus(MESSAGES['auth/weak-password'], 'error');
+    }
+    /* Length before match, deliberately: a short password reported as "they do
+       not match" sends people hunting for a typo that is not there. Compared
+       here and nowhere else, and both fields are wiped on every outcome. */
+    if (password !== confirm) {
+      return setStatus('The two passwords do not match.', 'error');
     }
 
     setBusy(true);

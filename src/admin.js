@@ -114,6 +114,9 @@ function boot() {
     root.querySelector('.admin-warn')?.remove();
   };
 
+  /* The idle warning is appended to the unlocked stage and styled as a fixed
+     pill (auth.css), not laid out in flow: since v0.4.3 that stage is a bare
+     background with a button row, so there is no panel for it to sit inside. */
   const showWarning = () => {
     if (!unlocked || root.querySelector('.admin-warn')) return;
     let left = WARN_SECONDS;
@@ -226,7 +229,9 @@ function boot() {
         module.default?.(mount, {
           lock,
           lockAfterMinutes: Number(payload.lockAfterMinutes) || 15,
-          generatedAt: dashboard.generatedAt || '',
+          // the dashboard cannot read import.meta.env from a blob module, so
+          // the Vite base is handed in; it is what "View site" navigates to
+          homeUrl: import.meta.env.BASE_URL,
         }) || null;
     } finally {
       URL.revokeObjectURL(url);

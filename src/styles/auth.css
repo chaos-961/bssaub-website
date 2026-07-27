@@ -344,37 +344,65 @@
   height: 12px;
 }
 
-.admin-panel__row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.85rem 0;
-  border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
-  font-size: var(--step--1);
-  color: var(--ink-soft);
-}
+/* The locked card must obey `hidden` even though .auth declares display grid.
+   base.css forces this globally now; this comment is here because THIS is the
+   element that taught the lesson's sibling case. */
 
-.admin-panel__row b {
-  color: var(--ink);
-  font-weight: 600;
-}
-
-/* idle lock warning, appended inside the unlocked panel rather than floated
-   over the viewport: it belongs to the thing that is about to disappear */
-.admin-warn {
+/* --- unlocked stage (v0.4.3, user call) --------------------------------
+   The whole unlocked admin: the mesh background and a button row top left.
+   No panel, no card, no rows. The two buttons take a paper fill rather than
+   the plain .btn--ghost hairline, because a bare outline over a moving mesh
+   reads as a stray rectangle; this is the same "paper island" the navbar uses
+   to sit on the same ground. */
+.admin-bar {
+  position: fixed;
+  top: clamp(1rem, 3vw, 1.75rem);
+  left: clamp(1rem, 3vw, 1.75rem);
+  z-index: 10;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
   flex-wrap: wrap;
-  margin-top: 1.1rem;
-  padding: 0.7rem 0.9rem;
-  border-radius: var(--radius);
-  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  gap: 0.6rem;
+}
+
+.admin-bar .btn {
+  background: var(--surface);
+  border-color: color-mix(in srgb, var(--ink) 16%, transparent);
+  color: var(--ink);
+  box-shadow:
+    0 1px 2px rgba(34, 18, 25, 0.05),
+    0 12px 28px -22px rgba(34, 18, 25, 0.5);
+}
+
+.admin-bar .btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* idle lock warning: a fixed pill at the bottom, because since v0.4.3 the
+   unlocked stage has no panel for it to sit inside */
+.admin-warn {
+  position: fixed;
+  left: 50%;
+  bottom: clamp(1rem, 3vw, 1.75rem);
+  transform: translateX(-50%);
+  z-index: 11;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: calc(100vw - 2rem);
+  padding: 0.7rem 1.1rem;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  box-shadow:
+    0 1px 2px rgba(34, 18, 25, 0.05),
+    0 18px 42px -22px rgba(34, 18, 25, 0.55);
   color: var(--accent);
   font-size: var(--step--1);
   font-weight: 550;
+  text-align: center;
 }
 
 .admin-warn .auth__link {
