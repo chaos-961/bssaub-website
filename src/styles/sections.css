@@ -12,6 +12,25 @@
 @media (min-width: 60rem) {
   .hero {
     grid-template-columns: 1.05fr 0.95fr;
+    /* THE SHORT WIDE WINDOW, which the v0.4.6 fold work did not cover because
+       only the mobile block got svh spacing (2026-07-27). A two column hero is
+       short enough to fit almost anywhere, so its spacing was flat rem with no
+       give in it at all: at 1280x600 the sub going to three lines put the trust
+       row 24px under the fold. min() and not clamp because the rem value is the
+       ceiling here and the svh term may only ever pull it DOWN.
+
+       PADDING-BOTTOM IS NOT IN THIS LIST, and the reason is the whole shape of
+       the fix. Once the content is taller than min-height the grid row is no
+       longer centred in anything, so the trust row's y is padding-top plus the
+       stack above it and the bottom padding moves it by exactly zero. Measured:
+       trimming it 64px to 48px moved factsBottom 0px. Only the top padding and
+       the internal margins are real levers, which is why those are what scale.
+
+       On a window with slack these are close to free rather than merely small:
+       the hero is align-items: center, so on a tall desktop window the centring
+       absorbs a padding change instead of moving the content. That is what makes
+       3.5svh safe to reach for. */
+    padding-top: calc(var(--nav-h) + min(3rem, 3.5svh));
   }
 }
 
@@ -59,10 +78,21 @@
   color: var(--ink-soft);
   font-size: var(--step-1);
   max-width: 38ch;
+  /* 1.5 rather than the body 1.6, at every width (2026-07-27, when this line
+     gained events and opportunities and went from two lines to three on a phone
+     and to three or four on a desktop). The paragraph that grew is the one that
+     should pay for itself, and leading is the part of a paragraph that can give
+     without the type getting smaller: worth 4.2px at 360x640 and 6.9px at
+     1280x600. Do not push it below 1.5, that is where --ink-soft on the moving
+     mesh starts to knit together. */
+  line-height: 1.5;
 }
 
 .hero__ctas {
-  margin-top: 2.4rem;
+  /* the second half of the short wide window trim above, and the largest single
+     gap in the copy column, so it is the one worth scaling: 38.4px flat, 30px at
+     600 tall, untouched from ~770px up (2026-07-27) */
+  margin-top: min(2.4rem, 5svh);
   display: flex;
   flex-wrap: wrap;
   gap: 0.9rem;
@@ -141,8 +171,18 @@
        of it below the trust row instead, and the card sits a fixed 24px under
        the nav at every screen height rather than drifting with the slack. */
     align-items: start;
-    padding-top: calc(var(--nav-h) + clamp(0.75rem, 3svh, 2rem));
-    padding-bottom: clamp(0.9rem, 2svh, 1.6rem);
+    /* 2.2svh and not v0.4.6's 3svh (2026-07-27): this is the gap between the nav
+       and the card, 19.2px at 640 tall and 14.1px after, and it is the last 5px
+       the shortest phone needed to keep the trust row inside the fold with a
+       margin worth trusting rather than a 7px one. Unchanged from ~890px of
+       height up, where the 2rem ceiling has always been the binding term. */
+    padding-top: calc(var(--nav-h) + clamp(0.75rem, 2.2svh, 2rem));
+    /* The cheapest 5px on the page: with align-items: start the hero only ever
+       spends this when the content has already overrun, i.e. on exactly the
+       short screens that cannot afford it, and on a screen with slack it is
+       invisible because the slack sits below it either way. Trimmed from 2svh
+       when the sub gained a third line (2026-07-27). */
+    padding-bottom: clamp(0.5rem, 1.2svh, 1.6rem);
     gap: clamp(0.85rem, 2svh, 1.5rem);
   }
 
@@ -300,10 +340,19 @@
        block in the phone stack, so on a screen too short for the whole hero it
        is the first thing that gives height back, capped at the artwork's own
        663/473 ratio so the picture cannot distort. Inert on a phone with the
-       room for it, where 100% is still the smaller term. Mobile only on
-       purpose: 27svh of a 900px desktop window would shrink a card that has
-       nothing to make room for. */
-    width: min(100%, 520px, max(240px, calc(29svh * 1.4)));
+       room for it, where 100% is still the smaller term. The max() is the
+       landscape floor, the same one the headline carries. Mobile only on
+       purpose: 27.5svh of a 900px desktop window would shrink a card that has
+       nothing to make room for.
+
+       27.5 and not the v0.4.6 29 (2026-07-27): the sub gained a third line and
+       this is the block the comment above already nominates to pay for it. It
+       is deliberately the SMALLEST of the three trims taken that day, ~10px at
+       360x640 against the 5px of hero padding and the 4px of sub leading,
+       because the card is the thing the page is selling and 29 to 26 would have
+       covered the whole overrun out of the one element nobody wants smaller.
+       At 375x812 it is 330px wide against 318px, which is a 3.6% change. */
+    width: min(100%, 520px, max(240px, calc(27.5svh * 1.4)));
   }
 }
 
