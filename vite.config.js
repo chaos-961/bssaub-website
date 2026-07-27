@@ -61,17 +61,31 @@ const preloadGatedAssets = () => ({
 
    The recaptcha origins are Firebase Auth's fallback path: identity toolkit can
    demand a reCAPTCHA challenge on password reset or sign-up when abuse
-   protection kicks in, and without these the failure is a silent hang. */
+   protection kicks in, and without these the failure is a silent hang.
+
+   firestore.googleapis.com joins both at v0.4.8, when the membership record
+   arrived. The ADMIN page grew the whole Firebase set in the same pass and
+   that is the bigger change: it used to talk to nothing but its own origin,
+   because there was nothing behind the gate. It now signs in to a real admin
+   account and writes member records, so it needs exactly what account.html
+   needs. Note this is the one page where a missing origin here would look like
+   a wrong password rather than a network error, since the sign in happens
+   immediately after the unlock. */
+const FIREBASE_CONNECT =
+  'https://identitytoolkit.googleapis.com https://securetoken.googleapis.com ' +
+  'https://firestore.googleapis.com';
+const RECAPTCHA_SCRIPT = 'https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/';
+
 const CSP_ACCOUNT = [
   "default-src 'self'",
   "base-uri 'none'",
   "object-src 'none'",
   "form-action 'self'",
-  "script-src 'self' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/",
+  `script-src 'self' ${RECAPTCHA_SCRIPT}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
   "font-src 'self'",
-  "connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com",
+  `connect-src 'self' ${FIREBASE_CONNECT}`,
   'frame-src https://bssaub.firebaseapp.com https://www.google.com',
   "manifest-src 'self'",
   "worker-src 'self'",
@@ -82,12 +96,12 @@ const CSP_ADMIN = [
   "base-uri 'none'",
   "object-src 'none'",
   "form-action 'none'",
-  "script-src 'self' blob:",
+  `script-src 'self' blob: ${RECAPTCHA_SCRIPT}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
   "font-src 'self'",
-  "connect-src 'self'",
-  "frame-src 'none'",
+  `connect-src 'self' ${FIREBASE_CONNECT}`,
+  'frame-src https://bssaub.firebaseapp.com https://www.google.com',
   "manifest-src 'self'",
   "worker-src 'self'",
 ].join('; ');

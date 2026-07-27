@@ -9,6 +9,14 @@ Thumbs.db
 # Kept local on purpose; raw screenshots and full-size PNGs never ship.
 /assets/
 
+# Firestore security rules (v0.4.8, user call). Untracked on purpose: the rules
+# name the admin account's email address, which is the one thing about the
+# admin gate deliberately kept out of a public repo (it travels inside the
+# encrypted payload instead, see scripts/build-admin-payload.mjs). The rules
+# are pasted into the Firebase console by hand and the console is where they
+# live; this file is the local copy to edit and paste from.
+firestore.rules
+
 # Local tooling
 .claude/
 run-local.bat

@@ -34,6 +34,36 @@
    - The password field is cleared on every outcome, success or failure,
      and the derived key is never stored: it goes out of scope with the
      unlock call.
+
+   THE MEMBERS CONNECTION (v0.4.8), which changes what this page is.
+   Until now the payload was the whole story: decrypt it and there was
+   nothing behind it. Now the dashboard reads and writes real member
+   records, and Firestore only ever answers to a Firebase identity, so the
+   gate signs in to a dedicated admin account whose ADDRESS travels inside
+   the ciphertext and whose PASSWORD is the same one that just decrypted
+   it. One secret, typed once, doing both jobs.
+
+   That is a deliberate trade and it moves the boundary. A cracked payload
+   used to be worth some markup; it is now worth write access to the
+   members collection, which is exactly why the honest note above about
+   password length stopped being theoretical. The mitigation is length,
+   and it is the user's to apply.
+
+   THE RULES ARE THE AUTHORITY, NOT THIS PAGE. Firestore checks the signed
+   in address on every read and write, so patching this file, skipping the
+   gate, or forging an unlock buys nothing: without the Firebase session
+   the collection is closed. That is the opposite of the usual static site
+   admin, where the client is the only thing standing in the way.
+
+   Three things keep the session itself small. It runs on a NAMED Firebase
+   app, so it cannot touch the member session the account page keeps in
+   this same origin's IndexedDB (the auth store is keyed by app name). It
+   uses inMemoryPersistence, so nothing about it is ever written to disk
+   and closing the tab is a sign out. And the idle lock signs it out and
+   deletes the app, so a locked admin is a signed out one.
+
+   The connection is started but NOT awaited at unlock, so a slow round
+   trip cannot hold the dashboard shut; the search area waits on it.
    ------------------------------------------------------------------ */
 import '@fontsource-variable/fraunces/full.css';
 import '@fontsource-variable/instrument-sans';
@@ -44,6 +74,23 @@ import './styles/site-bg.css';
 import './styles/auth.css';
 
 import { initOceanMesh } from './modules/oceanMesh.js';
+import { firebaseConfig } from './data/firebase.js';
+/* Statically imported although a LOCKED page can use none of it. These are
+   pure functions with no dependencies of their own, and the alternative (a
+   fourth dynamic chunk) would leave the dashboard unable to do arithmetic
+   until a network round trip finished, to save a few hundred bytes on a page
+   exactly one person ever opens. */
+import {
+  MEMBERS,
+  daysLeft,
+  extend,
+  formatDate,
+  formatLeft,
+  isActive,
+  matchesTerm,
+  memberFrom,
+  queryKeyFor,
+} from './data/membership.js';
 
 /* Must match scripts/build-admin-payload.mjs byte for byte. */
 const KDF_PREFIX = 'bss-admin:';
@@ -53,8 +100,111 @@ const WARN_SECONDS = 60;
 const THROTTLE_STEP_MS = 900;
 const THROTTLE_MAX_MS = 4500;
 
+/* Pulled deliberately high and REPORTED when it bites (the dashboard prints a
+   line when it does). The client side filter below narrows an array-contains
+   hit further, so a low cap here would silently drop rows the admin is
+   entitled to see, and a search that quietly hides someone is worse than one
+   that says it stopped counting. */
+const SEARCH_LIMIT = 50;
+
 const encoder = new TextEncoder();
 const bytes = (base64) => Uint8Array.from(atob(base64 || ''), (c) => c.charCodeAt(0));
+
+/* The exclusive upper bound of a prefix range: the same string with its last
+   code unit bumped by one. The usual Firestore idiom appends U+F8FF instead,
+   and it is avoided here on purpose. That character is in a private use block,
+   so it renders as NOTHING in an editor and in a diff, which makes it a byte a
+   future edit can delete without anyone seeing it happen; and it is only an
+   upper bound for text that sorts below it, so an address holding any higher
+   character would fall outside its own prefix range. Incrementing is exact and
+   visible. */
+const afterPrefix = (value) =>
+  value.slice(0, -1) + String.fromCharCode(value.charCodeAt(value.length - 1) + 1);
+
+/* ------------------------------------------------------------------
+   The members connection. Every Firebase call on this page lives inside
+   this function, which is only ever reached with a password that has
+   already decrypted the payload.
+   ------------------------------------------------------------------ */
+async function connect(email, password) {
+  const [{ initializeApp, deleteApp }, authSdk, dbSdk] = await Promise.all([
+    import('firebase/app'),
+    import('firebase/auth'),
+    import('firebase/firestore/lite'),
+  ]);
+
+  /* A NAMED app, which is the part that keeps this off the member session.
+     Firebase keys its auth store by app name, so the default app's entry (the
+     one account.html writes, on this same GitHub Pages origin) is a different
+     key entirely and is neither read nor overwritten here. */
+  const app = initializeApp(firebaseConfig, 'bss-admin');
+  const auth = authSdk.getAuth(app);
+  await authSdk.setPersistence(auth, authSdk.inMemoryPersistence);
+  await authSdk.signInWithEmailAndPassword(auth, email, password);
+
+  /* firestore/lite rather than the full SDK: this dashboard runs a handful of
+     one shot queries and writes, and the realtime channel, the offline cache
+     and the local query engine that come with the full build would all be dead
+     weight sitting behind a password gate. */
+  const db = dbSdk.getFirestore(app);
+  const readRows = (snap) => snap.docs.map((entry) => memberFrom(entry.id, entry.data()));
+
+  return {
+    /* ONE query and NO composite index, which is what lets this work the
+       moment the rules are pasted in with no console index step. A name search
+       hits the prefix array membership.js builds and is then narrowed here for
+       exactness; an address search runs a range on the email field. Both are
+       single field indexes, and Firestore maintains those automatically. */
+    async search(term) {
+      const clean = String(term || '').trim();
+      if (!clean) return { rows: [], capped: false };
+
+      if (clean.includes('@')) {
+        const needle = clean.toLowerCase();
+        const snap = await dbSdk.getDocs(
+          dbSdk.query(
+            dbSdk.collection(db, MEMBERS),
+            dbSdk.orderBy('email'),
+            dbSdk.startAt(needle),
+            dbSdk.endBefore(afterPrefix(needle)),
+            dbSdk.limit(SEARCH_LIMIT),
+          ),
+        );
+        return { rows: readRows(snap), capped: snap.docs.length >= SEARCH_LIMIT };
+      }
+
+      const key = queryKeyFor(clean);
+      if (!key) return { rows: [], capped: false };
+      const snap = await dbSdk.getDocs(
+        dbSdk.query(
+          dbSdk.collection(db, MEMBERS),
+          dbSdk.where('searchKeys', 'array-contains', key),
+          dbSdk.limit(SEARCH_LIMIT),
+        ),
+      );
+      const found = readRows(snap)
+        .filter((row) => matchesTerm(row.name, clean))
+        .sort((a, b) => a.name.localeCompare(b.name));
+      return { rows: found, capped: snap.docs.length >= SEARCH_LIMIT };
+    },
+
+    setExpiry(uid, expiresAt) {
+      return dbSdk.updateDoc(dbSdk.doc(db, MEMBERS, uid), { expiresAt });
+    },
+
+    remove(uid) {
+      return dbSdk.deleteDoc(dbSdk.doc(db, MEMBERS, uid));
+    },
+
+    async close() {
+      try {
+        await authSdk.signOut(auth);
+      } finally {
+        await deleteApp(app);
+      }
+    },
+  };
+}
 
 function boot() {
   document.documentElement.classList.add('js');
@@ -74,6 +224,7 @@ function boot() {
   let busy = false;
   let unlocked = false;
   let teardown = null;
+  let connection = null; // Promise of the members connection while unlocked
   let idleTimer = 0;
   let warnTimer = 0;
   let warnTick = 0;
@@ -169,6 +320,14 @@ function boot() {
       /* a broken teardown must not block the lock */
     }
     teardown = null;
+    /* Locking signs the admin OUT of Firebase, it does not merely hide the
+       dashboard. Anything less would leave an idle machine holding a session
+       that can write every member record, which is the whole thing the idle
+       lock exists to prevent. Detached deliberately: a network hiccup on the
+       way out must not stop the lock, and the app is deleted either way. */
+    const closing = connection;
+    connection = null;
+    closing?.then((members) => members.close()).catch(() => {});
     window.clearTimeout(idleTimer);
     window.clearTimeout(warnTimer);
     clearWarning();
@@ -209,7 +368,7 @@ function boot() {
     return JSON.parse(new TextDecoder().decode(plain));
   }
 
-  async function open(dashboard) {
+  async function open(dashboard, password) {
     /* innerHTML with a decrypted string, which normally would be the worst
        line in the file. It is safe HERE for a specific reason, not a vague
        one: AES-GCM is authenticated encryption, so this string is bit for bit
@@ -218,6 +377,18 @@ function boot() {
        can rewrite the served JS does not need this line. */
     mount.innerHTML = dashboard.html;
 
+    /* Started here, where the password is still in scope, and NOT awaited: the
+       dashboard opens on the next line either way and its search area waits on
+       this promise itself. Awaiting would put a sign in round trip between the
+       correct password and the page appearing, for no gain.
+
+       The password's last use is this call. It was never in a module variable
+       and it is not in one now: it lives in this function's arguments and in
+       the async closure below until sign in resolves, and nowhere else. */
+    connection = connect(dashboard.adminEmail, password);
+    // the dashboard reports the failure; this only stops an unhandled rejection
+    connection.catch(() => {});
+
     /* The dashboard's CODE runs as a real module from a blob URL rather than
        an inline <script>, which is what lets the built CSP stay
        script-src 'self' blob: with no 'unsafe-inline'. @vite-ignore stops
@@ -225,6 +396,14 @@ function boot() {
     const url = URL.createObjectURL(new Blob([dashboard.code], { type: 'text/javascript' }));
     try {
       const module = await import(/* @vite-ignore */ url);
+      /* `api` is the seam this file has always described as the one to widen
+         when the admin grows, and v0.4.8 is the first time it has. The
+         dashboard is a blob module with no bundler behind it, so it can import
+         nothing: the maths comes through `membership` and the database through
+         `members`, both as plain functions it can call. Each members call
+         chains off the connection promise, so the dashboard never has to know
+         whether sign in has landed yet. */
+      const live = (run) => (...args) => connection.then((members) => run(members, ...args));
       teardown =
         module.default?.(mount, {
           lock,
@@ -232,6 +411,13 @@ function boot() {
           // the dashboard cannot read import.meta.env from a blob module, so
           // the Vite base is handed in; it is what "View site" navigates to
           homeUrl: import.meta.env.BASE_URL,
+          membership: { daysLeft, extend, formatDate, formatLeft, isActive },
+          members: {
+            ready: () => connection.then(() => true),
+            search: live((members, term) => members.search(term)),
+            setExpiry: live((members, uid, ms) => members.setExpiry(uid, ms)),
+            remove: live((members, uid) => members.remove(uid)),
+          },
         }) || null;
     } finally {
       URL.revokeObjectURL(url);
@@ -261,7 +447,7 @@ function boot() {
       failures = 0;
       resetField();
       setStatus('');
-      await open(dashboard);
+      await open(dashboard, password);
     } catch (error) {
       failures += 1;
       resetField();

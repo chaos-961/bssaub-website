@@ -1,16 +1,81 @@
-<!-- Encrypted admin dashboard markup (v0.4.3, user call: strip it to the
-     background plus a Sign out button top left with View site beside it).
+<!-- Encrypted admin dashboard markup (v0.4.8, user brief: a search bar with a
+     Search button on its right, results a name can be found in, and each result
+     subscribable by the month, unsubscribable by the month, or deletable behind
+     a confirmation, showing how many days are left).
 
      This file is NOT served. It is encrypted into public/admin-payload.json by
      scripts/build-admin-payload.mjs and only exists as plaintext in the repo
      and in the browser of whoever typed the password. Re-run the encryptor
      after every edit here (npm run admin:payload), or the build gate fails.
 
-     What was here until v0.4.3 and is gone on the user's word: the eyebrow,
-     the Admin title, the "nothing is wired up" note, and the three status rows
-     (Session, Locks after, Payload built). Everything added here in future is
-     encrypted for free, which is the whole point of the shape. -->
+     A <template> holds the result row rather than dashboard.js building one
+     from strings, and that is a security decision and not a tidiness one: a
+     member's name and email are whatever THEY typed at registration, so every
+     one of them is written with textContent into a node that already exists.
+     There is no string concatenation anywhere near this markup.
+
+     The v0.4.3 stage (a bare background with Sign out and View site top left)
+     is unchanged and still first; the console sits under it in normal flow. -->
 <div class="admin-bar">
   <button class="btn btn--sm" type="button" data-admin-signout>Sign out</button>
   <a class="btn btn--sm" data-admin-home href="./">View site</a>
 </div>
+
+<main class="admin-console">
+  <h1 class="admin-console__title">Members</h1>
+
+  <form class="admin-search" data-admin-search novalidate>
+    <label class="admin-search__label" for="admin-q">Search by name or email address</label>
+    <div class="admin-search__row">
+      <input
+        class="auth__input"
+        id="admin-q"
+        type="search"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="Type a name"
+        data-admin-query
+      />
+      <button class="btn btn--primary" type="submit" data-admin-go>Search</button>
+    </div>
+  </form>
+
+  <p class="admin-console__status" data-admin-console-status role="status" aria-live="polite"></p>
+
+  <ul class="admin-results" data-admin-results></ul>
+</main>
+
+<template data-admin-row>
+  <li class="admin-row">
+    <!-- Identity and state are ONE grid child so the wide layout can be two
+         columns rather than three. Three never fitted: the action buttons and
+         the state pill together are wider than the row, which squeezed the
+         name column to zero and broke each name onto one character a line. -->
+    <div class="admin-row__main">
+      <div class="admin-row__who">
+        <strong class="admin-row__name" data-row-name></strong>
+        <span class="admin-row__email" data-row-email></span>
+      </div>
+      <span class="state-pill" data-row-state></span>
+    </div>
+    <div class="admin-row__actions" data-row-actions>
+      <button class="btn btn--sm btn--primary" type="button" data-act="add">Add 1 month</button>
+      <button class="btn btn--sm btn--ghost" type="button" data-act="sub">Remove 1 month</button>
+      <button class="btn btn--sm btn--ghost admin-row__danger" type="button" data-act="ask">
+        Delete
+      </button>
+    </div>
+    <div class="admin-row__confirm" data-row-confirm hidden>
+      <p class="admin-row__warn">
+        Delete this membership record? This removes the row and the days on it.
+        The sign in account itself stays, and only the Firebase console can remove that.
+      </p>
+      <div class="admin-row__actions">
+        <button class="btn btn--sm admin-row__danger admin-row__danger--solid" type="button" data-act="delete">
+          Yes, delete
+        </button>
+        <button class="btn btn--sm btn--ghost" type="button" data-act="cancel">Cancel</button>
+      </div>
+    </div>
+  </li>
+</template>

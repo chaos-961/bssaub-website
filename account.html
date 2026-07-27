@@ -270,9 +270,37 @@
             </span>
           </div>
 
-          <p class="auth__note">
-            Member perks land here as they open up. For now, the membership card is the way in.
-          </p>
+          <!-- The membership block (v0.4.8). The card is hidden until the
+               record says the subscription is still running, and memberPanel.js
+               takes it away again the instant it runs out on an open page. The
+               SVG is the same trick the hero card uses for its NAME blank: the
+               viewBox IS the artwork's own 663x473 pixel grid, so x/y here are
+               pixels measured off the asset and the fit needs no breakpoint.
+               inset 0 rather than the hero's 2px, since this card has no
+               border. -->
+          <div class="member" data-member>
+            <div class="member__card" data-member-card hidden>
+              <img
+                class="member__art"
+                src="assets/card/card-front.webp"
+                alt="Your Business Student Society membership card"
+                width="663"
+                height="473"
+                decoding="async"
+              />
+              <svg
+                class="member__name"
+                viewBox="0 0 663 473"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <text class="member__name-text" x="362" y="422.8" data-member-cardname></text>
+              </svg>
+            </div>
+            <p class="state-pill" data-member-state role="status" aria-live="polite"></p>
+            <p class="member__note" data-member-note></p>
+          </div>
 
           <div class="auth__actions">
             <a
@@ -280,7 +308,9 @@
               href="https://forms.cloud.microsoft/r/d5fFFxbKKN"
               target="_blank"
               rel="noopener"
+              data-member-join
               data-auth-always
+              hidden
             >
               Get the membership card
             </a>
@@ -338,7 +368,7 @@
       <div class="site-footer__bottom">
         <div class="site-footer__bottom-inner">
           <p>© Business Student Society, AUB · CRN: 5014</p>
-          <span class="version-badge" data-version-badge>v0.4.7</span>
+          <span class="version-badge" data-version-badge>v0.4.8</span>
         </div>
       </div>
     </footer>

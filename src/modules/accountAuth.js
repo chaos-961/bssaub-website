@@ -28,9 +28,20 @@
    moment a submit resolves either way. The session cookie this writes is
    a display name and nothing else (see session.js). Every string that came
    from a user is rendered with textContent.
+
+   FIRESTORE (v0.4.8) RIDES BEHIND AUTH, NOT BESIDE IT. The membership
+   record is only reachable once somebody is signed in, so putting it in
+   the same Promise.all as firebase/auth would make every visitor to the
+   GATE wait for a database they cannot query yet. It is started as soon
+   as the app exists and awaited only where it is used, which means the
+   sign in form goes live at the same moment it always did and an already
+   signed in visitor loses nothing either: the panel paints their name
+   first and fills in the membership when it lands.
    ------------------------------------------------------------------ */
 import { firebaseConfig } from '../data/firebase.js';
+import { MEMBERS, memberFrom, searchKeysFor } from '../data/membership.js';
 import { sanitizeName, writeSession, clearSession } from './session.js';
+import { initMemberPanel } from './memberPanel.js';
 
 const MIN_PASSWORD = 8;
 
@@ -80,11 +91,38 @@ export function initAccount() {
   );
   const tabs = Array.from(root.querySelectorAll('[data-auth-tab]'));
 
+  const panel = initMemberPanel(root);
+
   let failures = 0;
   let busy = false;
   let auth = null;
   let api = null;
   let pendingName = '';
+  let app = null;
+  let store = null; // the firestore/lite import, started on first use only
+  let db = null;
+  let loadedFor = ''; // uid whose membership is loaded or in flight
+
+  /* Firestore is fetched on the FIRST membership read and never before it,
+     which is the difference between a signed out visitor paying for it and
+     not. That visitor is the common case on this page (it is the sign in
+     page), the chunk is the largest thing here after Auth itself, and they
+     can never query a single document without a session. So the import is
+     started here, from inside loadMembership, rather than beside the Auth one.
+
+     firestore/lite rather than the full SDK, for the same reason it is lazy:
+     this page does exactly one read and at most one write, and Lite drops the
+     realtime channel, the offline cache and the local query engine that come
+     with the full build. Nothing on this page wants a live listener. */
+  const openStore = () => {
+    if (!store) {
+      store = import('firebase/firestore/lite').then((sdk) => {
+        db = sdk.getFirestore(app);
+        return sdk;
+      });
+    }
+    return store;
+  };
 
   /* --- small DOM helpers ------------------------------------------------ */
 
@@ -167,6 +205,54 @@ export function initAccount() {
     });
   });
 
+  /* --- the membership record -------------------------------------------- */
+
+  /* One read on arrival, and a write only when there is something to correct.
+     Skipping the unchanged case matters more than it looks: this runs on every
+     visit to the page by every member, and the free tier's write allowance is
+     less than half its read allowance.
+
+     The name and email are mirrored into the record because the admin searches
+     THIS collection, not Firebase Auth, which a static page has no way to list.
+     So the row has to carry enough to be found by a human typing a half
+     remembered name. It carries nothing else: expiresAt is written by the admin
+     account alone, and the rules refuse this path if it tries (see the rules in
+     §Open items, and membership.js for the record's shape). */
+  const loadMembership = async (user) => {
+    if (!panel || loadedFor === user.uid) return;
+    const uid = user.uid;
+    loadedFor = uid;
+    panel.pending();
+
+    const name = sanitizeName(user.displayName || pendingName) || 'Member';
+    const email = user.email || '';
+
+    try {
+      const sdk = await openStore();
+      const ref = sdk.doc(db, MEMBERS, uid);
+      const snap = await sdk.getDoc(ref);
+      let data;
+      if (!snap.exists()) {
+        data = { name, email, searchKeys: searchKeysFor(name), expiresAt: 0, createdAt: Date.now() };
+        await sdk.setDoc(ref, data);
+      } else {
+        data = snap.data() || {};
+        if (data.name !== name || data.email !== email) {
+          await sdk.updateDoc(ref, { name, email, searchKeys: searchKeysFor(name) });
+          data = { ...data, name, email };
+        }
+      }
+      // a sign out (or a different account) landed while this was in flight
+      if (loadedFor !== uid) return;
+      panel.show(memberFrom(uid, data));
+    } catch (error) {
+      if (loadedFor !== uid) return;
+      loadedFor = ''; // a later render may retry; a failed read is not an answer
+      console.warn('Membership unavailable', error?.code || error);
+      panel.fail();
+    }
+  };
+
   /* --- signed in / signed out views ------------------------------------- */
 
   const renderSignedIn = (user) => {
@@ -179,11 +265,16 @@ export function initAccount() {
     if (member) member.hidden = false;
     root.classList.add('is-authed');
     setStatus('');
+    // deliberately not awaited: the identity is on screen now and the card
+    // fills in behind it, rather than the whole panel waiting on a round trip
+    loadMembership(user);
   };
 
   const renderSignedOut = () => {
     pendingName = '';
+    loadedFor = '';
     clearSession();
+    panel?.clear();
     if (member) member.hidden = true;
     if (gate) gate.hidden = false;
     root.classList.remove('is-authed');
@@ -334,7 +425,7 @@ export function initAccount() {
         import('firebase/app'),
         import('firebase/auth'),
       ]);
-      const app = initializeApp(firebaseConfig);
+      app = initializeApp(firebaseConfig);
       auth = authSdk.getAuth(app);
       // Explicit rather than implied: the session survives a tab close and
       // lives in Firebase's own IndexedDB store, which is what the cookie in

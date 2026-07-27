@@ -289,6 +289,109 @@
   overflow-wrap: anywhere;
 }
 
+/* --- membership (v0.4.8) ---------------------------------------------
+   The card and the two lines under it. The card element is `hidden` unless
+   the record says the subscription is still running, which base.css turns
+   into a hard display:none, so an unsubscribed member is not carrying a
+   62KB image they will never see either.
+
+   The name overlay is the hero card's own geometry (see memberPanel.js and
+   cardName.js): the SVG viewBox is the artwork's 663x473 pixel grid, so one
+   user unit is one source pixel at every rendered width. inset 0 rather than
+   the hero's 2px because this card carries no border, and width/height auto
+   to take the size from the insets over base.css's img/svg block rules. */
+.member {
+  display: grid;
+  gap: 0.6rem;
+  justify-items: start;
+  margin-top: 1.1rem;
+}
+
+.member__card {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow:
+    0 1px 2px rgba(34, 18, 25, 0.06),
+    0 22px 44px -26px rgba(34, 18, 25, 0.6);
+  animation: auth-panel 0.55s var(--ease-out) backwards;
+}
+
+.member__art {
+  width: 100%;
+  height: auto;
+}
+
+.member__name {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+  pointer-events: none;
+}
+
+.member__name-text {
+  /* the card band is the deep maroon print, not a token surface */
+  fill: #fff;
+  font-family: var(--font-body);
+  /* 19.5 user units matches the printed NAME label's cap height; memberPanel.js
+     only ever shrinks from here, and only for a name too long for the rule */
+  font-size: 19.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-anchor: middle;
+}
+
+/* The membership state, as a primitive rather than a member-page part: the
+   account page and the admin's result rows are answering the same question
+   about the same field, and two pills that drifted apart would be two
+   different readings of one record. Named for what it is, like every other
+   primitive in this file. */
+.state-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.34em 0.85em;
+  border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
+  border-radius: 999px;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.state-pill:empty {
+  display: none;
+}
+
+.state-pill::before {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.7;
+}
+
+.state-pill[data-tone='ok'] {
+  border-color: color-mix(in srgb, var(--accent) 34%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--accent);
+}
+
+.state-pill[data-tone='error'] {
+  border-color: color-mix(in srgb, var(--accent) 34%, transparent);
+  color: var(--accent);
+}
+
+.member__note {
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+  line-height: 1.5;
+}
+
 .auth__actions {
   display: grid;
   gap: 0.6rem;
@@ -409,6 +512,197 @@
 .admin-warn .auth__link {
   color: var(--accent);
   font-weight: 600;
+}
+
+/* --- the members console (v0.4.8) --------------------------------------
+   Search, and a result row per member. It sits in normal flow UNDER the fixed
+   button row above, which is why its top padding is that row's own inset
+   doubled plus a button: both come off the same clamp, so the two cannot drift
+   apart when the viewport changes.
+
+   Every row is a paper island for the v0.4.3 reason, unchanged: a bare outline
+   over a moving mesh reads as a stray rectangle, and this page has a lot more
+   rectangles on it than it used to. The headings above the rows sit directly
+   on the mesh, which is inside the measured budget (--ink-soft holds 4.76:1 at
+   the worst instant of the colour cycle). */
+.admin-console {
+  width: min(56rem, 100%);
+  margin: 0 auto;
+  padding: calc(clamp(1rem, 3vw, 1.75rem) * 2 + 44px) var(--gutter) 4rem;
+}
+
+.admin-console__title {
+  font-size: var(--step-3);
+  font-variation-settings: 'opsz' 144, 'WONK' 1;
+}
+
+.admin-console__status {
+  min-height: 1.4em;
+  margin-top: 0.9rem;
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+}
+
+.admin-console__status[data-tone='error'],
+.admin-console__status[data-tone='ok'] {
+  color: var(--accent);
+  font-weight: 550;
+}
+
+.admin-search {
+  margin-top: 1.1rem;
+}
+
+.admin-search__label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+/* The button stays on the field's right at every width, per the brief, so this
+   row deliberately does not wrap: a Search button that drops under its own
+   field on a phone is a different control. The input takes the squeeze
+   instead, which min-width 0 is what allows (a flex item's default
+   min-width:auto refuses to shrink below its content). */
+.admin-search__row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.6rem;
+}
+
+.admin-search__row .auth__input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.admin-search__row .btn {
+  flex: none;
+}
+
+/* padding 0 is load bearing, not tidiness: `list-style: none` removes the
+   marker and leaves the UA's padding-inline-start behind, which indented every
+   row 40px and stole exactly that much from the name column. */
+.admin-results {
+  list-style: none;
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.4rem;
+  padding: 0;
+}
+
+.admin-row {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  box-shadow:
+    0 1px 2px rgba(34, 18, 25, 0.05),
+    0 16px 34px -26px rgba(34, 18, 25, 0.5);
+  animation: auth-rise 0.45s var(--ease-out) backwards;
+}
+
+.admin-row.is-busy {
+  opacity: 0.6;
+}
+
+.admin-row__main {
+  display: grid;
+  gap: 0.55rem;
+  justify-items: start;
+  min-width: 0;
+}
+
+.admin-row__who {
+  min-width: 0;
+}
+
+.admin-row__name {
+  display: block;
+  font-size: var(--step-0);
+  font-weight: 620;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.admin-row__email {
+  display: block;
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+  overflow-wrap: anywhere;
+}
+
+.admin-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.admin-row__warn {
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+  line-height: 1.5;
+  margin-bottom: 0.7rem;
+}
+
+.admin-row__confirm {
+  padding-top: 0.2rem;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  animation: auth-note 0.35s var(--ease-out);
+}
+
+/* Destructive, in the one accent this palette has. There is no red here and
+   inventing one for two buttons would put a colour on the site that no token
+   owns and no contrast measurement covers. */
+.admin-row__danger {
+  border-color: color-mix(in srgb, var(--accent) 34%, transparent);
+  color: var(--accent);
+}
+
+.admin-row__danger:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+}
+
+.admin-row__danger--solid {
+  background: var(--accent);
+  border-color: transparent;
+  color: #fff;
+}
+
+.admin-row__danger--solid:hover {
+  background: var(--accent-strong);
+  border-color: transparent;
+  color: #fff;
+}
+
+/* TWO columns once there is room, never three. Identity and state ride
+   together on the left (they are one child, see the template) and the actions
+   sit on the right. Three columns were measured at 1280 and do not fit inside
+   this console at any sane width: pill plus buttons alone came to 563px of a
+   596px content box, which left the name column at 0 and wrapped every name
+   to one character a line.
+
+   The confirm panel spans the full width and auto places onto its own row.
+   That works in both directions because the actions it replaces are
+   display:none while it is open (base.css makes [hidden] a hard none), so the
+   only thing competing for row one is the identity column. */
+@media (min-width: 52rem) {
+  .admin-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 1.2rem;
+  }
+
+  .admin-row__confirm {
+    grid-column: 1 / -1;
+  }
 }
 
 /* ------------------------------------------------------------------
@@ -599,8 +893,11 @@ html.reduced-motion .auth__card section > *,
 html.reduced-motion .auth__card > .auth__foot,
 html.reduced-motion .auth__form,
 html.reduced-motion .auth__status,
+html.reduced-motion .member__card,
 html.reduced-motion [data-admin-mount],
 html.reduced-motion .admin-bar .btn,
+html.reduced-motion .admin-row,
+html.reduced-motion .admin-row__confirm,
 html.reduced-motion .admin-warn {
   animation: none;
 }

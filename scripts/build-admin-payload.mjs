@@ -29,11 +29,28 @@
    THE PASSWORD NEVER TOUCHES THE REPO. It arrives in BSS_ADMIN_PASSWORD
    and is used once, here. Only salt, iv and ciphertext are written out.
 
+   BSS_ADMIN_EMAIL, ADDED AT v0.4.8, AND WHY IT IS ENCRYPTED RATHER THAN
+   A CONSTANT. The admin now writes to Firestore, and Firestore can only
+   answer to a Firebase identity, so the gate has to sign in to a real
+   account. The address of that account goes INSIDE the ciphertext: it is
+   not much of a secret (Firebase's enumeration protection means nobody
+   can confirm a guess, and its own rate limits stand behind that), but
+   naming the exact account to attack in a public repo is free to avoid,
+   and here the cost of avoiding it is one env var.
+
+   THE ADMIN PASSWORD IS NOW ALSO THAT ACCOUNT'S FIREBASE PASSWORD, one
+   secret doing both jobs so the operator types one thing. That raises
+   what a cracked payload is worth, from "the dashboard markup" to "write
+   access to the members collection", and it is the reason the password
+   length note above stopped being theoretical. Use a long one.
+
    USAGE
-     BSS_ADMIN_PASSWORD='...' node scripts/build-admin-payload.mjs
+     BSS_ADMIN_PASSWORD='...' BSS_ADMIN_EMAIL='...' node scripts/build-admin-payload.mjs
    Re-run it after ANY edit to src/admin/dashboard.html or dashboard.js.
    scripts/check-admin-payload.mjs runs on every build and fails loudly if
-   you forget (it compares a source hash, so it needs no password).
+   you forget (it compares a source hash, so it needs no password). Note
+   that the gate cannot catch a changed EMAIL, since the address is not
+   part of the source hash; changing it is a deliberate re-run.
    ------------------------------------------------------------------ */
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
@@ -54,6 +71,7 @@ const AAD = 'bss-admin:v1';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const password = process.env.BSS_ADMIN_PASSWORD || '';
+const adminEmail = (process.env.BSS_ADMIN_EMAIL || '').trim();
 const iterations = Number(process.env.BSS_ADMIN_ITERATIONS || 600000);
 const lockAfterMinutes = Number(process.env.BSS_ADMIN_LOCK_MINUTES || 15);
 const MIN_PASSWORD = 8;
@@ -66,6 +84,14 @@ if (password.length < MIN_PASSWORD) {
   console.error(`BSS_ADMIN_PASSWORD must be at least ${MIN_PASSWORD} characters. Nothing was written.`);
   process.exit(1);
 }
+/* Required rather than optional, because the failure it prevents is silent:
+   a payload with no address decrypts perfectly, unlocks the dashboard, and
+   then cannot reach a single member record, which reads as a Firestore
+   outage rather than a missing env var. */
+if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail)) {
+  console.error('BSS_ADMIN_EMAIL must be the Firebase admin account address. Nothing was written.');
+  process.exit(1);
+}
 
 const htmlPath = path.join(root, 'src/admin/dashboard.html');
 const codePath = path.join(root, 'src/admin/dashboard.js');
@@ -75,7 +101,7 @@ const html = await fs.readFile(htmlPath, 'utf8');
 const code = await fs.readFile(codePath, 'utf8');
 
 const plaintext = Buffer.from(
-  JSON.stringify({ generatedAt: new Date().toISOString(), html, code }),
+  JSON.stringify({ generatedAt: new Date().toISOString(), adminEmail, html, code }),
   'utf8',
 );
 
