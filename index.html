@@ -200,7 +200,11 @@
 
       <section class="perk-field" id="sponsors" aria-labelledby="sponsors-title" data-perk-field>
         <span class="rv-rule" data-rule aria-hidden="true"></span>
-        <div class="perk-field__intro" data-reveal>
+        <!-- data-drift (v0.4.4): the container drifts slowly against the
+             section while its children arrive, so the block keeps answering
+             the scroll after it has landed. Container and children, never the
+             same element twice — see reveal.js. -->
+        <div class="perk-field__intro" data-reveal data-drift>
           <p class="eyebrow section__eyebrow rv-up">The Perk Field</p>
           <h2 class="section__title" id="sponsors-title">
             <span class="rv-mask" style="--i: 1"><span>Sponsors</span></span>
@@ -242,7 +246,7 @@
 
       <section class="journey" id="journey" aria-labelledby="journey-title" data-journey>
         <span class="rv-rule" data-rule aria-hidden="true"></span>
-        <div class="journey__intro" data-reveal>
+        <div class="journey__intro" data-reveal data-drift>
           <p class="eyebrow section__eyebrow rv-up">Story · Mission · Vision</p>
           <h2 class="section__title" id="journey-title">
             <span class="rv-mask" style="--i: 1"><span>Our Journey</span></span>
@@ -364,7 +368,7 @@
 
       <section class="sponsor-cta" id="become-a-sponsor" aria-labelledby="sponsor-cta-title" data-sponsor-cta>
         <span class="rv-rule" data-rule aria-hidden="true"></span>
-        <div class="sponsor-cta__inner">
+        <div class="sponsor-cta__inner" data-drift>
           <p class="eyebrow section__eyebrow">Partners</p>
           <h2 class="section__title" id="sponsor-cta-title">
             <span class="rv-mask"><span>Have your own business? Become&nbsp;a&nbsp;sponsor.</span></span>
@@ -382,7 +386,12 @@
            agency-credit.css does the rest. -->
       <section class="agency-credit" aria-label="Site credit" data-agency-credit>
         <span class="rv-rule" data-rule aria-hidden="true"></span>
-        <div class="agency-credit__inner">
+        <!-- data-reveal (v0.4.4) so the two masked lines in here join the
+             scrubbed text system like every other heading on the page. It also
+             adds .is-in to THIS element, which nothing styles: the section's
+             own plate and hairlines key off `.agency-credit.is-in`, which
+             agencyCredit.js still owns. -->
+        <div class="agency-credit__inner" data-reveal>
           <p class="eyebrow agency-credit__eyebrow">
             <span class="agency-credit__hair" aria-hidden="true"></span>
             <span class="rv-mask"><span>Brought to you by</span></span>
@@ -480,7 +489,7 @@
       <div class="site-footer__bottom">
         <div class="site-footer__bottom-inner">
           <p>© Business Student Society, AUB · CRN: 5014</p>
-          <span class="version-badge" data-version-badge>v0.4.3</span>
+          <span class="version-badge" data-version-badge>v0.4.4</span>
         </div>
       </div>
     </footer>

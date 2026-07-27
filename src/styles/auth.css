@@ -381,6 +381,7 @@
 /* idle lock warning: a fixed pill at the bottom, because since v0.4.3 the
    unlocked stage has no panel for it to sit inside */
 .admin-warn {
+  animation: admin-warn-in 0.45s var(--ease-out) backwards;
   position: fixed;
   left: 50%;
   bottom: clamp(1rem, 3vw, 1.75rem);
@@ -408,4 +409,198 @@
 .admin-warn .auth__link {
   color: var(--accent);
   font-weight: 600;
+}
+
+/* ------------------------------------------------------------------
+   MOTION (v0.4.4, user call: "add simple animations to the account page
+   and maybe admin page").
+
+   ALL OF IT IS CSS ANIMATION KEYED TO DISPLAY, WHICH IS WHY IT COSTS NOTHING
+   AND WHY IT COVERS EVERY STATE THESE PAGES HAVE. An element inside
+   `display: none` has no running animations; the moment it is displayed, its
+   animations start from zero. Both pages toggle every state with `hidden`
+   (base.css makes that a hard `display: none !important`), so the same rules
+   that play the entrance on load replay it when a tab switches, when the
+   signed in panel takes over, and when the admin unlocks — with no JS, no
+   class plumbing, and nothing added to either module.
+
+   THE ADMIN GETS ITS SHARE WITHOUT THE DASHBOARD BEING TOUCHED, and that is
+   deliberate: `src/admin/dashboard.{html,js}` are encrypted into
+   public/admin-payload.json, so editing either one demands the password and a
+   re-encrypt (§ rule 8). The unlocked stage's button row and its idle warning
+   are styled from here, so they animate from here.
+
+   Transform and opacity only, nothing loops, and everything is short enough to
+   be over before it can be in the way of typing a password. Reduced motion is
+   covered twice: base.css collapses every duration under the OS setting, and
+   the ?reduced-motion QA class is handled at the bottom of this block.
+   ------------------------------------------------------------------ */
+.auth__card {
+  animation: auth-card-in 0.75s var(--ease-out) backwards;
+}
+
+/* the brand thread along the top edge draws outward as the card lands */
+.auth__card::before {
+  animation: auth-thread 0.9s var(--ease-out) 0.22s backwards;
+}
+
+/* --d cascades to whichever animation the child actually runs, so the stagger
+   is declared once and neither rule below has to repeat it. Everything past
+   the fourth row shares a delay: a form is long and the eye has stopped
+   counting by then. */
+.auth__card section > * {
+  --d: 0.3s;
+}
+
+.auth__card section > :nth-child(1) {
+  --d: 0.06s;
+}
+
+.auth__card section > :nth-child(2) {
+  --d: 0.14s;
+}
+
+.auth__card section > :nth-child(3) {
+  --d: 0.22s;
+}
+
+.auth__card section > :not(.auth__form) {
+  animation: auth-rise 0.6s var(--ease-out) var(--d) backwards;
+}
+
+.auth__card > .auth__foot {
+  animation: auth-rise 0.6s var(--ease-out) 0.38s backwards;
+}
+
+/* A panel carries NO delay on purpose. It inherits a --d it deliberately does
+   not use, because this animation runs twice: once on load, where a late panel
+   would be correct, and once every time the tabs swap, where a 0.3s wait
+   before the fields appear would read as the page being slow to answer a tap.
+   Instant wins that trade. */
+.auth__form {
+  animation: auth-panel 0.45s var(--ease-out) backwards;
+}
+
+/* The status line already animated in with its row on load; this is the SECOND
+   state, when a message actually arrives. The selector has to out-specify the
+   row rule above (0,2,1), which is what the extra .auth__card qualifier buys. */
+.auth__card .auth__status[data-tone='error'],
+.auth__card .auth__status[data-tone='ok'] {
+  animation: auth-note 0.42s var(--ease-out);
+}
+
+/* The unlocked admin stage: the mount fades in as a whole, then the two
+   buttons land in sequence. Both run off the same display flip the unlock
+   already performs.
+
+   THE MOUNT FADES AND DOES NOT MOVE, AND THAT IS A HARD CONSTRAINT, NOT A
+   PREFERENCE. Everything the dashboard puts inside it is `position: fixed`
+   (the button row, the idle pill), and an ancestor with a transform becomes
+   the containing block for its fixed descendants — so a transform here quietly
+   turns both of them into absolutely positioned boxes for as long as it runs.
+   Measured with `auth-panel` on this element: the button row sat at y=836
+   instead of y=16 and then snapped when the animation ended. Opacity is not a
+   containing block, so this keyframe has no transform in it at all. */
+[data-admin-mount] {
+  animation: auth-fade 0.5s var(--ease-out) backwards;
+}
+
+.admin-bar .btn {
+  animation: auth-rise 0.55s var(--ease-out) 0.12s backwards;
+}
+
+.admin-bar .btn:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+@keyframes auth-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes auth-thread {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  to {
+    opacity: 0.85;
+    transform: none;
+  }
+}
+
+@keyframes auth-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes auth-panel {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* no transform in here on purpose — see [data-admin-mount] above */
+@keyframes auth-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes auth-note {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* the pill is centred with translateX(-50%), so every key here has to carry
+   it or the entrance would slide it half its own width across the screen */
+@keyframes admin-warn-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%);
+  }
+}
+
+/* ?reduced-motion, the QA hook that has no media query behind it. The OS
+   setting is already handled globally in base.css. */
+html.reduced-motion .auth__card,
+html.reduced-motion .auth__card::before,
+html.reduced-motion .auth__card section > *,
+html.reduced-motion .auth__card > .auth__foot,
+html.reduced-motion .auth__form,
+html.reduced-motion .auth__status,
+html.reduced-motion [data-admin-mount],
+html.reduced-motion .admin-bar .btn,
+html.reduced-motion .admin-warn {
+  animation: none;
 }

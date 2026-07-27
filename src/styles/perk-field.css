@@ -224,8 +224,13 @@ html.is-grabbing .perk-bubble {
 }
 
 /* ------------------------------------------------------------------
-   Bubble lifecycle (v0.3.6, user brief): each sponsor inflates into
-   existence as you scroll to it and bursts like soap as you scroll on.
+   Bubble arrival (v0.3.6 as a full lifecycle, ARRIVAL ONLY since v0.4.4):
+   each sponsor inflates into existence as you scroll to it, and then it
+   is simply there. It never bursts, never goes dormant again, and never
+   replays (user call 2026-07-27: "remove the popping of the bubbles, if
+   the bubble pops it stays there no need to hide it or reshow the
+   animation"). Gone with it: the burst keyframes, the soap film flash,
+   the outward photo push, and the pooled droplet debris.
 
    ALL OF IT LIVES ON .perk-bubble__scale, never on .perk-bubble, because
    perkField.js writes the outer element's transform every single frame
@@ -239,9 +244,8 @@ html.is-grabbing .perk-bubble {
    Default state is ALIVE and unstyled, so no-JS and reduced-motion visitors
    get the plain field with none of this attached.
    ------------------------------------------------------------------ */
-.perk-bubble.is-dormant,
-.perk-bubble.is-bursting {
-  pointer-events: none; /* nothing half popped is clickable */
+.perk-bubble.is-dormant {
+  pointer-events: none; /* nothing that has not arrived yet is clickable */
 }
 
 .perk-bubble.is-dormant .perk-bubble__scale {
@@ -275,71 +279,13 @@ html.is-grabbing .perk-bubble {
   }
 }
 
-/* burst: the film stretches, ruptures, and the remnant collapses inward.
-   That order is what reads as a POP rather than a fade: the stretch sells
-   surface tension, and the collapse is what tension does when it fails. */
-.perk-bubble.is-bursting .perk-bubble__scale {
-  animation: perk-burst 0.38s cubic-bezier(0.3, 0, 0.2, 1) forwards;
-}
-
-@keyframes perk-burst {
-  0% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  42% {
-    opacity: 1;
-    transform: scale(1.16);
-  }
-  56% {
-    opacity: 0.55;
-    transform: scale(1.21);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(0.6);
-  }
-}
-
-/* the soap film itself: an off centre highlight plus a rose counter sheen,
-   flashed on as a bubble bursts. Idle opacity is 0, so this costs nothing
-   for the 99% of the time it is not running.
-
-   It used to flash on ARRIVAL too, and that half was removed on the user's
-   word (2026-07-26): a white bloom at 0.9 opacity over a sponsor's photo
-   blew the artwork out for the first fifth of a second it was visible. The
-   burst flash stays, because there the coin is on its way out and washing
-   it is the point. */
-.perk-bubble__scale::after {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: 50%;
-  pointer-events: none;
-  opacity: 0;
-  background:
-    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.34) 26%, transparent 58%),
-    radial-gradient(circle at 72% 76%, rgba(176, 74, 103, 0.55), transparent 62%);
-}
-
-.perk-bubble.is-bursting .perk-bubble__scale::after {
-  animation: perk-film-pop 0.34s var(--ease-out);
-}
-
-@keyframes perk-film-pop {
-  0% {
-    opacity: 0;
-  }
-  40% {
-    opacity: 1;
-  }
-  70% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 0;
-  }
-}
+/* The burst half of the lifecycle lived here from v0.3.6 to v0.4.3 and is
+   gone on the user's word: `perk-burst` (the film stretching, rupturing and
+   collapsing), the `.perk-bubble__scale::after` soap film with its
+   `perk-film-pop` flash, and `perk-undevelop` (the photo pushing outward as
+   the coin left). A bubble that has arrived now simply stays. Recover them
+   from the v0.4.3 tree if a pop is ever wanted again, and read the note above
+   about which layer owns what before putting anything back. */
 
 /* ------------------------------------------------------------------
    The photo inside the coin (v0.3.8, user report that the images were
@@ -374,164 +320,17 @@ html.is-grabbing .perk-bubble {
   }
 }
 
-/* On the way out the photo keeps going while the film collapses inward,
-   so the two separate for the last few frames. That opposition is what
-   sells a rupture: something got out. */
-.perk-bubble.is-bursting img {
-  animation: perk-undevelop 0.38s cubic-bezier(0.3, 0, 0.2, 1) forwards;
-}
+/* THE SPECULAR SWEEP IS GONE (v0.4.4, user call: "there is like an animation
+   of light reflection ... when a sponsor bubble after it appears ... remove
+   that animation"). It was a hard band of white crossing the coin once on
+   arrival, on `.perk-bubble__lens::after`, and the pseudo element, its trigger
+   rule and its `perk-sweep` keyframes all went with it. The lens itself stays:
+   it is the photo's clipping circle and `perk-develop` above still needs it.
 
-@keyframes perk-undevelop {
-  0% {
-    transform: scale(1);
-  }
-  100% {
-    transform: scale(1.3) rotate(4deg);
-  }
-}
-
-/* Specular sweep: a hard band of light that crosses the coin once as it
-   arrives, so the surface reads as glass rather than as paper. Lives on
-   the lens (clipped to the circle) and is a separate element from the
-   __scale soap film, which is a radial highlight and does not travel.
-   Idle opacity 0 and a single composited translate. */
-.perk-bubble__lens::after {
-  content: '';
-  position: absolute;
-  top: -60%;
-  bottom: -60%;
-  left: -70%;
-  width: 45%;
-  opacity: 0;
-  pointer-events: none;
-  transform: rotate(18deg);
-  background: linear-gradient(
-    to right,
-    transparent,
-    rgba(255, 255, 255, 0.72) 46%,
-    rgba(255, 255, 255, 0.86) 54%,
-    transparent
-  );
-}
-
-.perk-bubble.is-emerging .perk-bubble__lens::after {
-  animation: perk-sweep 0.86s cubic-bezier(0.32, 0.06, 0.2, 1) 0.16s backwards;
-}
-
-@keyframes perk-sweep {
-  0% {
-    opacity: 0;
-    transform: translateX(0) rotate(18deg);
-  }
-  22% {
-    opacity: 1;
-  }
-  78% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(340%) rotate(18deg);
-  }
-}
-
-/* ---- burst debris: one shock ring plus ten droplets, pooled ----
-   Pooled five deep and parked at opacity 0, so the whole rig is 55 idle
-   elements that paint nothing. --r (the popped bubble's radius) is the only
-   value JS writes, which keeps a burst to three style writes total. */
-.perk-burst {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 0;
-  height: 0;
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* holds the group alive for exactly as long as the longest child animation,
-   and is what tells JS the slot is free again */
-.perk-burst.is-on {
-  animation: burst-hold 0.6s linear;
-}
-
-@keyframes burst-hold {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.perk-burst__ring {
-  position: absolute;
-  left: calc(var(--r) * -1);
-  top: calc(var(--r) * -1);
-  width: calc(var(--r) * 2);
-  height: calc(var(--r) * 2);
-  border-radius: 50%;
-  border: 2px solid rgba(176, 74, 103, 0.75);
-  opacity: 0;
-}
-
-.perk-burst.is-on .perk-burst__ring {
-  animation: burst-ring 0.5s cubic-bezier(0.16, 0.84, 0.44, 1);
-}
-
-@keyframes burst-ring {
-  0% {
-    opacity: 0.95;
-    transform: scale(0.8);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.55);
-  }
-}
-
-.perk-burst i {
-  position: absolute;
-  left: -3.5px;
-  top: -3.5px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  opacity: 0;
-  background: radial-gradient(circle at 35% 32%, rgba(255, 255, 255, 0.95), var(--accent-2) 55%, var(--accent) 100%);
-}
-
-.perk-burst.is-on i {
-  animation: burst-drop 0.56s cubic-bezier(0.16, 0.84, 0.44, 1);
-}
-
-/* Angles and throw distances are spread unevenly on purpose: ten droplets on
-   an even 36 degree ring reads as a machine part, not a splash. */
-.perk-burst i:nth-of-type(1) { --a: 6deg; --f: 1.44; }
-.perk-burst i:nth-of-type(2) { --a: 47deg; --f: 1.18; }
-.perk-burst i:nth-of-type(3) { --a: 79deg; --f: 1.52; }
-.perk-burst i:nth-of-type(4) { --a: 121deg; --f: 1.26; }
-.perk-burst i:nth-of-type(5) { --a: 154deg; --f: 1.47; }
-.perk-burst i:nth-of-type(6) { --a: 191deg; --f: 1.15; }
-.perk-burst i:nth-of-type(7) { --a: 224deg; --f: 1.5; }
-.perk-burst i:nth-of-type(8) { --a: 263deg; --f: 1.3; }
-.perk-burst i:nth-of-type(9) { --a: 297deg; --f: 1.55; }
-.perk-burst i:nth-of-type(10) { --a: 335deg; --f: 1.22; }
-
-@keyframes burst-drop {
-  0% {
-    opacity: 0;
-    transform: rotate(var(--a)) translateX(calc(var(--r) * 0.62)) scale(0.45);
-  }
-  16% {
-    opacity: 1;
-    transform: rotate(var(--a)) translateX(calc(var(--r) * 0.9)) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: rotate(var(--a)) translateX(calc(var(--r) * var(--f))) scale(0.2);
-  }
-}
+   The pooled burst debris (a shock ring plus ten droplets, `.perk-burst*` and
+   the `burst-hold` / `burst-ring` / `burst-drop` keyframes) is gone in the same
+   pass, because nothing bursts any more. It was ~90 lines and 55 idle elements
+   that no longer have an event to fire on. */
 
 /* contact sparks — pooled, decorative */
 .perk-sparks {

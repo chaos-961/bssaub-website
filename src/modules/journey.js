@@ -82,12 +82,47 @@ export function initJourney(scroll) {
       return { x: r.left - tr.left + r.width / 2, y: r.top - tr.top + r.height / 2 };
     });
 
+    // hashed 0..1, so every wander amount below is stable across rebuilds:
+    // the same node gets the same swing at every resize and on every reload
+    const h01 = (n2) => {
+      const v = Math.sin((n2 + 1) * 127.1) * 43758.5453;
+      return v - Math.floor(v);
+    };
+
     // waypoints, plus which point is each node's checkpoint (for ignition)
     const pts = [];
     const dotIdx = [];
     if (mobileNow) {
-      pts.push({ x: dotPts[0].x, y: 0 }); // rail: enter straight above dot 1
-      dotPts.forEach((p) => {
+      /* v0.4.4, user call: "even on mobile make sure the line is not actually
+         straight and have a bit of like wiggly small wiggle patterns chaos, a
+         bit." The rail ran dead vertical from 2026-07-23, when the serpentine
+         it replaced was rejected as too much — so this is the third position on
+         that dial and it is deliberately the small one.
+
+         THE DOTS DO NOT MOVE. They are the ignition checkpoints and their x is
+         owned by CSS (--dot-x), so all the wander lives strictly BETWEEN them:
+         two hashed sway points per gap on opposite sides, which the bezier
+         builder's mid-y control points turn into a gentle S rather than a
+         zigzag. Every checkpoint is still exactly on the rail, which is what
+         keeps the dots reading as beads on the line.
+
+         WIG is the whole budget, and it is measured, not guessed: the rail sits
+         at 18px inside a node whose content starts at padding-left 46px, so a
+         12px swing lands ~16px clear of the text on one side and stays inside
+         the track on the other. */
+      const WIG = 12;
+      const railX = dotPts[0].x;
+      const sway = (n2, side) => Math.max(6, railX + side * WIG * (0.45 + h01(n2) * 0.55));
+      pts.push({ x: sway(31, -1), y: 0 });
+      dotPts.forEach((p, i) => {
+        if (i) {
+          const from = dotPts[i - 1].y;
+          const gap = p.y - from;
+          pts.push({ x: sway(i * 7 + 1, i % 2 ? 1 : -1), y: from + gap * 0.34 });
+          pts.push({ x: sway(i * 11 + 2, i % 2 ? -1 : 1), y: from + gap * 0.7 });
+        } else {
+          pts.push({ x: sway(3, 1), y: p.y * 0.55 });
+        }
         dotIdx.push(pts.length);
         pts.push(p);
       });
@@ -99,10 +134,6 @@ export function initJourney(scroll) {
       // columns) and bows always point AWAY from the node's image, so the
       // no-overlap guarantee survives the chaos.
       const PAD = 24; // clearance above/below each frame before any swing
-      const h01 = (n2) => {
-        const v = Math.sin((n2 + 1) * 127.1) * 43758.5453;
-        return v - Math.floor(v);
-      };
       const cx = (v) => Math.min(W * 0.64, Math.max(W * 0.36, v));
       pts.push({ x: cx(W / 2 + (h01(9) - 0.5) * 90), y: 0 });
       let prevExitY = 0;

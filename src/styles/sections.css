@@ -117,23 +117,39 @@
   margin-bottom: 0;
 }
 
-/* hero membership card (§6.3) */
+/* hero membership card (§6.3)
+
+   NO `perspective` AND NO `transform-style` ANYWHERE IN THIS BLOCK SINCE
+   v0.4.4. The card does not rotate on any device (user call: no tilt, straight;
+   see heroCard.js for the gyro that was almost certainly the reported backward
+   lean), so the 3D context has nothing left to serve, and dropping it also
+   retires the v0.4.0 trap for good: an opacity below 1 anywhere above a
+   preserve-3d subtree stops the browser grouping it and lets the background
+   mesh read straight through the card's own fill. */
 .hero-card {
   width: min(100%, 520px);
   justify-self: center;
-  perspective: 1000px;
-  /* v0.3.9, user brief: the card is interactive on a phone too, so a press and
-     a sideways drag swivel it. pan-y hands vertical gestures back to the
-     browser, which is what keeps the page scrolling normally through the hero
-     while horizontal movement reaches heroCard.js as pointermove instead of
-     being eaten by a scroll and answered with pointercancel.
-     The pair is a cascade fallback, not a duplicate: `pan-y pinch-zoom` is the
-     one that ships, and a browser that does not know the pinch-zoom keyword
-     drops that whole declaration and keeps the line above rather than silently
-     taking zoom away from the visitor. */
+  /* Vertical gestures stay the browser's, so the page scrolls straight through
+     the hero when a finger lands on the card. The pair is a cascade fallback,
+     not a duplicate: `pan-y pinch-zoom` is the one that ships, and a browser
+     that does not know the pinch-zoom keyword drops that whole declaration and
+     keeps the line above rather than silently taking zoom away. */
   touch-action: pan-y;
   touch-action: pan-y pinch-zoom;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* THE CARD LEADS ON A NARROW SCREEN (v0.4.4, user call: "on mobile the card is
+   before the text"). `order` and not a DOM move on purpose: the reading order
+   stays headline first for a screen reader and for the no-CSS path, which is
+   the order the copy was written in, while the visual order puts the thing
+   being sold at the top of the phone screen. One declaration, and it only
+   exists below the two column breakpoint, where `.hero` is a single column and
+   `order` is the whole layout. */
+@media (max-width: 59.99rem) {
+  .hero-card {
+    order: -1;
+  }
 }
 
 /* The .hero-card__drift departure plane that sat here from v0.3.6 is gone at
@@ -147,7 +163,6 @@
 .hero-card__tilt {
   position: relative;
   border-radius: var(--radius);
-  transform-style: preserve-3d;
   will-change: transform;
 }
 
@@ -181,10 +196,9 @@
    that rounding into a 0.09% stretch nobody can see, and the name stays welded
    to the rule at every size.
 
-   translateZ lifts it a hair off the image inside .hero-card__tilt's
-   preserve-3d space, which is what stops the two coplanar layers z-fighting
-   when the card turns. 0.05px against a 950px perspective is a 1/20000 scale
-   change, i.e. nothing.
+   The 0.05px translateZ that sat here went with the 3D at v0.4.4: it existed to
+   stop two coplanar layers z-fighting while the card turned, and nothing turns
+   any more. Paint order alone puts this over the image now.
    ------------------------------------------------------------------ */
 .hero-card__name {
   position: absolute;
@@ -192,7 +206,6 @@
   width: auto; /* both from the insets, over base.css's img/svg block rules */
   height: auto;
   pointer-events: none;
-  transform: translateZ(0.05px);
 }
 
 .hero-card__name-text {
