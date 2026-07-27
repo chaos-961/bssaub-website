@@ -27,14 +27,28 @@
    rather than sitting here matching nothing. */
 
 /* The headline is the society's own name since v0.4.5, so it is bigger and
-   heavier than the old two line tagline: its own clamp rather than --step-5
-   (which every other display heading still uses, and which stays where it is),
-   and weight 700 on the Fraunces axis. Checked at both ends, since a single
-   long word is the thing that overflows: "Business" is the widest at ~0.58em a
-   character, so 252px of the 335px a 375px phone leaves inside the gutter, and
-   475px of the ~580px column at 1440. */
+   heavier than every other display heading: its own clamp rather than --step-5
+   (which the rest of them still use, and which stays where it is), and weight
+   700 on the Fraunces axis.
+
+   THE CLAMP IS SIZED SO "AUB'S BUSINESS" NEVER WRAPS (v0.4.6). The break is in
+   the markup now, and a markup break only reads as a break while the longer of
+   the two lines fits its column: the moment it wraps, the headline is three
+   lines again and the layout budget below is wrong. That line measures a flat
+   5.98x its own font size in Fraunces at this weight and tracking, so the
+   binding width is whatever column it sits in divided by 5.98, checked at both
+   ends AND at the two column breakpoint, which is the tightest point of all
+   because the copy column is at its narrowest the instant it appears:
+
+     375px phone   47px type, 277px line against a 335px column
+     960px, 2 col  66px type, 396px line against a ~432px column  <- tightest
+     1440px        83px type, 493px line against a 538px column
+
+   The old 6.4rem cap is gone with the wrap it caused: at 102px that line was
+   612px against that same 538px column, which is exactly why the "two line"
+   headline was rendering as three. */
 .hero__headline {
-  font-size: clamp(3.4rem, 2.2rem + 5.6vw, 6.4rem);
+  font-size: clamp(2.6rem, 2.1rem + 3.4vw, 5.2rem);
   font-weight: 700;
   font-variation-settings: 'opsz' 144, 'WONK' 1;
   letter-spacing: -0.03em;
@@ -78,6 +92,89 @@
   height: 5px;
   border-radius: 50%;
   background: var(--accent);
+}
+
+/* ------------------------------------------------------------------
+   THE WHOLE HERO FITS THE FIRST SCREEN (v0.4.6, user call: eyebrow, headline,
+   sub, both CTAs and the trust row all visible when the page opens).
+
+   It did not, and by a long way: 988px of content in an 812px phone, so the
+   trust row and half the CTAs sat below the fold. Two thirds of that came back
+   from the two line headline above (three lines of 58px became two of 47px),
+   and the rest is this block, which is spacing only. No copy was cut, because
+   the ask was to SEE all of it.
+
+   IT SITS HERE, BELOW EVERY RULE IT OVERRIDES, AND NOT BESIDE THE .hero RULES
+   AT THE TOP OF THE FILE. A media query adds no specificity, so `.hero__sub`
+   inside one and `.hero__sub` outside it are a tie that source order breaks:
+   written above the base rules this whole block silently does nothing to the
+   four margins below, which is a bug that looks exactly like a typo in a
+   clamp.
+
+   EVERY NUMBER IS A clamp() AGAINST svh RATHER THAN A SECOND BREAKPOINT, and
+   that is the load bearing decision. A fixed set of tighter values fits one
+   phone and one only: tuned for 812 it overflows a 667 or 640 screen by ~140px,
+   and tuned for 640 it shrinks the headline to 35px on a phone with room for
+   47. A height query fixes that with a hard step, which is worse in the band
+   around it, where a 20px taller window suddenly redraws the hero a size
+   larger. Scaling on svh means the hero gives back exactly what the screen
+   does not have, continuously, and one set of rules lands it inside the fold
+   at 360x640, 375x667, 375x812, 390x844, 412x915 and 768x1024.
+
+   svh and not vh or dvh: svh is the SMALL viewport, the height with the mobile
+   URL bar showing, which is the conservative one and the only one that cannot
+   park content under a bar that is about to slide back in. dvh would relayout
+   the hero every time that bar moved.
+
+   The card is capped by height too, at its own aspect ratio (663/473 =
+   1.4017), because it is the tallest single block in the stack and so the
+   first thing that has to give on a short screen. On a phone tall enough it is
+   still full width and nothing about it changed.
+   ------------------------------------------------------------------ */
+@media (max-width: 59.99rem) {
+  .hero {
+    /* `start` and not the inherited `center` (v0.4.6, the "card a bit up" half
+       of the brief): the hero is 100svh tall with min-height, so once the
+       content fits inside the fold there is leftover height for the first time,
+       and centring splits it above and below, i.e. it pushes the card back
+       DOWN by half of whatever was just saved. Anchoring to the top spends all
+       of it below the trust row instead, and the card sits a fixed 24px under
+       the nav at every screen height rather than drifting with the slack. */
+    align-items: start;
+    padding-top: calc(var(--nav-h) + clamp(0.75rem, 3svh, 2rem));
+    padding-bottom: clamp(0.9rem, 2svh, 1.6rem);
+    gap: clamp(0.85rem, 2svh, 1.5rem);
+  }
+
+  /* min() and not a clamp: the vw driven size is the ceiling, and this only
+     ever pulls it DOWN on a screen too short to spend it. The inner max() is
+     the landscape phone floor, and it is a floor on the LOOK rather than on
+     the fit: at 844x390 the height term alone asks for 21px type, which is
+     smaller than the sub under it, and no amount of shrinking fits that hero
+     inside 390px anyway. Below ~592px of height it stops trying and scrolls.
+     Portrait never reaches it (5.4svh is 34.6px on the shortest phone here). */
+  .hero__headline {
+    font-size: min(clamp(2.6rem, 2.1rem + 3.4vw, 5.2rem), max(2rem, 5.4svh));
+  }
+
+  .hero__eyebrow {
+    margin-bottom: clamp(0.4rem, 1.1svh, 0.7rem);
+  }
+
+  .hero__sub {
+    margin-top: clamp(0.55rem, 1.5svh, 1rem);
+    /* the 0.875rem floor is a legibility floor and not a fit one: --ink-soft
+       body copy has to stay readable on the mesh however short the window */
+    font-size: clamp(0.875rem, 1.85svh, 1.125rem);
+  }
+
+  .hero__ctas {
+    margin-top: clamp(0.9rem, 2.2svh, 1.6rem);
+  }
+
+  .hero__facts {
+    margin-top: clamp(0.65rem, 1.7svh, 1.1rem);
+  }
 }
 
 /* masked headline lines (§6.3 entrance) — padding/margin pair keeps Fraunces
@@ -199,6 +296,34 @@
 @media (max-width: 59.99rem) {
   .hero-card {
     order: -1;
+    /* The fold budget's share of the card (v0.4.6): it is the tallest single
+       block in the phone stack, so on a screen too short for the whole hero it
+       is the first thing that gives height back, capped at the artwork's own
+       663/473 ratio so the picture cannot distort. Inert on a phone with the
+       room for it, where 100% is still the smaller term. Mobile only on
+       purpose: 27svh of a 900px desktop window would shrink a card that has
+       nothing to make room for. */
+    width: min(100%, 520px, max(240px, calc(29svh * 1.4)));
+  }
+}
+
+/* A BIT UP (v0.4.6, user call). Two columns only, where the card is centred
+   against a copy block half again its height and reads as sitting low; on a
+   phone the card already rose with the hero's top padding above.
+
+   `top` on a relatively positioned grid item, NOT `translate`, and the reason
+   is worth keeping because it is the one trick this site reaches for by
+   default and it does not work here: GSAP's CSSPlugin writes `translate: none`
+   onto anything it transforms, and heroCard.js transforms this element on the
+   entrance, so a CSS `translate` on it is simply erased (measured: card at the
+   same y with and without it). The channel separation trick only holds when
+   the CSS side owns an element GSAP never touches, which is why the headline
+   swell rides the outer word box. Relative positioning is layout, GSAP's
+   transform is paint, and the two compose. */
+@media (min-width: 60rem) {
+  .hero-card {
+    position: relative;
+    top: -1.75rem;
   }
 }
 

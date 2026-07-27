@@ -6,12 +6,30 @@
 // rim-flashes with contact sparks, stir currents off pointer velocity, idle
 // breathing + random shivers, hover make-room.
 // Reduced motion: physics off, same packed cluster rendered statically.
-import Matter from 'matter-js';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { sponsors, categories } from '../data/sponsors.js';
 
-const { Engine, Bodies, Body, Composite, Events } = Matter;
+/* Matter arrives on its OWN chunk (v0.4.6), not in the entry bundle: ~84KB raw
+   of physics for a section that is below the fold on every viewport, sitting in
+   front of a hero that cannot paint until the entry chunk has downloaded,
+   parsed and run. This is the lever §Budgets has been pointing at since v0.3.9
+   ("the first move is a lazy chunk for Matter.js"), and it is worth more than
+   every byte this site's own modules add up to.
+
+   Bound as `let` at module scope so the ~800 lines below are untouched by the
+   change, and assigned once the chunk lands. initPerkField stays SYNCHRONOUS up
+   to its first await — async functions run to that point on the calling stack —
+   so the DOM build, the layout and the reduced-motion path all still complete
+   inside main.js's call, which is what the preloader's image collection and
+   scroll.refresh() downstream of it depend on.
+
+   Reduced motion never imports it at all: that path returns before the await. */
+let Engine;
+let Bodies;
+let Body;
+let Composite;
+let Events;
 
 const STEP = 1000 / 60; // fixed timestep, accumulator-driven (§6.4)
 
@@ -94,7 +112,7 @@ const debounce = (fn, ms) => {
   };
 };
 
-export function initPerkField(scroll, modal) {
+export async function initPerkField(scroll, modal) {
   const section = document.querySelector('[data-perk-field]');
   if (!section) return;
 
@@ -136,13 +154,22 @@ export function initPerkField(scroll, modal) {
         el.innerHTML = `
           <span class="perk-bubble__scale">
             <span class="perk-bubble__lens">
-              <img src="${s.image}" alt="" width="320" height="320" decoding="async" data-preload />
+              <img src="${s.image}" alt="" width="320" height="320" decoding="async" fetchpriority="low" />
             </span>
             ${s.discount ? `<span class="perk-bubble__badge" aria-hidden="true">${s.discount}</span>` : ''}
           </span>`;
         if (hasDetails) el.addEventListener('click', () => modal.open(s, el));
         canvas.appendChild(el);
-        const it = { sponsor: s, el, i, d: 0, r: 0, home: { x: 0, y: 0 }, body: null };
+        const it = {
+          sponsor: s,
+          el,
+          img: el.querySelector('img'), // arrival waits on this one (see lifecycle)
+          i,
+          d: 0,
+          r: 0,
+          home: { x: 0, y: 0 },
+          body: null,
+        };
         byEl.set(el, it);
         return it;
       });
@@ -250,6 +277,18 @@ export function initPerkField(scroll, modal) {
   }
 
   /* ---------------- Matter world ---------------- */
+  /* THE suspension point. Everything above ran synchronously on main.js's
+     stack; everything below resumes when the physics chunk lands.
+
+     Nothing can flash: the field's default state is alive and unstyled (the
+     plain cluster of real links), and the seed pass explicitly leaves anything
+     already on screen alone, so bubbles the visitor is looking at when this
+     resolves are never retro-parked. A failed import leaves exactly that plain
+     field, which is the same graceful floor the no-JS path lands on. */
+  ({ Engine, Bodies, Body, Composite, Events } = await import('matter-js').then(
+    (m) => m.default ?? m,
+  ));
+
   const engine = Engine.create();
   engine.gravity.x = 0;
   engine.gravity.y = 0;
@@ -583,6 +622,7 @@ export function initPerkField(scroll, modal) {
         const y = top + it.body.position.y; // body y is already section-local
         if (y > inA && y < inB) continue; // on screen at load: leave it be
         it.alive = false;
+        it.due = false;
         it.el.classList.add('is-dormant');
         pending.add(it);
       }
@@ -590,11 +630,27 @@ export function initPerkField(scroll, modal) {
     }
 
     if (!pending.size) return;
-    // deleting the current entry mid iteration is safe on a Set: the spec skips
-    // removed entries and the current one has already been visited
+    /* Two conditions now, not one (v0.4.6). The bubble photos left the
+       preloader's manifest in the same pass — 159KB of below-the-fold artwork
+       was holding the curtain shut over a hero that was already painted — so
+       for the first time a coin can reach its arrival line before its own
+       picture has landed, and inflating an empty coin is exactly the flatness
+       the v0.3.8 image pass exists to prevent. `complete` is the right test and
+       not `naturalWidth`: it goes true on ERROR too, so a picture that will
+       never arrive still lets its bubble in rather than deleting a sponsor from
+       the field.
+
+       `due` latches the position half separately, so a bubble whose photo is
+       slow still arrives the moment it lands instead of waiting to be scrolled
+       back over. Off screen by then means the inflation plays to nobody, which
+       is the cheap half of the trade.
+
+       Deleting the current entry mid iteration is safe on a Set: the spec skips
+       removed entries and the current one has already been visited. */
     for (const it of pending) {
       const y = top + it.body.position.y;
-      if (y > inA && y < inB) wake(it, instant);
+      if (y > inA && y < inB) it.due = true;
+      if (it.due && it.img.complete) wake(it, instant);
     }
   }
 

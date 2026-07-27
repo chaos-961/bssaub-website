@@ -87,9 +87,15 @@
     <a class="skip-link" href="#main">Skip to content</a>
 
     <header class="site-nav" data-nav>
-      <a class="site-nav__wordmark" href="./" aria-label="Business Student Society, home">
-        <img class="site-nav__logo" src="assets/brand/logo.webp" alt="" width="233" height="108" decoding="async" />
-      </a>
+      <div class="site-nav__left">
+        <a class="site-nav__wordmark" href="./" aria-label="Business Student Society, home">
+          <!-- data-preload (v0.4.6): the curtain could lift onto an empty nav
+               slot. Costs the gate nothing — 13.6KB the parser starts before the
+               bundle exists, against 121KB of Fraunces in the same wait. -->
+          <img class="site-nav__logo" src="assets/brand/logo.webp" alt="" width="233" height="108" decoding="async" data-preload />
+        </a>
+        <span class="site-nav__crn">CRN: 5014</span>
+      </div>
       <div class="site-nav__right">
         <a class="site-nav__account" href="account">Account</a>
         <button
@@ -148,8 +154,17 @@
                hero with the old eyebrow and still rides in the footer's bottom
                bar, which is the line that was always its home. -->
           <p class="eyebrow hero__eyebrow">Welcome to</p>
+          <!-- Two lines since v0.4.6 (user call: "AUB's Business" over
+               "Society"). The break is MARKUP, not a wrap, because a wrap
+               moves with the font size and the column width and would have
+               read as three lines on a phone and two on a desktop. Each line
+               is its own mask and its own step in the entrance timeline, which
+               is the structure the headline had before v0.4.5 flattened it to
+               one. heroCard.js splits BOTH lines into words, single word line
+               included, so the permanent swell reaches "Society" too. -->
           <h1 class="hero__headline">
-            <span class="line"><span class="line__inner">AUB&#8217;s Business Society</span></span>
+            <span class="line"><span class="line__inner">AUB&#8217;s Business</span></span>
+            <span class="line"><span class="line__inner">Society</span></span>
           </h1>
           <p class="hero__sub">Student discounts across restaurants, clothing, health &amp; beauty, fitness and services.</p>
           <div class="hero__ctas">
@@ -488,7 +503,7 @@
       <div class="site-footer__bottom">
         <div class="site-footer__bottom-inner">
           <p>© Business Student Society, AUB · CRN: 5014</p>
-          <span class="version-badge" data-version-badge>v0.4.5</span>
+          <span class="version-badge" data-version-badge>v0.4.6</span>
         </div>
       </div>
     </footer>

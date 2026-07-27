@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "node scripts/check-admin-payload.mjs && vite build",
     "preview": "vite preview",
-    "admin:payload": "node scripts/build-admin-payload.mjs"
+    "admin:payload": "node scripts/build-admin-payload.mjs",
+    "images:optimize": "node scripts/optimize-images.mjs"
   },
   "dependencies": {
     "@fontsource-variable/fraunces": "^5.2.0",

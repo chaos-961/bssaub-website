@@ -47,6 +47,12 @@ const heroCard = initHeroCard(scroll);
 // heroCard returns early under reduced motion, cardName still fills the blank
 initCardName(scroll);
 const modal = initSponsorModal(scroll);
+/* initPerkField is async since v0.4.6 (Matter.js moved to its own chunk), but
+   an async function still runs synchronously up to its first await, and the
+   await sits AFTER the DOM build and the layout. So the bubbles exist, the
+   section has its height, and reduced motion has already returned by the time
+   this line finishes — which is what everything below it assumes. Only the
+   physics resumes late, and only the dev handle wants the return value. */
 const perkField = initPerkField(scroll, modal);
 const journey = initJourney(scroll);
 initSponsorCta(scroll);
@@ -70,5 +76,12 @@ initPreloader({
   },
 });
 
-// dev-only handle for QA sessions (manual ticker stepping, state inspection)
-if (import.meta.env.DEV) window.__bss = { gsap, scroll, perkField, modal, journey, ocean };
+// dev-only handle for QA sessions (manual ticker stepping, state inspection).
+// perkField is resolved rather than stored as its promise, so __bss.perkField._qa
+// still reads the way every headless check in CLAUDE.md writes it.
+if (import.meta.env.DEV) {
+  window.__bss = { gsap, scroll, modal, journey, ocean };
+  perkField.then((pf) => {
+    window.__bss.perkField = pf;
+  });
+}

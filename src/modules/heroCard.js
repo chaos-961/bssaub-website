@@ -162,13 +162,25 @@ export function initHeroCard(scroll) {
        structure exists to avoid exactly that. Falling back to the line
        elements themselves keeps a one word headline working. */
     const lines = [...document.querySelectorAll('.hero__headline .line__inner')].flatMap((line) => {
-      const words = splitWords(line);
+      // min 1, not the default 2 (v0.4.6): the headline is two lines now and
+      // the second is the single word "Society", which would otherwise keep
+      // the whole-line mask and be the one word on the page that never joins
+      // the swell. Everywhere else on the site the default still holds.
+      const words = splitWords(line, 1);
       // same handover the masked headings make: once the words carry their own
       // clip they carry their own descender allowance too, and .line keeping
       // its copy of it measured 6px of extra headline height on a phone
       if (words) line.parentElement.classList.add('is-split');
       return words || [line];
     });
+    /* The swell's phase offset reads --w, and splitWords numbers words within
+       their own line, so across two lines the first word of each would share a
+       phase and the wave would arrive as two halves moving together. One pass
+       renumbers them as a single sequence, which is also the order the
+       entrance stagger already runs in. */
+    document
+      .querySelectorAll('.hero__headline .rv-w')
+      .forEach((box, i) => box.style.setProperty('--w', i));
     const eyebrow = document.querySelector('.hero__eyebrow');
     const soft = ['.hero__sub', '.hero__ctas', '.hero__facts']
       .map((s) => document.querySelector(s))

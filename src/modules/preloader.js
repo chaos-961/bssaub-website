@@ -1,7 +1,23 @@
 // Honest preloader (§6.1): progress tracks real asset readiness — both display
-// fonts plus the hero card art (sponsor bubbles join the manifest in Phase 3).
+// fonts plus every [data-preload] image, which since v0.4.6 means the FIRST
+// SCREEN and nothing else (the hero card art and the nav lockup).
 // Floor ~400ms so it never flashes; hard cap ~4s so a bad network never gates
 // entry — whatever is still loading finishes quietly behind the page.
+//
+// The 25 sponsor bubbles left this manifest at v0.4.6 and the reasoning is the
+// point, because "wait for everything" reads as the careful option and was not:
+// 159KB of artwork for section FOUR was holding the curtain shut over a hero
+// that had been fully painted for a second, on the exact page whose whole job
+// is to get a student to the membership card. It was also 25 requests competing
+// for bandwidth with the card art and the fonts inside the one window where
+// contention is most expensive, which is the same measurement that keeps font
+// preloads off this page (see vite.config.js).
+//
+// Nothing regressed by dropping them, because the field learned to wait for
+// itself: a bubble now holds its arrival until its own photo is complete
+// (perkField.js), so a coin that used to be guaranteed-loaded-but-early is now
+// guaranteed-loaded-when-it-inflates. The old guarantee was softer than it
+// looked anyway — the 4s cap could always let a visitor in mid download.
 import gsap from 'gsap';
 
 const FLOOR = 400;
@@ -24,8 +40,7 @@ export function initPreloader({ scroll, onComplete }) {
     document.fonts.load('400 1rem "Instrument Sans Variable"'),
   ];
 
-  // every [data-preload] image: hero card art + all sponsor bubbles (§6.1) —
-  // bubbles exist by now because perkField builds its DOM before this runs
+  // every [data-preload] image: the hero card art and the nav lockup (§6.1)
   document.querySelectorAll('img[data-preload]').forEach((img) => {
     const loaded = img.complete
       ? Promise.resolve()

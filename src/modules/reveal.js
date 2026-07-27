@@ -34,10 +34,17 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
    for character and a screen reader still reads one continuous phrase.
 
    Returns the word boxes, or null when there was nothing worth splitting, so
-   the caller can fall back to whatever it already did to the whole line. */
-export function splitWords(el) {
+   the caller can fall back to whatever it already did to the whole line.
+
+   `min` is what "worth splitting" means, and it is 2 everywhere on the page
+   for a reason: a one word block gains nothing from a per word cascade, and
+   the whole-block mask it keeps instead is the cheaper path. The hero passes 1
+   since v0.4.6, because its headline broke into two lines and the second one
+   is a single word: without a word box that line would sit out the permanent
+   swell (which rides .rv-w) while the line above it moved. */
+export function splitWords(el, min = 2) {
   const words = el.textContent.split(' ');
-  if (words.length < 2) return null;
+  if (words.length < min) return null;
   el.textContent = '';
   return words.map((word, w) => {
     if (w) el.append(' ');

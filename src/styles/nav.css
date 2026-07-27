@@ -114,6 +114,34 @@
      (v0.2.2; the v0.2.1 brightness filter was for the old dark glass nav). */
 }
 
+/* CRN beside the lockup (user call 2026-07-27). It sits OUTSIDE the wordmark
+   link on purpose: it is a fact about the society, not part of the "home"
+   target, and folding it in would grow that link's hit area and fold a number
+   into its accessible name. The left group exists so the bar's
+   justify-content: space-between still has exactly two children — a third
+   direct child would be pushed to the middle of the bar. */
+.site-nav__left {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.site-nav__crn {
+  display: inline-flex;
+  align-items: center;
+  /* A fixed height, not align-self: stretch: the rule is a separator between
+     two marks, so it is sized to the type it stands beside and not to the 72px
+     bar, which would draw a full height line down the middle of the paper. */
+  height: 1.35rem;
+  padding-left: 0.7rem;
+  border-left: 1px solid color-mix(in srgb, var(--nav-ink) 24%, transparent);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--nav-ink-soft);
+  white-space: nowrap;
+}
+
 .site-nav__right {
   display: flex;
   align-items: center;
@@ -146,10 +174,27 @@
   color: var(--nav-ink);
 }
 
+/* Phones: the CRN gives ground before anything else in the bar does. It shrinks
+   at 26rem rather than at the 22.5rem breakpoint below because that one is
+   about the logo, and the number runs out of room first — at 375px the full
+   size mark left only 17px between itself and the Account link, against 32px
+   at the shrunk size. Nothing else in the bar moves. */
+@media (max-width: 26rem) {
+  .site-nav__crn {
+    padding-left: 0.5rem;
+    font-size: 0.64rem;
+    letter-spacing: 0.06em;
+  }
+}
+
 /* very narrow screens: keep Account in the bar without crowding the logo */
 @media (max-width: 22.5rem) {
   .site-nav__logo {
     height: 34px;
+  }
+
+  .site-nav__left {
+    gap: 0.45rem;
   }
 
   .site-nav__right {
