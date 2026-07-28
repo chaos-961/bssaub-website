@@ -1,5 +1,10 @@
 <!doctype html>
-<html lang="en">
+<!-- auth-resolving is set HERE rather than by the entry module, and that is
+     deliberate: a module runs after the document is parsed, so adding the class
+     from JS leaves a frame in which the signed out form can paint. It is what
+     hides the gate until Firebase has said whether there is a session, and
+     accountAuth.js removes it the moment there is an answer either way. -->
+<html lang="en" class="auth-resolving">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -21,6 +26,16 @@
     <!-- No inline <script> on this page, deliberately: the built CSP runs
          script-src 'self' with no 'unsafe-inline', and the js / reduced-motion
          root classes are set at the top of src/account.js instead. -->
+    <!-- Without JS there is no session to wait for and no spinner that could
+         ever stop, so the wait is reversed and the plain form is shown. A
+         <style> rather than a <script> because the CSP forbids the second and
+         allows the first (style-src keeps 'unsafe-inline'). -->
+    <noscript>
+      <style>
+        html.auth-resolving [data-auth-gate] { display: block; }
+        html.auth-resolving [data-auth-loading] { display: none; }
+      </style>
+    </noscript>
     <script type="module" src="/src/account.js"></script>
   </head>
   <body>
@@ -83,6 +98,19 @@
 
     <main class="auth" id="main">
       <div class="auth__card" data-auth>
+        <!-- The third state, shown only while it is not yet known whether
+             there is a session. It carries the same eyebrow and title as the
+             gate below it, so resolving into either one moves nothing that was
+             already on screen. -->
+        <section data-auth-loading>
+          <p class="eyebrow">Business Student Society</p>
+          <h1 class="auth__title">Member access</h1>
+          <p class="auth__loading">
+            <span class="auth__spinner" aria-hidden="true"></span>
+            <span>Checking your session.</span>
+          </p>
+        </section>
+
         <section data-auth-gate>
           <p class="eyebrow">Business Student Society</p>
           <h1 class="auth__title">Member access</h1>
@@ -270,7 +298,7 @@
             </span>
           </div>
 
-          <!-- The membership block (v0.4.8). The card is hidden until the
+          <!-- The membership block (v0.4.8, black outline at v0.4.9). The card is hidden until the
                record says the subscription is still running, and memberPanel.js
                takes it away again the instant it runs out on an open page. The
                SVG is the same trick the hero card uses for its NAME blank: the
@@ -368,7 +396,7 @@
       <div class="site-footer__bottom">
         <div class="site-footer__bottom-inner">
           <p>© Business Student Society, AUB · CRN: 5014</p>
-          <span class="version-badge" data-version-badge>v0.4.8</span>
+          <span class="version-badge" data-version-badge>v0.4.9</span>
         </div>
       </div>
     </footer>

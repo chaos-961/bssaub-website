@@ -192,8 +192,28 @@ async function connect(email, password) {
       return dbSdk.updateDoc(dbSdk.doc(db, MEMBERS, uid), { expiresAt });
     },
 
+    /* DELETE MEANS THE PERSON IS GONE, and getting there needs a word of
+       explanation because a static site cannot do it in one call. Removing a
+       Firebase Auth account requires either the Admin SDK on a server, which
+       this site does not have, or the account deleting ITSELF while signed in.
+       So deleting the row alone would be worse than useless: their login would
+       still work and their next visit would quietly write a fresh empty row,
+       undoing the delete with nobody watching.
+
+       Instead the row is REPLACED by a tombstone. That one field does three
+       jobs at once. It drops them out of every search, because the tombstone
+       carries no searchKeys and no email for either query to match. It cannot
+       be overwritten by the member: the rules refuse their create (the doc
+       exists) and refuse their update (expiresAt would have to equal a field
+       the tombstone does not have), so they can never resurrect themselves.
+       And it is the instruction the account page acts on, deleting its own
+       Auth account the next time that person opens the site.
+
+       Net effect: gone from the admin the instant the button is pressed, and
+       locked out permanently from that moment whether or not they ever come
+       back to collect the deletion. */
     remove(uid) {
-      return dbSdk.deleteDoc(dbSdk.doc(db, MEMBERS, uid));
+      return dbSdk.setDoc(dbSdk.doc(db, MEMBERS, uid), { revoked: true });
     },
 
     async close() {
@@ -499,7 +519,7 @@ function boot() {
     })
     .catch((error) => {
       console.error('Admin payload unavailable', error);
-      setStatus('The admin payload could not be loaded.', 'error');
+      setStatus('This page could not load. Refresh and try again.', 'error');
     });
 }
 

@@ -216,7 +216,7 @@ export default function mount(root, api) {
      decrypted, so the password was right and what went wrong is the Firebase
      account or the rules. The message says so rather than blaming the typing. */
   setBusy(true);
-  setStatus('Connecting to the members database.');
+  setStatus('Connecting.');
   api.members
     .ready()
     .then(() => {
@@ -225,10 +225,12 @@ export default function mount(root, api) {
       input.focus({ preventScroll: true });
     })
     .catch((error) => {
-      setStatus(
-        'Signed in to the page, but not to the members database. Check that the admin account exists in Firebase and that its password matches this one.',
-        'error',
-      );
+      /* Deliberately says nothing about what is behind this page (user
+         instruction, v0.4.9: nothing about the backend belongs in the site,
+         and "the site" includes the screens only the admin ever sees). The
+         diagnosis an operator would actually need goes to the console
+         instead, which is a devtools panel and not a page. */
+      setStatus('Could not reach the members list. Try again in a moment.', 'error');
       if (error) console.warn('Members connection failed', error.code || error);
     });
 

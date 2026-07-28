@@ -40,7 +40,7 @@
    ------------------------------------------------------------------ */
 import { firebaseConfig } from '../data/firebase.js';
 import { MEMBERS, memberFrom, searchKeysFor } from '../data/membership.js';
-import { sanitizeName, writeSession, clearSession } from './session.js';
+import { readSession, sanitizeName, writeSession, clearSession } from './session.js';
 import { initMemberPanel } from './memberPanel.js';
 
 const MIN_PASSWORD = 8;
@@ -62,9 +62,12 @@ const MESSAGES = {
   'auth/email-already-in-use': 'An account already exists for that email. Try signing in instead.',
   'auth/too-many-requests': 'Too many attempts. Wait a moment and try again.',
   'auth/network-request-failed': 'Network error. Check your connection and try again.',
-  'auth/operation-not-allowed':
-    'Email sign in is not switched on for this project yet. Enable it in the Firebase console.',
-  'auth/unauthorized-domain': 'This domain is not authorized for sign in in the Firebase console.',
+  /* These two are misconfigurations rather than anything a visitor did, and
+     they deliberately say nothing about what runs behind this page (user
+     instruction, v0.4.9). The operator still gets the real cause: `explain`
+     logs the code to the console for anything it did not map by hand. */
+  'auth/operation-not-allowed': 'Sign in is unavailable right now. Try again later.',
+  'auth/unauthorized-domain': 'Sign in is unavailable from this address.',
 };
 
 const SIGNIN_FAILURES = new Set([
@@ -75,9 +78,47 @@ const SIGNIN_FAILURES = new Set([
   'auth/user-disabled',
 ]);
 
+/* The card starts in a third state, "we do not know yet" (v0.4.9, user report:
+   "when you open account if you are logged in I saw that it shows the log in
+   page then after like 1sec it will show me my account").
+
+   That second is not slow code, it is the shape of the problem: the session
+   lives in Firebase's own store and nothing can say whether there is one until
+   ~50KB gz of SDK has arrived and read it. The old page answered "signed out"
+   during that window because the gate was simply what the HTML contained, and
+   then took it back. Showing a wait instead is the honest answer to a question
+   nobody can answer yet.
+
+   THE CLASS IS IN THE HTML, NOT ADDED BY THIS MODULE, and that placement is
+   the whole point: a module runs after the document is parsed, so setting it
+   from here would leave a frame where the gate can paint, which is a smaller
+   version of the exact flash being fixed. A <noscript> block in the page
+   reverses it, so a visitor without JS still gets the plain form and never a
+   spinner that can never resolve. */
+const resolveView = () => document.documentElement.classList.remove('auth-resolving');
+
 export function initAccount() {
   const root = document.querySelector('[data-auth]');
-  if (!root) return;
+  if (!root) return resolveView(); // never leave the page waiting on a card it does not have
+
+  /* Only WAIT if there is reason to think there is something to wait for.
+     Without this, fixing the signed in flash would have charged every signed
+     out visitor a second of spinner before they could start typing, on the
+     page whose whole job is that form, and they are the majority here because
+     this IS the sign in page.
+
+     The cookie is the right instrument for that and it is being used for
+     exactly what it was built for: session.js says it is a display hint that
+     is never consulted for authorization, and this consults it to pick which
+     of two views to show FIRST, which Firebase then confirms or overrides a
+     moment later either way. Forging it still buys nothing: the worst it can
+     do is show a spinner to someone who is signed out, for as long as it takes
+     Firebase to say so.
+
+     The reverse case, a live Firebase session whose cookie has lapsed, brings
+     back the old flash. It needs a 30 day absence to reach, because every
+     signed in render rewrites the cookie with a fresh 30 day life. */
+  if (!readSession()) resolveView();
 
   const gate = root.querySelector('[data-auth-gate]');
   const member = root.querySelector('[data-auth-member]');
@@ -207,6 +248,26 @@ export function initAccount() {
 
   /* --- the membership record -------------------------------------------- */
 
+  /* Collect a deletion the admin ordered. Best effort on the account itself,
+     certain on the outcome: whatever happens above, the person ends up signed
+     out and told, and can never sign back in to anything. The message is set
+     AFTER the sign out, because signing out repaints the gate underneath it. */
+  const removeSelf = async (user) => {
+    loadedFor = '';
+    panel?.clear();
+    try {
+      await api.deleteUser(user);
+    } catch {
+      /* a session too old to delete itself: the tombstone holds the line */
+    }
+    try {
+      await api.signOut(auth);
+    } catch {
+      /* already gone, which is the same outcome */
+    }
+    setStatus('This account has been removed.', 'error');
+  };
+
   /* One read on arrival, and a write only when there is something to correct.
      Skipping the unchanged case matters more than it looks: this runs on every
      visit to the page by every member, and the free tier's write allowance is
@@ -231,6 +292,25 @@ export function initAccount() {
       const sdk = await openStore();
       const ref = sdk.doc(db, MEMBERS, uid);
       const snap = await sdk.getDoc(ref);
+
+      /* The admin deleted this person. Their record is a tombstone now (see
+         the note on remove() in src/admin.js for why it is a tombstone rather
+         than an absence), and this is where the deletion is actually
+         collected: the account deletes ITSELF, which is the only way a page
+         with no server behind it can remove a login at all.
+
+         It is attempted, not required. A session that has been sitting around
+         for a while cannot delete itself without signing in again, and there
+         is no point marching someone through that to complete their own
+         removal. Either way the tombstone stays and they are locked out for
+         good, because the rules refuse to let them write over it: create is
+         refused since the document exists, and update is refused since their
+         expiresAt would have to match a field a tombstone does not carry. */
+      if (snap.exists() && snap.data()?.revoked) {
+        await removeSelf(user);
+        return;
+      }
+
       let data;
       if (!snap.exists()) {
         data = { name, email, searchKeys: searchKeysFor(name), expiresAt: 0, createdAt: Date.now() };
@@ -263,6 +343,7 @@ export function initAccount() {
     writeSession(name);
     if (gate) gate.hidden = true;
     if (member) member.hidden = false;
+    resolveView();
     root.classList.add('is-authed');
     setStatus('');
     // deliberately not awaited: the identity is on screen now and the card
@@ -277,6 +358,7 @@ export function initAccount() {
     panel?.clear();
     if (member) member.hidden = true;
     if (gate) gate.hidden = false;
+    resolveView();
     root.classList.remove('is-authed');
     clearPasswords();
   };
@@ -436,6 +518,7 @@ export function initAccount() {
         createUserWithEmailAndPassword: authSdk.createUserWithEmailAndPassword,
         sendPasswordResetEmail: authSdk.sendPasswordResetEmail,
         updateProfile: authSdk.updateProfile,
+        deleteUser: authSdk.deleteUser,
         signOut: authSdk.signOut,
       };
       setBusy(false);
@@ -446,6 +529,9 @@ export function initAccount() {
       });
     } catch (error) {
       console.error('Firebase failed to load', error);
+      // reveal the form even though it cannot be used yet: a card stuck on a
+      // spinner tells a visitor nothing, and this at least carries the reason
+      resolveView();
       setStatus('Sign in is unavailable right now. Try again in a moment.', 'error');
     }
   })();
