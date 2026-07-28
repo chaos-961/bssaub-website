@@ -132,10 +132,10 @@
   /* A fixed height, not align-self: stretch: the rule is a separator between
      two marks, so it is sized to the type it stands beside and not to the 72px
      bar, which would draw a full height line down the middle of the paper. */
-  height: 1.6rem;
+  height: 1.8rem;
   padding-left: 0.7rem;
   border-left: 1px solid color-mix(in srgb, var(--nav-ink) 24%, transparent);
-  font-size: 0.86rem;
+  font-size: 1rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--nav-ink-soft);
@@ -182,7 +182,7 @@
 @media (max-width: 26rem) {
   .site-nav__crn {
     padding-left: 0.5rem;
-    font-size: 0.74rem;
+    font-size: 0.8rem;
     letter-spacing: 0.05em;
   }
 }
