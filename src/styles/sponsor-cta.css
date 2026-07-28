@@ -5,6 +5,13 @@
   padding-block: var(--section-pad);
 }
 
+/* The one centred section head on the page, so its underline (v0.5.0) has to
+   grow from the middle out rather than from a left edge that is not there. */
+.sponsor-cta .section__rule {
+  margin-inline: auto;
+  transform-origin: center;
+}
+
 .sponsor-cta__inner {
   max-width: min(var(--container), 880px);
   margin-inline: auto;

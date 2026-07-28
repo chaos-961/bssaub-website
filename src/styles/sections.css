@@ -7,6 +7,16 @@
   max-width: var(--container);
   margin-inline: auto;
   padding: calc(var(--nav-h) + 3rem) var(--gutter) var(--section-pad);
+  /* v0.5.0: the copy column leaves sideways now (§ exit system), and a block
+     travelling 90px out of a full bleed section widens the document and opens a
+     horizontal scrollbar. `clip` and not `hidden` for the same reason
+     .perk-field picked it: hidden would make this a scroll container, which
+     costs the page its anchor scrolling and its sticky behaviour, while clip
+     leaves vertical flow completely untouched. The clip edge is the padding
+     box, i.e. the outer edge of --gutter, and the card's own shadow reaches
+     only ~10px into a gutter that is never narrower than 20px, so nothing that
+     is meant to be seen is cut. */
+  overflow-x: clip;
 }
 
 @media (min-width: 60rem) {

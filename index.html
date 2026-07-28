@@ -146,7 +146,20 @@
 
     <main id="main">
       <section class="hero" id="top">
-        <div class="hero__copy">
+        <!-- data-exit (v0.5.0, user brief: "texts going side ways to disappear
+             when I scroll past them"). THE HERO HAS HAD NO SCROLL DRIVEN MOTION
+             AT ALL SINCE v0.4.5, when the old fade was removed on the user's
+             word, so this is the one attribute on the page that is a reversal
+             rather than an addition and it is called out here for whoever reads
+             this next. It is a different animation from the one that went: that
+             lifted the copy 64px and dimmed it to 0.12 across the hero's exit,
+             starting while the trust row was still on screen; this one does not
+             begin until the block's own bottom edge has reached 40% of the
+             screen, and it is the same gesture every other text block on the
+             page now makes rather than a hero special. The CARD is untouched,
+             deliberately: its departure was removed at v0.4.0 for a separate and
+             worse reason (see reveal.js) and nothing here goes near it. -->
+        <div class="hero__copy" data-exit="left">
           <!-- v0.4.5, user call: the eyebrow is a greeting and the headline is
                the society's own name, big and bold, with a permanent swell on
                it (see .hero__headline in sections.css and heroCard.js for the
@@ -225,12 +238,13 @@
 
       <section class="perk-field" id="sponsors" aria-labelledby="sponsors-title" data-perk-field>
         <span class="rv-rule" data-rule aria-hidden="true"></span>
-        <div class="perk-field__intro" data-reveal>
+        <div class="perk-field__intro" data-reveal data-exit="right" data-head-drift>
           <p class="eyebrow section__eyebrow rv-up">The Perk Field</p>
           <h2 class="section__title" id="sponsors-title">
             <span class="rv-mask" style="--i: 1"><span>Sponsors</span></span>
+            <span class="section__rule" data-title-rule aria-hidden="true"></span>
           </h2>
-          <p class="section__note rv-up" style="--i: 2">Tap a bubble for the deal, or go straight to the sponsor's Instagram.</p>
+          <p class="section__note rv-up" style="--i: 2; --dx: -34px">Tap a bubble for the deal, or go straight to the sponsor's Instagram.</p>
         </div>
         <!-- Left category ruler + mobile chip removed 2026-07-23 on the user's word;
              the per-zone headings below are the category labels that stay -->
@@ -238,27 +252,31 @@
           <div class="perk-field__zones">
             <div class="perk-zone" data-zone="restaurants">
               <span class="perk-zone__rail" data-rail aria-hidden="true"></span>
-              <h3 class="perk-zone__title" data-reveal><span class="rv-mask"><span>Restaurants</span></span></h3>
+              <!-- data-lag + data-exit (v0.5.0): each category label holds back
+                   against its own zone so it lingers beside its sponsors, then
+                   leaves sideways like every other text block. Alternating
+                   direction down the five, so the section deals itself out. -->
+              <h3 class="perk-zone__title" data-reveal data-lag data-exit="left"><span class="rv-mask"><span>Restaurants</span></span></h3>
               <div class="perk-zone__canvas" data-zone-canvas="restaurants"></div>
             </div>
             <div class="perk-zone" data-zone="clothing">
               <span class="perk-zone__rail" data-rail aria-hidden="true"></span>
-              <h3 class="perk-zone__title" data-reveal><span class="rv-mask"><span>Clothing</span></span></h3>
+              <h3 class="perk-zone__title" data-reveal data-lag data-exit="right"><span class="rv-mask"><span>Clothing</span></span></h3>
               <div class="perk-zone__canvas" data-zone-canvas="clothing"></div>
             </div>
             <div class="perk-zone" data-zone="health-beauty">
               <span class="perk-zone__rail" data-rail aria-hidden="true"></span>
-              <h3 class="perk-zone__title" data-reveal><span class="rv-mask"><span>Health &amp; Beauty</span></span></h3>
+              <h3 class="perk-zone__title" data-reveal data-lag data-exit="left"><span class="rv-mask"><span>Health &amp; Beauty</span></span></h3>
               <div class="perk-zone__canvas" data-zone-canvas="health-beauty"></div>
             </div>
             <div class="perk-zone" data-zone="fitness">
               <span class="perk-zone__rail" data-rail aria-hidden="true"></span>
-              <h3 class="perk-zone__title" data-reveal><span class="rv-mask"><span>Fitness</span></span></h3>
+              <h3 class="perk-zone__title" data-reveal data-lag data-exit="right"><span class="rv-mask"><span>Fitness</span></span></h3>
               <div class="perk-zone__canvas" data-zone-canvas="fitness"></div>
             </div>
             <div class="perk-zone" data-zone="services">
               <span class="perk-zone__rail" data-rail aria-hidden="true"></span>
-              <h3 class="perk-zone__title" data-reveal><span class="rv-mask"><span>Services</span></span></h3>
+              <h3 class="perk-zone__title" data-reveal data-lag data-exit="left"><span class="rv-mask"><span>Services</span></span></h3>
               <div class="perk-zone__canvas" data-zone-canvas="services"></div>
             </div>
           </div>
@@ -267,10 +285,11 @@
 
       <section class="journey" id="journey" aria-labelledby="journey-title" data-journey>
         <span class="rv-rule" data-rule aria-hidden="true"></span>
-        <div class="journey__intro" data-reveal>
+        <div class="journey__intro" data-reveal data-exit="left" data-head-drift>
           <p class="eyebrow section__eyebrow rv-up">Story · Mission · Vision</p>
           <h2 class="section__title" id="journey-title">
             <span class="rv-mask" style="--i: 1"><span>Our Journey</span></span>
+            <span class="section__rule" data-title-rule aria-hidden="true"></span>
           </h2>
         </div>
         <div class="journey__track" data-journey-track>
@@ -287,7 +306,12 @@
             <li class="journey-node" data-node>
               <span class="journey-node__dot" aria-hidden="true"></span>
               <article class="journey-node__card">
-                <figure class="journey-node__media" data-journey-media data-img-io style="--i: 0">
+                <!-- data-img-exit (v0.5.0): the picture leaves the way its own
+                     column points and the copy beside it leaves the other way,
+                     so the card shears apart as it goes instead of sliding off
+                     as one slab. On desktop the odd nodes put the picture on the
+                     left, so left is "away" for it here. -->
+                <figure class="journey-node__media" data-journey-media data-img-io data-img-exit="left" style="--i: 0">
                   <img
                     src="assets/journey/story.webp"
                     alt="Members of the Commerce Students' Society seated around a meeting table, archive photograph in black and white"
@@ -297,7 +321,11 @@
                     decoding="async"
                   />
                 </figure>
-                <div class="journey-node__content">
+                <!-- The other half of the card split. journey.js already owns
+                     this element's `y` for the depth parallax; the exit writes
+                     `x` and `opacity`, which are different components of the
+                     same transform cache and compose with it. -->
+                <div class="journey-node__content" data-exit="right">
                   <p class="journey-node__chip">Since 1965</p>
                   <h3 class="journey-node__title"><span class="jline"><span class="jline__inner">Our Story</span></span></h3>
                   <p class="journey-node__text">
@@ -315,7 +343,7 @@
             <li class="journey-node" data-node>
               <span class="journey-node__dot" aria-hidden="true"></span>
               <article class="journey-node__card">
-                <figure class="journey-node__media" data-journey-media data-img-io style="--i: 1">
+                <figure class="journey-node__media" data-journey-media data-img-io data-img-exit="right" style="--i: 1">
                   <img
                     src="assets/journey/mission.webp"
                     alt="BSS members in maroon vests handing a membership card to a student on campus"
@@ -325,7 +353,7 @@
                     decoding="async"
                   />
                 </figure>
-                <div class="journey-node__content">
+                <div class="journey-node__content" data-exit="left">
                   <p class="journey-node__chip">What drives us</p>
                   <h3 class="journey-node__title"><span class="jline"><span class="jline__inner">Our Mission</span></span></h3>
                   <p class="journey-node__text">
@@ -343,7 +371,7 @@
             <li class="journey-node" data-node>
               <span class="journey-node__dot" aria-hidden="true"></span>
               <article class="journey-node__card">
-                <figure class="journey-node__media" data-journey-media data-img-io style="--i: 2">
+                <figure class="journey-node__media" data-journey-media data-img-io data-img-exit="left" style="--i: 2">
                   <img
                     src="assets/journey/vision.webp"
                     alt="BSS members at the Suliman S. Olayan School of Business celebrating 125 years of business education"
@@ -353,7 +381,7 @@
                     decoding="async"
                   />
                 </figure>
-                <div class="journey-node__content">
+                <div class="journey-node__content" data-exit="right">
                   <p class="journey-node__chip">Where we're headed</p>
                   <h3 class="journey-node__title"><span class="jline"><span class="jline__inner">Our Vision</span></span></h3>
                   <p class="journey-node__text">We envision a student body that is confident, capable, and ready for their careers.</p>
@@ -371,6 +399,19 @@
                 <div class="journey-node__content">
                   <p class="journey-node__chip">Your move</p>
                   <h3 class="journey-node__title"><span class="jline"><span class="jline__inner">Join us</span></span></h3>
+                  <!-- NO data-pop ON THIS ONE BUTTON, and it is a measured
+                       exclusion rather than an oversight. journey.js runs
+                       gsap.set(cta, {x, y}) for the magnetic pull, and CSSPlugin
+                       claims all three individual transform channels when it
+                       takes an element over: it writes `translate: none` and
+                       `scale: none` inline, which outranks any stylesheet.
+                       Measured at v0.5.0 — the pop's translate and scale both
+                       computed as `none` here while the other two buttons
+                       resolved to 0px and 1. It would also only have died on a
+                       fine pointer, since that gsap.set sits inside the pointer
+                       query, so a phone and a desktop would have disagreed. The
+                       Join checkpoint is not short of arrival motion anyway: its
+                       whole card scales up on the scrub. -->
                   <a
                     class="btn btn--primary journey__cta"
                     data-journey-cta
@@ -392,11 +433,17 @@
         <div class="sponsor-cta__inner">
           <p class="eyebrow section__eyebrow">Partners</p>
           <h2 class="section__title" id="sponsor-cta-title">
-            <span class="rv-mask"><span>Have your own business? Become&nbsp;a&nbsp;sponsor.</span></span>
+            <!-- data-words-x (v0.5.0): the one heading big enough to carry a
+                 horizontal word cascade, on the barest section of the page.
+                 One shot on its own clock and never a scrub, because each word
+                 arrives from behind its own clipping box and a scrub would let
+                 a reader park in the half arrived state (the v0.4.5 lesson). -->
+            <span class="rv-mask" data-words-x><span>Have your own business? Become&nbsp;a&nbsp;sponsor.</span></span>
+            <span class="section__rule" data-title-rule aria-hidden="true"></span>
           </h2>
           <!-- CTA interim target: verified society email (§14 key links). Swaps to the
                Become-a-Sponsor Google Form URL the moment it's supplied (§0 blockers). -->
-          <a class="btn btn--primary" href="mailto:aubbusinesssociety@gmail.com?subject=Sponsorship">Become a sponsor</a>
+          <a class="btn btn--primary" data-pop href="mailto:aubbusinesssociety@gmail.com?subject=Sponsorship">Become a sponsor</a>
         </div>
       </section>
 
@@ -463,13 +510,18 @@
     <footer class="site-footer" data-reveal>
       <span class="rv-rule" data-rule aria-hidden="true"></span>
       <div class="site-footer__inner">
-        <div class="rv-up">
+        <!-- --dx (v0.5.0): the three footer columns now arrive from alternating
+             sides as well as from below, so the bottom of the page deals itself
+             out instead of rising as one slab. The middle column keeps a plain
+             rise, which is what makes the two outer ones read as coming in. -->
+        <div class="rv-up" style="--dx: -40px">
           <p class="site-footer__wordmark">
             <span class="rv-mask" style="--i: 1"><span>Business Student Society</span></span>
           </p>
           <p class="site-footer__tag">American University of Beirut</p>
           <a
             class="btn btn--primary btn--sm site-footer__cta"
+            data-pop
             href="https://forms.cloud.microsoft/r/d5fFFxbKKN"
             target="_blank"
             rel="noopener"
@@ -487,7 +539,7 @@
             <li><a href="account">Account</a></li>
           </ul>
         </nav>
-        <div class="rv-up" style="--i: 2">
+        <div class="rv-up" style="--i: 2; --dx: 40px">
           <p class="site-footer__heading">Connect</p>
           <div class="site-footer__social">
             <a href="https://www.instagram.com/businessstudentsociety/" target="_blank" rel="noopener" aria-label="BSS on Instagram">
@@ -509,7 +561,7 @@
       <div class="site-footer__bottom">
         <div class="site-footer__bottom-inner">
           <p>© Business Student Society, AUB · CRN: 5014</p>
-          <span class="version-badge" data-version-badge>v0.4.9</span>
+          <span class="version-badge" data-version-badge>v0.5.0</span>
         </div>
       </div>
     </footer>

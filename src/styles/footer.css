@@ -1,6 +1,14 @@
 .site-footer {
   border-top: 1px solid var(--line);
   background: color-mix(in srgb, var(--surface) 55%, var(--bg));
+  /* v0.5.0: the outer two columns arrive from ±40px (--dx in reveal.css). On a
+     desktop that stays inside the 1200px container, but on a phone the footer
+     is full bleed against a 20px gutter, so the right hand column pushed the
+     document 20px wide and opened a horizontal scrollbar — measured 395 against
+     a 375 client width before this line. `clip` rather than `hidden` for the
+     usual reason (hidden would make the footer a scroll container); the offset
+     is a rest state that resolves to 0, so nothing is ever cut once landed. */
+  overflow-x: clip;
 }
 
 .site-footer__inner {

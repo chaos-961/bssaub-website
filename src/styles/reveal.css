@@ -87,10 +87,17 @@
   transform: none;
 }
 
-/* Rise and fade, for everything that is not a heading */
+/* Rise and fade, for everything that is not a heading.
+
+   `--dx` (v0.5.0) lets a block come in from the SIDE as well as from below,
+   which is what puts the user's "sideways" brief on the arrivals and not only
+   on the exits. It defaults to 0, so every existing consumer of this class is
+   byte for byte unchanged and only the elements that opt in move: the two
+   section notes and the three footer columns, alternating, so the footer deals
+   itself out rather than rising as one slab. */
 .rv-up {
   opacity: 0;
-  transform: translateY(22px);
+  transform: translate(var(--dx, 0px), 22px);
   transition:
     opacity 0.85s var(--ease-out),
     transform 0.85s var(--ease-out);
@@ -100,6 +107,65 @@
 .is-in .rv-up {
   opacity: 1;
   transform: none;
+}
+
+/* ------------------------------------------------------------------
+   Words arriving from the side (v0.5.0), for the one heading on the page big
+   enough to carry it: the Become a Sponsor line, which was three plain rising
+   words on the barest section of the site.
+
+   THIS IS A CLIPPING REVEAL AND IT IS DELIBERATELY A ONE SHOT CLASS, never a
+   scrub. Each word slides out from behind its own box, so the half arrived
+   state hides text — which is fine at 0.95s on its own clock, where nobody can
+   park in it, and was exactly what got the v0.4.4 scrub removed when scroll
+   position could hold it there. The rule from reveal.js's header comment,
+   applied rather than restated.
+
+   Words alternate sides so the line knits together instead of marching, and
+   the per word delay is the `--w` cascade the split already sets up.
+
+   DESCENDANT AND NOT CHILD COMBINATORS, which cost a measurement to find:
+   splitWords() rewrites the mask's INNER span, so the word boxes are the mask's
+   grandchildren (.rv-mask > span > .rv-w). Written with `>` the whole block
+   silently matched nothing and the words sat at x: 0. */
+.rv-mask[data-words-x] .rv-w > span {
+  transform: translateX(112%);
+}
+
+.rv-mask[data-words-x] .rv-w:nth-child(odd) > span {
+  transform: translateX(-112%);
+}
+
+.is-in .rv-mask[data-words-x] .rv-w > span {
+  transform: none;
+}
+
+/* ------------------------------------------------------------------
+   Conversion buttons land (v0.5.0). The three below the fold calls to action
+   (Join, Become a sponsor, the footer card link) arrive with a little weight
+   instead of simply being there once their section reveals.
+
+   IT RIDES `translate` AND `scale`, NOT `transform`, AND THAT IS THE WHOLE
+   REASON IT CAN EXIST AT ALL. `.btn` already animates `transform` on :hover and
+   :active, and the journey's Join button has journey.js writing x/y into that
+   same property for the magnetic pull. The individual transform properties are
+   a separate channel the browser composes ahead of `transform`, so this lands
+   on top of both without a wrapper and without either owner losing a write.
+   Same trick as the picture float above and the hero headline's swell.
+
+   Keyed to the `.is-in` its section already gets, so it costs no trigger. */
+[data-pop] {
+  translate: 0 18px;
+  scale: 0.94;
+  transition:
+    translate 0.75s var(--ease-out),
+    scale 0.75s var(--ease-out);
+  transition-delay: 0.2s;
+}
+
+.is-in [data-pop] {
+  translate: 0 0;
+  scale: 1;
 }
 
 /* Divider sweep: a thread of accent light that opens along a section's top
@@ -178,9 +244,65 @@
 @media (prefers-reduced-motion: reduce) {
   .rv-mask > span,
   .rv-w > span,
+  .rv-mask[data-words-x] .rv-w > span,
+  .rv-mask[data-words-x] .rv-w:nth-child(odd) > span,
   .rv-up {
     transform: none;
     opacity: 1;
+  }
+
+  /* the two v0.5.0 classes whose rest state is on the individual channels
+     rather than on `transform`, so the block above cannot reach them */
+  [data-pop] {
+    translate: 0 0;
+    scale: 1;
+  }
+}
+
+/* ------------------------------------------------------------------
+   The v0.5.0 exits are GSAP's from frame one, so they need no rest state here
+   and none of the elements carrying `data-exit` may declare a transform of
+   their own — the whole set is section wrappers and copy columns, chosen partly
+   for that. Reduced motion creates no triggers at all (initReveal returns
+   early), so those blocks are simply never touched, which is the correct
+   resting state for a thing whose only job is to leave.
+
+   One layout note that belongs with them rather than in a section file: a block
+   travelling 90px sideways can widen the document and open a horizontal
+   scrollbar. Every section hosting an exit clips on the x axis for that reason
+   — .perk-field and .journey already did, and .hero gained it at v0.5.0.
+   ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------
+   Section title underline (v0.5.0). Draws out under a section title as the
+   title arrives, scrubbed by reveal.js. A plain scaleX on a 2px block: no
+   filter, no blend, and it adds its own height to the layout once rather than
+   moving anything as it draws. */
+.section__rule {
+  display: block;
+  width: min(180px, 42%);
+  height: 2px;
+  margin-top: 0.85rem;
+  border-radius: 999px;
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: linear-gradient(to right, var(--accent), var(--accent-2), transparent);
+}
+
+/* TWO CLASSES ON PURPOSE, not the bare `.is-drawn` the rails resolve through.
+   `.is-drawn` and `.section__rule` are both one class, i.e. a specificity TIE
+   that source order breaks — and this block sits below it, so the bare form
+   lost and the reduced motion path measured three rules still at scaleX(0)
+   after reveal.js had correctly tagged them. Same family as the media query
+   ordering trap written up in sections.css: when two selectors tie, where the
+   rule is written IS the behaviour. */
+.section__rule.is-drawn {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section__rule {
+    transform: none;
   }
 }
 

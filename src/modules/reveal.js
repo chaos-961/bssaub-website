@@ -102,7 +102,15 @@ export function initReveal(scroll) {
   if (scroll.reduced) {
     reveals.forEach((el) => el.classList.add('is-in'));
     rails.forEach((el) => el.classList.add('is-drawn'));
-    // the rules are a sweep of light with nothing behind them but the
+    /* The v0.5.0 section title underlines resolve here rather than in the CSS,
+       and that is the difference between covering one reduced motion signal and
+       covering both: `?reduced-motion` is a root CLASS and never matches the
+       prefers-reduced-motion media query, so a rule that leans on the query
+       alone leaves the QA path staring at three undrawn hairlines. `.is-drawn`
+       already means exactly "your rest transform is scaleX(0), resolve it", so
+       this reuses it rather than inventing a second way to say the same thing. */
+    document.querySelectorAll('[data-title-rule]').forEach((el) => el.classList.add('is-drawn'));
+    // the sweeps are a thread of light with nothing behind them but the
     // section's own hairline, so at rest they simply stay invisible
     return;
   }
@@ -261,7 +269,216 @@ export function initReveal(scroll) {
          run to 1, so 0.35 means the same moment in either. */
       .to({}, { duration: 0.65 }, 0.35);
 
-    if (el.dataset.imgIo !== 'in')
-      tl.to(el, { y: -40, scale: 0.95, opacity: 0.55, duration: 0.35 }, 0.65);
+    /* The leaving half gained an x and a rotation at v0.5.0 (§ item 2 and item
+       8 of the exit brief). It lands HERE, inside the timeline that already
+       owns this element's transform, rather than as a second tween: `transform`
+       on a journey frame is spoken for by this scrub and `translate` by the
+       constant float in reveal.css, so a third owner would have had nowhere
+       left to stand. The direction comes off the markup and matches the way the
+       copy beside it leaves, so a card shears apart as it goes. */
+    if (el.dataset.imgIo !== 'in') {
+      const away = el.dataset.imgExit === 'left' ? -1 : 1;
+      tl.to(
+        el,
+        { x: 58 * away, y: -40, rotation: 1.6 * away, scale: 0.95, opacity: 0.55, duration: 0.35 },
+        0.65,
+      );
+    }
   });
+
+  /* 6. THE EXIT SYSTEM (v0.5.0, user brief: "texts going side ways to
+        disappear when I scroll past them, fades, more animations").
+
+        WHY THIS IS NOT THE v0.4.4 SCRUBBED TEXT COMING BACK, because that was
+        removed on the user's word and the distinction is the only thing keeping
+        this honest. That system scrubbed a masked ARRIVAL, and a masked reveal
+        works by sliding a line out from behind its own bottom edge, so every
+        state before it finishes is a CLIPPED state and parking mid band parked a
+        heading half cut. This moves a whole, unclipped block sideways and fades
+        it: at every point of its travel the text is complete, merely offset and
+        translucent, which is exactly the "still legible at every point" test
+        that reveal.js's own header comment leaves behind as the rule. Nothing
+        here touches .rv-mask, .rv-w or any element that clips.
+
+        It is also only ever pointed at blocks that have ALREADY left the top of
+        the screen — see the two start regimes below — so it never dissolves
+        something a reader could still be reading. */
+  initExits();
+
+  /* 7. Section heads drift (v0.5.0). The intro block of the perk field and of
+        the journey travels against the page as it crosses, so the eyebrow,
+        title and note read as a plane behind the section rather than as part of
+        the same sheet as the bubbles or the timeline.
+
+        `y` here and `x` from the exit above are two tweens on ONE element, and
+        that is fine where a GSAP tween plus a CSS transition would not be: GSAP
+        keeps a per element transform cache and each tween writes its own
+        component into it, so x and y compose. The hazard this file keeps
+        warning about is two OWNERS (CSS and GSAP) on one property, not two
+        tweens on two components. */
+  document.querySelectorAll('[data-head-drift]').forEach((el) =>
+    gsap.fromTo(
+      el,
+      { y: 26 },
+      {
+        y: -26,
+        ease: 'none',
+        scrollTrigger: { trigger: el, start: 'top bottom', end: 'bottom top', scrub: 0.5 },
+      },
+    ),
+  );
+
+  /* 8. Zone label lag (v0.5.0). The five perk category labels hold back against
+        their own zone, so a label lingers beside its sponsors instead of
+        travelling with them. Small on purpose: it ends 20px BELOW its layout
+        seat, which is the edge nearest the bubble canvas, and by then its exit
+        above has already taken it most of the way out. */
+  document.querySelectorAll('[data-lag]').forEach((el) =>
+    gsap.fromTo(
+      el,
+      { y: -20 },
+      {
+        y: 20,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: el.closest('.perk-zone') || el,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 0.5,
+        },
+      },
+    ),
+  );
+
+  /* 9. Section title underline (v0.5.0). A thread of accent draws out from under
+        each section title as the title arrives, the same gesture the section's
+        own top hairline makes, one element down.
+
+        `clamp()` IS THE RIGHT TOOL FOR AN ARRIVAL AND THE WRONG ONE FOR AN EXIT,
+        which is worth stating once since both are in this file now. It pulls a
+        range that runs off the end of the document back inside it, so a rule
+        near the page bottom still finishes drawing (the v0.4.4 footer lesson).
+        Do that to an exit and it would finish DISSOLVING early, while the block
+        is still on screen, which is why the exits below get a measured guard
+        instead. */
+  document.querySelectorAll('[data-title-rule]').forEach((el) =>
+    gsap.fromTo(
+      el,
+      { scaleX: 0 },
+      {
+        scaleX: 1,
+        ease: 'none',
+        scrollTrigger: { trigger: el, start: 'clamp(top 94%)', end: 'clamp(top 64%)', scrub: 0.45 },
+      },
+    ),
+  );
+
+  /* 10. The Join card lands (v0.5.0). The drawn path ends on this one block, so
+         it is the one block that grows into place rather than merely arriving:
+         a scrub from 0.9 across its entry band, clamped so it can always finish.
+         It lands on .journey-node__card--join, which nothing else transforms —
+         journey.js's magnetic pull is on the button inside it. */
+  const joinCard = document.querySelector('.journey-node__card--join');
+  if (joinCard)
+    gsap.fromTo(
+      joinCard,
+      { scale: 0.9 },
+      {
+        scale: 1,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: joinCard,
+          start: 'clamp(top 92%)',
+          end: 'clamp(top 48%)',
+          scrub: 0.5,
+        },
+      },
+    );
+}
+
+/* Sideways travel of an exiting block, in px. Deliberately modest: the block is
+   already off the top of the screen while this runs, so the job is to make it
+   read as LEAVING, not to move it anywhere in particular. */
+const EXIT_X = 90;
+
+/* Document space bottom of an element, in scroll units. offsetTop rather than
+   getBoundingClientRect, because half of these elements are carrying a live
+   transform from the very tweens being audited and a rect would fold that in.
+   Same reason perkField.js measures its section from document offsets. */
+function docBottom(el) {
+  let y = el.offsetHeight;
+  for (let n = el; n; n = n.offsetParent) y += n.offsetTop;
+  return y;
+}
+
+function initExits() {
+  const exits = [];
+
+  document.querySelectorAll('[data-exit]').forEach((el) => {
+    const away = el.dataset.exit === 'left' ? -1 : 1;
+    const st = gsap.fromTo(
+      el,
+      { x: 0, opacity: 1 },
+      {
+        x: EXIT_X * away,
+        opacity: 0,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: el,
+          /* TWO REGIMES, AND THEY AGREE AT THE BOUNDARY RATHER THAN STEPPING.
+             A short block is governed by its top ("you have scrolled it up
+             under the nav"); a tall one has to be governed by its bottom, or a
+             500px block would start dissolving with its lower half still in the
+             middle of the screen, which is the v0.4.5 complaint wearing a
+             different hat. The threshold is 0.32vh because that is exactly the
+             height at which `top 8%` puts a block's bottom at 40% — so a
+             heading that grows a line and crosses the threshold does not jump,
+             the two formulas hand over continuously. Re-evaluated on every
+             refresh, so a font swap or a rotated phone re-picks. */
+          start: () =>
+            el.offsetHeight > window.innerHeight * 0.32 ? 'bottom 40%' : 'top 8%',
+          end: 'bottom top',
+          scrub: 0.4,
+        },
+      },
+    ).scrollTrigger;
+    exits.push({ el, st, off: null });
+  });
+
+  if (!exits.length) return;
+
+  /* THE STRAND GUARD, which is the v0.4.0 agency badge lesson turned into
+     something the system checks for itself instead of something the next person
+     has to remember.
+
+     An exit ends at `bottom top`, i.e. the block's bottom clearing the top of
+     the screen. A block near the end of the document may never get there, and a
+     scrub that cannot reach its end parks FOREVER at whatever fraction it
+     reached: not an animation, a paragraph left permanently at 40% opacity and
+     40px to the left. Nothing in the markup says which blocks those are. It
+     depends on the viewport height and on how much content happens to sit
+     below them, so it changes when the window is resized, when the sub gains a
+     line, and when somebody adds a section. So it is measured on every refresh
+     rather than decided once by whoever wrote the attribute.
+
+     Disabled triggers are left out of the global refresh, so the audit reads
+     geometry directly rather than the trigger's own stale `end`. */
+  const audit = () => {
+    const max = ScrollTrigger.maxScroll(window);
+    exits.forEach((e) => {
+      const off = docBottom(e.el) > max - 1;
+      if (off === e.off) return;
+      e.off = off;
+      if (off) {
+        e.st.disable(false, true);
+        gsap.set(e.el, { x: 0, opacity: 1 });
+      } else {
+        e.st.enable(false, false);
+        e.st.refresh();
+      }
+    });
+  };
+
+  ScrollTrigger.addEventListener('refresh', audit);
+  audit();
 }

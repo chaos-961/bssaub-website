@@ -61,6 +61,19 @@
   pointer-events: none;
 }
 
+/* Pre-existing bug, found at v0.5.0 while adding a second consumer of
+   `.is-drawn` and fixed in the same pass because it is one line and the exact
+   same mistake. reveal.js correctly tags these five rails under reduced motion,
+   but `.is-drawn` (reveal.css) and `.perk-zone__rail` (here) are both ONE class,
+   i.e. a specificity tie broken by source order — and main.js imports
+   perk-field.css after reveal.css, so the scaleY(0) rest state won and a reduced
+   motion visitor got five invisible zone hairlines rather than five still ones.
+   Measured before: matrix(1, 0, 0, 0, 0, 0) on all five. Two classes settles it
+   wherever the file happens to sit in the import order. */
+.perk-zone__rail.is-drawn {
+  transform: none;
+}
+
 .perk-zone__title {
   font-family: var(--font-body);
   font-variation-settings: normal;
