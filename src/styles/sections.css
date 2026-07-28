@@ -19,7 +19,44 @@
   overflow-x: clip;
 }
 
-@media (min-width: 60rem) {
+/* ------------------------------------------------------------------
+   TWO COLUMNS IS NOT A WIDTH QUESTION ALONE (v0.5.1, user report against a
+   952x641 window: "in this resolution the card is too small").
+
+   It was, and that was the bug. 952px is under the 60rem breakpoint, so a
+   window with 952px of horizontal room got the PHONE layout: one column, the
+   card capped by height to 247px (26% of the screen), the headline squeezed to
+   35px by the mobile svh cap with its longest line using 207px of an 861px box,
+   and the whole right half of the hero empty. Nothing was broken, the layout
+   was simply answering the wrong question — it asked "is this narrow?" when
+   what decides the hero's shape is "is this SHORT?".
+
+   So the second clause: wide enough for two columns AND short enough to need
+   them. A short window has no vertical room to stack a card above the copy and
+   plenty of horizontal room to put them side by side, which is exactly the
+   window in the report.
+
+   48rem IS AS LOW AS IT GOES, and the number moved once during this pass for a
+   reason worth recording. The first cut was 54rem, chosen so the headline could
+   not wrap at the entry point on its existing clamp — and measuring it found
+   866x700 sitting on SIX pixels of headroom, plus a visible cliff either side of
+   the boundary: 863px wide drew a 32% card under a 38px headline, 866px drew 40%
+   under 59px, for three pixels of window. Adding the 6.8vw headline cap (see
+   .hero__headline below) took the wrap risk out of the width entirely, which is
+   what let this come down to a threshold chosen for how the LAYOUT reads rather
+   than for what the type survives. Below 768px the two columns are both cramped
+   enough that stacking is genuinely the better answer, so that is where it
+   stops. A landscape phone at 844x390 is above it and now gets two columns,
+   which is the right shape for that window even though it still scrolls.
+
+   47rem/47.01rem mirrors the 59.99rem/60rem pattern already in this file: the
+   two blocks are complementary, and the 0.01rem sliver between them lands on
+   the plain one column path, which is a graceful state rather than a broken
+   hybrid. THE COMPLEMENT IS WRITTEN OUT IN FOUR PLACES (two here, two at the
+   .hero-card blocks below) because CSS has no custom media; if you change one
+   threshold, change all four or the card will get the phone's height cap
+   inside a two column grid. */
+@media (min-width: 60rem), (min-width: 48rem) and (max-height: 47rem) {
   .hero {
     grid-template-columns: 1.05fr 0.95fr;
     /* THE SHORT WIDE WINDOW, which the v0.4.6 fold work did not cover because
@@ -81,6 +118,33 @@
   font-weight: 700;
   font-variation-settings: 'opsz' 144, 'WONK' 1;
   letter-spacing: -0.03em;
+}
+
+/* THE COPY COLUMN NARROWS FASTER THAN THE HEADLINE DOES, which is what makes a
+   lower two column entry point dangerous and is the whole reason this cap
+   exists (v0.5.1). Both grow with the viewport, but not at the same rate: the
+   column gains ~0.45px per px of width (52.5% of the width less two gutters and
+   a gap, all three themselves vw driven) while the headline's longest line
+   gains ~0.20px, so headroom drains at ~0.25px per px on the way down. Measured
+   going in: 952px wide leaves 28px of slack on "AUB's Business", 866px leaves
+   SIX. Six is not a margin, it is a coincidence waiting for a font metric to
+   change.
+
+   6.8vw is inert exactly where it should be. It crosses the clamp at ~988px
+   wide, so every window at or above that (which is every window the 60rem
+   breakpoint served before v0.5.1, and every desktop) keeps the size it has
+   always had, and only the new band underneath gives ground. Re-measured at
+   866: 31px of headroom instead of 6.
+
+   IT SITS HERE AND NOT INSIDE THE TWO COLUMN BLOCK ABOVE, for the same reason
+   the fold block below is where it is: a media query adds no specificity, so
+   `.hero__headline` inside one and `.hero__headline` outside it are a tie that
+   source order breaks. Written up there it silently lost to the clamp it was
+   meant to cap, which measures as no change at all. */
+@media (min-width: 60rem), (min-width: 48rem) and (max-height: 47rem) {
+  .hero__headline {
+    font-size: min(clamp(2.6rem, 2.1rem + 3.4vw, 5.2rem), 6.8vw);
+  }
 }
 
 .hero__sub {
@@ -171,7 +235,11 @@
    first thing that has to give on a short screen. On a phone tall enough it is
    still full width and nothing about it changed.
    ------------------------------------------------------------------ */
-@media (max-width: 59.99rem) {
+/* The exact complement of the two column query above (v0.5.1). It has to be
+   spelled out rather than left as a bare max-width, or a 952x641 window would
+   take the two column GRID from that block and the phone's svh headline cap and
+   card height cap from this one, which is a worse hybrid than either layout. */
+@media (max-width: 47.99rem), (max-width: 59.99rem) and (min-height: 47.01rem) {
   .hero {
     /* `start` and not the inherited `center` (v0.4.6, the "card a bit up" half
        of the brief): the hero is 100svh tall with min-height, so once the
@@ -343,9 +411,22 @@
    being sold at the top of the phone screen. One declaration, and it only
    exists below the two column breakpoint, where `.hero` is a single column and
    `order` is the whole layout. */
-@media (max-width: 59.99rem) {
+@media (max-width: 47.99rem), (max-width: 59.99rem) and (min-height: 47.01rem) {
   .hero-card {
     order: -1;
+    /* A BIT DOWN, the single column half (v0.5.1, user call). The card sat 24px
+       under the nav because v0.4.6 anchored this grid to `start`, and `start` is
+       still right: it is what stops the card drifting with the leftover height
+       instead of holding a fixed seat. So the gap is bought explicitly here.
+
+       IT IS PAID FOR OUT OF MEASURED SLACK AND RESOLVES TO ZERO WHERE THERE IS
+       NONE, which is the only way to add space to a hero whose whole brief is
+       fitting inside the fold. Measured trust row clearance before this: 360x640
+       had 10px, 375x812 had 53, 412x915 had 77, 768x1024 had 144. The line
+       through the first two of those is what the svh term is; the clamp floor
+       hands the shortest phone exactly nothing, and the 2.5rem ceiling keeps a
+       tablet from spending slack the bigger card below now wants. */
+    margin-top: clamp(0rem, 20.4svh - 8.15rem, 2.5rem);
     /* The fold budget's share of the card (v0.4.6): it is the tallest single
        block in the phone stack, so on a screen too short for the whole hero it
        is the first thing that gives height back, capped at the artwork's own
@@ -361,8 +442,24 @@
        360x640 against the 5px of hero padding and the 4px of sub leading,
        because the card is the thing the page is selling and 29 to 26 would have
        covered the whole overrun out of the one element nobody wants smaller.
-       At 375x812 it is 330px wide against 318px, which is a 3.6% change. */
-    width: min(100%, 520px, max(240px, calc(27.5svh * 1.4)));
+       At 375x812 it is 330px wide against 318px, which is a 3.6% change.
+
+       v0.5.1 REPLACES THE FLAT 27.5svh WITH A LINE, because a flat coefficient
+       has to be tuned for the WORST screen and then under-serves every better
+       one. The copy block's height is driven by how many lines it wraps to,
+       i.e. by WIDTH, which an svh-only cap cannot see: measured, 360x640 left
+       10px of slack under the trust row while 768x1024 left 144px and still
+       drew a card at 51% of the screen. The line runs through the tight end
+       unchanged (243px at 640, against 246 before) and opens up as the screen
+       grows, reaching 466px at 1024.
+
+       IT COSTS THE PHONES NOTHING, and that is not luck, it is the `min(100%)`
+       term already doing the work: at 375x812 and at 412x915 the card is
+       ALREADY full width (313 and 352, with the svh term landing within a pixel
+       of each), so a larger svh term simply loses to 100% and those two
+       viewports are byte for byte unchanged. Only screens with genuine room
+       spare, tablets and tall short-copy windows, see any of it. */
+    width: min(100%, 520px, max(240px, calc(58svh - 8rem)));
   }
 }
 
@@ -379,10 +476,15 @@
    the CSS side owns an element GSAP never touches, which is why the headline
    swell rides the outer word box. Relative positioning is layout, GSAP's
    transform is paint, and the two compose. */
-@media (min-width: 60rem) {
+/* v0.5.1, user call "move the card in the hero a bit down": -1.75rem to
+   -0.25rem, i.e. 24px lower and now only a hair above true centring. This is a
+   deliberate partial undo of the v0.4.6 lift rather than a push past centre,
+   since the two calls are a dial the user has now turned both ways and the
+   honest reading of "a bit down" is most of the lift back, not an overshoot. */
+@media (min-width: 60rem), (min-width: 48rem) and (max-height: 47rem) {
   .hero-card {
     position: relative;
-    top: -1.75rem;
+    top: -0.25rem;
   }
 }
 
