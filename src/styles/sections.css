@@ -619,12 +619,9 @@
   border-top: 1px solid var(--line);
 }
 
-.section--placeholder {
-  min-height: 55vh;
-  display: grid;
-  align-content: center;
-  gap: 1.1rem;
-}
+/* .section--placeholder lived here from v0.0.1 and was never once written into
+   any page's markup — sections.css is imported by main.js alone, so index was
+   the only page it could ever have reached. Removed at v0.5.3. */
 
 .section__title {
   font-size: var(--step-4);

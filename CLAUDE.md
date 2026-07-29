@@ -3,7 +3,9 @@
 Rebuild of bssaub.com for the AUB Business Student Society. One goal drives every decision: get an AUB student to grab the membership card. Everything else (sponsors, story, animations) exists to make that decision feel obvious.
 
 Repo: `https://github.com/chaos-961/bssaub-website.git` · Live: `https://chaos-961.github.io/bssaub-website/` (GitHub Pages via Actions; custom domain later).
-Current version: **0.5.1**.
+Current version: **0.5.3**.
+
+**Repo weight, because the 228MB this folder occupies on disk reads as a problem and is not one.** 207MB of it is `node_modules` and 134MB of THAT is `firebase` + `@firebase`, which ships every product in one package whether or not you import three of them; `@img` (sharp's platform binaries, for `images:optimize` alone) is another 27MB. All of it is gitignored, none of it has ever been in a commit, and `npm ci` rebuilds it byte for byte from the tracked lockfile, so it is a cache and can be deleted whenever the disk matters. **The tracked repo is 1.4MB**, and an audit at v0.5.3 found exactly one dead thing in it (`.section--placeholder` in sections.css, present since v0.0.1 and never written into any page). `dist/` is build output and regenerates. Do not go looking for bytes to save in `src/` on the strength of the folder size.
 
 ## Rules (standing, no exceptions)
 
