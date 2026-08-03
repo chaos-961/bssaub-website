@@ -8,6 +8,13 @@
       name="description"
       content="The Business Student Society at AUB. One membership card, student discounts across restaurants, clothing, health &amp; beauty, fitness and services."
     />
+    <!-- max-image-preview:large is the whole point of this tag: without it a
+         search result gets a thumbnail, with it the card artwork can run the
+         width of the result. index and follow are the defaults and are written
+         out so the line reads as a decision rather than a fragment. Index is
+         the only page that carries this; account is a sign in form whose search
+         appearance nobody is competing for, and admin says the opposite. -->
+    <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta name="theme-color" content="#f8f3f5" />
     <!-- the hero card is the LCP element; pull it ahead of the JS/font queue -->
     <link rel="preload" as="image" href="assets/card/card-front.webp" fetchpriority="high" />
@@ -28,6 +35,96 @@
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
+    <!-- Structured data (v0.5.4): who this society IS, in the vocabulary search
+         engines and answer engines actually parse, so it resolves as an entity
+         rather than as an unlabelled page of prose. The meta tags above say
+         what this PAGE is about; none of them can say that the organisation was
+         founded in 1965, sits inside a named school, or is the same body as the
+         Instagram account.
+
+         Every value is sourced, per rule 3. 1965 and the school come from the
+         copy in this file; the two sameAs entries are the only two places this
+         society is documented by somebody other than us, its own Instagram and
+         AUB's own page for it (verified live 2026-08-03). NO LinkedIn entry: a
+         search the same day found no page for this society, and a guessed URL
+         here would be a claim, not a link. It belongs in this array and in the
+         footer the day one exists.
+
+         The logo is the real brand lockup, and getting a servable one took a
+         new asset. It could not be assets/brand/logo.webp, which is that same
+         lockup trimmed for the navbar at 233x108: Google's Organization logo
+         wants at least 112 on the short side and 108 misses it by four pixels.
+         So assets/brand/logo-lockup.png is regenerated from the master at
+         assets/logo.png, with a 5% margin added back, which lands at 257x132
+         and clears the floor. Two things about it worth knowing before anyone
+         regenerates it. It is NOT upscaled: that master is 375x375 but only
+         233x108 of it is ink, so any larger output would be inventing edges
+         that were never in the artwork, and a genuinely bigger logo needs a
+         vector master rather than a bigger export. And it is flattened onto
+         white rather than keeping logo.webp's knocked out alpha, because this
+         file is consumed by third parties compositing it onto surfaces we do
+         not choose, and a maroon mark on transparency disappears on a dark one.
+         Note the master lives in the gitignored /assets working folder, so the
+         PNG beside logo.webp is the tracked copy and a clean clone cannot
+         rebuild either of them.
+
+         Note the literal & in the strings below, which is not a mistake and
+         must not be "fixed" to &amp;. Script content is raw text, so character
+         references are never parsed here and &amp; would ship as five visible
+         characters inside the JSON. This is a data block, not executable
+         script, so no CSP is involved (and index carries none regardless, that
+         is the two gated pages). -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://chaos-961.github.io/bssaub-website/#organization",
+            "name": "Business Student Society",
+            "alternateName": "BSS",
+            "description": "The Business Student Society at the American University of Beirut. Founded in 1965, BSS is a hub led by students across finance, marketing, consulting, entrepreneurship, and management, running events, partnerships, and a membership card that carries student discounts.",
+            "url": "https://chaos-961.github.io/bssaub-website/",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://chaos-961.github.io/bssaub-website/assets/brand/logo-lockup.png",
+              "width": 257,
+              "height": 132
+            },
+            "image": "https://chaos-961.github.io/bssaub-website/assets/brand/og-image.jpg",
+            "email": "aubbusinesssociety@gmail.com",
+            "foundingDate": "1965",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "Beirut",
+              "addressCountry": "LB"
+            },
+            "parentOrganization": {
+              "@type": "EducationalOrganization",
+              "name": "Suliman S. Olayan School of Business",
+              "parentOrganization": {
+                "@type": "CollegeOrUniversity",
+                "name": "American University of Beirut",
+                "url": "https://www.aub.edu.lb/"
+              }
+            },
+            "sameAs": [
+              "https://www.instagram.com/businessstudentsociety/",
+              "https://www.aub.edu.lb/osb/UndergradProgram/Pages/BSS.aspx"
+            ]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://chaos-961.github.io/bssaub-website/#website",
+            "url": "https://chaos-961.github.io/bssaub-website/",
+            "name": "Business Student Society",
+            "alternateName": "BSS AUB",
+            "inLanguage": "en",
+            "publisher": { "@id": "https://chaos-961.github.io/bssaub-website/#organization" }
+          }
+        ]
+      }
+    </script>
     <script>
       document.documentElement.classList.add('js');
       if (new URLSearchParams(location.search).has('reduced-motion'))
@@ -561,7 +658,7 @@
       <div class="site-footer__bottom">
         <div class="site-footer__bottom-inner">
           <p>© Business Student Society, AUB · CRN: 5014</p>
-          <span class="version-badge" data-version-badge>v0.5.3</span>
+          <span class="version-badge" data-version-badge>v0.5.4</span>
         </div>
       </div>
     </footer>

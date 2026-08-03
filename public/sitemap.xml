@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Two public pages, and deliberately only two.
+
+  NOT LISTED, both on purpose: admin.html, which is noindex and linked from
+  nowhere, so listing it would advertise the one path this site never publishes
+  (see public/robots.txt for the same reasoning at more length); and 404.html,
+  which is an error page and never belongs in a sitemap.
+
+  NO <lastmod>, also on purpose. The element is optional, and a hardcoded date
+  in a static file goes stale the first time somebody edits a page and forgets
+  this one. A lastmod that lies is worse than none at all, because a search
+  engine that catches it stops trusting the signal for the whole site. <loc>
+  alone is a valid sitemap and it can never rot. If dated entries are ever
+  wanted, generate them from git at build time rather than typing them here.
+
+  Note this file DOES work today, unlike robots.txt beside it: a sitemap is
+  valid for any URL at or below its own path, so /bssaub-website/sitemap.xml
+  covers both pages below. What it loses at this path is discovery through
+  robots.txt, so until the custom domain lands it has to be submitted by hand
+  in Search Console. The URLs are absolute because the format requires it, and
+  they flip to the custom domain with the canonical tags in the HTML.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://chaos-961.github.io/bssaub-website/</loc>
+  </url>
+  <url>
+    <loc>https://chaos-961.github.io/bssaub-website/account</loc>
+  </url>
+</urlset>

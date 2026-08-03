@@ -1,0 +1,28 @@
+# robots.txt for the Business Student Society site.
+#
+# THIS FILE IS INERT TODAY, and that is worth knowing before anyone edits it
+# expecting an effect. robots.txt is only ever read from the ORIGIN ROOT: this
+# is a GitHub Pages project site served from /bssaub-website/, so the file
+# crawlers actually consult is https://chaos-961.github.io/robots.txt, which
+# belongs to the account rather than to this repo and cannot be written from
+# here. It ships anyway because the day bssaub.com lands, that domain IS the
+# origin root and this file starts being read with no further work, which is a
+# better outcome than a flip that has to remember to invent one.
+#
+# NOTHING IS DISALLOWED, on purpose, and /admin is deliberately not named.
+# A Disallow line stops a page being CRAWLED, not being INDEXED (a disallowed
+# URL still gets listed if something links to it), so the noindex meta tag on
+# the page itself is the tool that actually does that job and it is already
+# there. Listing the path here would publish the one URL this site never links
+# to, in the one file every crawler and every curious visitor reads first.
+# Obscurity is not what protects that page, the encrypted payload is, but there
+# is no reason to hand out a map either.
+#
+# The Sitemap line is absolute because the format requires it. It carries the
+# Pages project path exactly like the canonical and og:url tags in the HTML,
+# and it flips to the custom domain with them.
+
+User-agent: *
+Disallow:
+
+Sitemap: https://chaos-961.github.io/bssaub-website/sitemap.xml
