@@ -25,4 +25,51 @@
 User-agent: *
 Disallow:
 
+# The agents below are named one by one rather than left to the wildcard that
+# already allows them, and the reason is the same one that makes this whole file
+# worth shipping early. The first group are ANSWER ENGINES: a student typing
+# "is there a discount card at AUB" into an assistant instead of a search box is
+# the exact person this society wants to reach, and several of these crawlers
+# publish their name specifically so a site can state a position on them, where
+# an explicit Allow reads as a position and a bare wildcard reads as an absence
+# of one. The second group are the LINK PREVIEW FETCHERS: this site travels
+# through Instagram DMs and WhatsApp between students, and those agents draw the
+# card from the og: tags in the head. Blocked, they show a bare grey link.
+#
+# Note the same inertness caveat as above applies to every line of it until the
+# custom domain lands, which is the whole point of writing it down now.
+
+# --- Answer engines (ChatGPT, Claude, Perplexity, Gemini, Copilot, Apple) ---
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-User
+User-agent: Claude-SearchBot
+User-agent: anthropic-ai
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+User-agent: Applebot
+User-agent: Applebot-Extended
+User-agent: Amazonbot
+User-agent: meta-externalagent
+User-agent: DuckAssistBot
+User-agent: cohere-ai
+User-agent: YouBot
+Disallow:
+
+# --- Link preview fetchers (the card drawn when the link is sent) ---
+User-agent: facebookexternalhit
+User-agent: FacebookBot
+User-agent: WhatsApp
+User-agent: Twitterbot
+User-agent: LinkedInBot
+User-agent: TelegramBot
+User-agent: Discordbot
+Disallow:
+
+# The society in plain prose, for machines that read text rather than markup:
+# https://chaos-961.github.io/bssaub-website/llms.txt
+
 Sitemap: https://chaos-961.github.io/bssaub-website/sitemap.xml

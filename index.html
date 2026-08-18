@@ -14,11 +14,16 @@
          out so the line reads as a decision rather than a fragment. Index is
          the only page that carries this; account is a sign in form whose search
          appearance nobody is competing for, and admin says the opposite. -->
-    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <meta name="theme-color" content="#f8f3f5" />
     <!-- the hero card is the LCP element; pull it ahead of the JS/font queue -->
     <link rel="preload" as="image" href="assets/card/card-front.webp" fetchpriority="high" />
     <link rel="canonical" href="https://chaos-961.github.io/bssaub-website/" />
+    <!-- The society in plain prose, for the answer engines that read text
+         rather than markup. A student asking an assistant what BSS is, or
+         what the card gets them, is answered from this file. Nothing in it is
+         hidden from a human. -->
+    <link rel="alternate" type="text/plain" href="https://chaos-961.github.io/bssaub-website/llms.txt" title="Plain-text brief for AI assistants" />
     <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/favicon-16.png" />
     <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png" />
@@ -35,7 +40,7 @@
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
-    <!-- Structured data (v0.5.4): who this society IS, in the vocabulary search
+    <!-- Structured data (v0.5.5): who this society IS, in the vocabulary search
          engines and answer engines actually parse, so it resolves as an entity
          rather than as an unlabelled page of prose. The meta tags above say
          what this PAGE is about; none of them can say that the organisation was
@@ -111,7 +116,78 @@
             "sameAs": [
               "https://www.instagram.com/businessstudentsociety/",
               "https://www.aub.edu.lb/osb/UndergradProgram/Pages/BSS.aspx"
-            ]
+            ],
+            "knowsAbout": [
+              "Student discounts in Beirut",
+              "AUB student life",
+              "Business student events and workshops",
+              "Case competitions",
+              "Corporate partnerships and sponsorship",
+              "Careers in finance, marketing, consulting, entrepreneurship and management"
+            ],
+            "memberOf": {
+              "@type": "EducationalOrganization",
+              "name": "Suliman S. Olayan School of Business",
+              "url": "https://www.aub.edu.lb/osb/Pages/default.aspx"
+            },
+            "hasOfferCatalog": {
+              "@type": "OfferCatalog",
+              "name": "BSS membership",
+              "itemListElement": [
+                {
+                  "@type": "Offer",
+                  "name": "BSS membership card",
+                  "category": "Student membership",
+                  "description": "One card for AUB students: events, opportunities, and discounts across restaurants, clothing, health and beauty, fitness and services in Beirut.",
+                  "areaServed": {
+                    "@type": "City",
+                    "name": "Beirut"
+                  },
+                  "eligibleCustomerType": "https://schema.org/Enthusiast",
+                  "seller": {
+                    "@id": "https://chaos-961.github.io/bssaub-website/#organization"
+                  },
+                  "itemOffered": {
+                    "@type": "Service",
+                    "name": "BSS membership card",
+                    "serviceType": "Student membership and discount programme",
+                    "provider": {
+                      "@id": "https://chaos-961.github.io/bssaub-website/#organization"
+                    },
+                    "areaServed": {
+                      "@type": "City",
+                      "name": "Beirut"
+                    },
+                    "hasOfferCatalog": {
+                      "@type": "OfferCatalog",
+                      "name": "Perk categories",
+                      "itemListElement": [
+                        {
+                          "@type": "OfferCatalog",
+                          "name": "Restaurants"
+                        },
+                        {
+                          "@type": "OfferCatalog",
+                          "name": "Clothing"
+                        },
+                        {
+                          "@type": "OfferCatalog",
+                          "name": "Health & Beauty"
+                        },
+                        {
+                          "@type": "OfferCatalog",
+                          "name": "Fitness"
+                        },
+                        {
+                          "@type": "OfferCatalog",
+                          "name": "Services"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
           },
           {
             "@type": "WebSite",
@@ -120,7 +196,31 @@
             "name": "Business Student Society",
             "alternateName": "BSS AUB",
             "inLanguage": "en",
-            "publisher": { "@id": "https://chaos-961.github.io/bssaub-website/#organization" }
+            "publisher": {
+              "@id": "https://chaos-961.github.io/bssaub-website/#organization"
+            }
+          },
+          {
+            "@type": "WebPage",
+            "@id": "https://chaos-961.github.io/bssaub-website/#webpage",
+            "url": "https://chaos-961.github.io/bssaub-website/",
+            "name": "BSS · AUB Business Student Society",
+            "isPartOf": {
+              "@id": "https://chaos-961.github.io/bssaub-website/#website"
+            },
+            "about": {
+              "@id": "https://chaos-961.github.io/bssaub-website/#organization"
+            },
+            "mainEntity": {
+              "@id": "https://chaos-961.github.io/bssaub-website/#organization"
+            },
+            "primaryImageOfPage": {
+              "@type": "ImageObject",
+              "url": "https://chaos-961.github.io/bssaub-website/assets/brand/og-image.jpg",
+              "width": 1200,
+              "height": 630
+            },
+            "inLanguage": "en"
           }
         ]
       }
@@ -658,7 +758,7 @@
       <div class="site-footer__bottom">
         <div class="site-footer__bottom-inner">
           <p>© Business Student Society, AUB · CRN: 5014</p>
-          <span class="version-badge" data-version-badge>v0.5.4</span>
+          <span class="version-badge" data-version-badge>v0.5.5</span>
         </div>
       </div>
     </footer>
