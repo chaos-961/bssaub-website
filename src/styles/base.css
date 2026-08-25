@@ -84,13 +84,24 @@ video {
   max-width: 100%;
 }
 
+/* Bold, and the whole point of the 2026-08-25 change: every display heading on
+   the site is now the logo's own condensed grotesque at 700. Fraunces' 580 was
+   a serif weight chosen against a serif's mass, and carrying it over would have
+   shipped a condensed face at what reads as its regular.
+
+   The 'opsz' 144 that sat here is gone with Fraunces, which is the only font in
+   this stack that ever had that axis; it is also why .perk-zone__title no
+   longer needs its `font-variation-settings: normal` reset.
+
+   Tracking loosens -0.02em -> -0.01em: negative tracking buys back the airiness
+   of a wide serif, and a condensed face has no air to spare. Its counters are
+   already narrow, so the same -0.02em closes them up. */
 h1,
 h2,
 h3 {
   font-family: var(--font-display);
-  font-weight: 580;
-  font-variation-settings: 'opsz' 144;
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   line-height: 1.04;
   text-wrap: balance;
 }

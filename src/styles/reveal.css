@@ -10,8 +10,14 @@
    ------------------------------------------------------------------ */
 
 /* Masked lift: the element climbs out from behind its own bottom edge.
-   The padding/margin pair is the Fraunces descender fix from the hero
-   headline — without it `overflow: hidden` shears the tails off g and y. */
+   The padding/margin pair is the descender fix from the hero headline —
+   without it `overflow: hidden` shears the tails off g and y. It was sized
+   for Fraunces and it comfortably outlives it: measured against the display
+   face at 700 (2026-08-25), the clip box clears the real glyph ink by 0.12em
+   at the top and 0.10em under the deepest descender, i.e. 0.14em is roughly
+   40% more padding than the font actually needs. Do not trim it to the
+   measurement — the slack is what lets the display face change again without
+   this rule being re-derived. */
 .rv-mask {
   display: block;
   overflow: hidden;

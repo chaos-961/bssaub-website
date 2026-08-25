@@ -24,7 +24,7 @@ const preloadGatedAssets = () => ({
         for (const name of Object.keys(ctx.bundle)) {
           if (
             name.endsWith('.woff2') &&
-            /(fraunces-latin-full|instrument-sans-latin-wght)/.test(name)
+            /(roboto-condensed-latin-wght|instrument-sans-latin-wght)/.test(name)
           ) {
             tags.push({
               tag: 'link',

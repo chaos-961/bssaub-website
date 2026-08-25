@@ -314,9 +314,8 @@
 
 .agency-credit__name {
   font-family: var(--font-display);
-  font-variation-settings: 'opsz' 144;
   font-size: var(--step-2);
-  font-weight: 590;
+  font-weight: 700;
   color: var(--ink);
   line-height: 1.05;
   letter-spacing: -0.01em;

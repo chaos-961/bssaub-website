@@ -36,7 +36,9 @@ export function initPreloader({ scroll, onComplete }) {
   document.documentElement.classList.add('u-scroll-lock');
 
   const jobs = [
-    document.fonts.load('600 1rem "Fraunces Variable"'),
+    // 700, not 600: the display face is set bold everywhere since 2026-08-25,
+    // and a weight the page never renders is a wait that proves nothing.
+    document.fonts.load('700 1rem "Roboto Condensed Variable"'),
     document.fonts.load('400 1rem "Instrument Sans Variable"'),
   ];
 

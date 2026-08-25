@@ -22,7 +22,6 @@ body.stub {
 
 .stub__title {
   font-size: var(--step-4);
-  font-variation-settings: 'opsz' 144, 'WONK' 1;
 }
 
 .stub__note {

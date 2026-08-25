@@ -2,7 +2,7 @@
 // nav consumes the scroll api, modal before the field (bubbles wire to it),
 // the field builds its DOM before the preloader collects [data-preload] images.
 // (categoryRuler retired 2026-07-23 — zone headings carry the category names.)
-import '@fontsource-variable/fraunces/full.css';
+import '@fontsource-variable/roboto-condensed';
 import '@fontsource-variable/instrument-sans';
 
 import './styles/tokens.css';

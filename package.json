@@ -8,11 +8,13 @@
     "build": "node scripts/check-admin-payload.mjs && vite build",
     "preview": "vite preview",
     "admin:payload": "node scripts/build-admin-payload.mjs",
-    "images:optimize": "node scripts/optimize-images.mjs"
+    "admin:check": "node scripts/check-admin-password.mjs",
+    "images:optimize": "node scripts/optimize-images.mjs",
+    "icons:favicon": "node scripts/generate-favicons.mjs --write"
   },
   "dependencies": {
-    "@fontsource-variable/fraunces": "^5.2.0",
     "@fontsource-variable/instrument-sans": "^5.2.0",
+    "@fontsource-variable/roboto-condensed": "^5.3.0",
     "firebase": "^12.16.0",
     "gsap": "^3.12.5",
     "lenis": "^1.1.20",

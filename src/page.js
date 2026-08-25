@@ -1,6 +1,6 @@
 // Light entry for 404.html (account.html shared it until v0.4.1).
 // No Lenis/GSAP here — this page stays tiny (§6.9).
-import '@fontsource-variable/fraunces/full.css';
+import '@fontsource-variable/roboto-condensed';
 import '@fontsource-variable/instrument-sans';
 
 import './styles/tokens.css';

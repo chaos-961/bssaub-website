@@ -29,7 +29,19 @@
   --accent-2: #b04a67;
 
   /* type */
-  --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+  /* The display face is a condensed neo grotesque set BOLD (user call,
+     2026-08-25), replacing Fraunces, which rode from v0.0.1. It is the logo's
+     own secondary face: the "BUSINESS STUDENT SOCIETY" lockup beside the BSS
+     mark is a condensed grotesque with flat sided narrow O, closed C aperture
+     and horizontal terminals, and Roboto Condensed is the closest common match
+     to it. So the page's headings now agree with the logo instead of answering
+     it with a serif.
+
+     'Arial Narrow' leads the fallback because it is the one condensed face
+     present on both Windows and macOS by default: falling back to plain Arial
+     would change the WIDTH of every heading, not just its texture, and the
+     hero's two line break is sized against a condensed measure. */
+  --font-display: 'Roboto Condensed Variable', 'Arial Narrow', Arial, sans-serif;
   --font-body: 'Instrument Sans Variable', system-ui, 'Segoe UI', sans-serif;
 
   --step--1: clamp(0.8rem, 0.78rem + 0.12vw, 0.875rem);

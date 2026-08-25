@@ -94,21 +94,36 @@
 
 /* The headline is the society's own name since v0.4.5, so it is bigger and
    heavier than every other display heading: its own clamp rather than --step-5
-   (which the rest of them still use, and which stays where it is), and weight
-   700 on the Fraunces axis.
+   (which the rest of them still use, and which stays where it is), at 700,
+   which since 2026-08-25 is the same bold every other heading takes.
 
    THE CLAMP IS SIZED SO "AUB'S BUSINESS" NEVER WRAPS (v0.4.6). The break is in
    the markup now, and a markup break only reads as a break while the longer of
    the two lines fits its column: the moment it wraps, the headline is three
    lines again and the layout budget below is wrong. That line measures a flat
-   5.98x its own font size in Fraunces at this weight and tracking, so the
-   binding width is whatever column it sits in divided by 5.98, checked at both
-   ends AND at the two column breakpoint, which is the tightest point of all
-   because the copy column is at its narrowest the instant it appears:
+   5.95x its own font size at this weight and tracking, so the binding width is
+   whatever column it sits in divided by 5.95, checked at both ends AND at the
+   two column entry point, which is the tightest of all because the copy column
+   is at its narrowest the instant it appears:
 
-     375px phone   47px type, 277px line against a 335px column
-     960px, 2 col  66px type, 396px line against a ~432px column  <- tightest
-     1440px        83px type, 493px line against a 538px column
+     375px phone   44px type, 261px line against a 335px column
+     866x700       59px type, 350px line against a 383px column  <- tightest
+     960px, 2 col  65px type, 388px line against a 433px column
+     1440px        83px type, 491px line against a 538px column
+
+   THE MEASURE SURVIVED THE FONT SWAP ALMOST EXACTLY, which is luck worth
+   writing down rather than relying on again. Fraunces at 700/-0.03em measured
+   5.98x and the condensed face at 700/-0.015em measures 5.946x, so every
+   number above moved by single pixels and no clamp needed retuning. A
+   condensed face is narrower per glyph but this one is also set at looser
+   tracking and has a larger advance for its point size; the two cancelled.
+   RE-MEASURE THE RATIO, do not assume it, if the display face changes again.
+
+   The FOLD budget below could not have moved at all, and that is structural
+   rather than lucky: line-height is 1.04, a ratio of font-size, so the
+   headline block is exactly 2 x font-size x 1.04 tall whatever font fills it.
+   Verified by swapping in Georgia at three viewports and reading identical
+   block heights and identical fold slack.
 
    The old 6.4rem cap is gone with the wrap it caused: at 102px that line was
    612px against that same 538px column, which is exactly why the "two line"
@@ -116,8 +131,7 @@
 .hero__headline {
   font-size: clamp(2.6rem, 2.1rem + 3.4vw, 5.2rem);
   font-weight: 700;
-  font-variation-settings: 'opsz' 144, 'WONK' 1;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.015em;
 }
 
 /* THE COPY COLUMN NARROWS FASTER THAN THE HEADLINE DOES, which is what makes a
@@ -295,8 +309,10 @@
   }
 }
 
-/* masked headline lines (§6.3 entrance) — padding/margin pair keeps Fraunces
-   descenders out of the overflow clip */
+/* masked headline lines (§6.3 entrance) — padding/margin pair keeps
+   descenders out of the overflow clip (see .rv-mask in reveal.css for the
+   measured slack; this one is 0.12em because the headline sets its own
+   tighter tracking and line box) */
 .hero__headline .line {
   display: block;
   overflow: hidden;

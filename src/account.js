@@ -1,7 +1,7 @@
 /* Entry for account.html (v0.4.2). The shared nav, background and footer
    around the auth card; Firebase itself is pulled in lazily from
    accountAuth.js so the shell and the ocean start without waiting for it. */
-import '@fontsource-variable/fraunces/full.css';
+import '@fontsource-variable/roboto-condensed';
 import '@fontsource-variable/instrument-sans';
 
 import './styles/tokens.css';

@@ -59,7 +59,6 @@
 
 .auth__title {
   font-size: var(--step-3);
-  font-variation-settings: 'opsz' 144, 'WONK' 1;
   margin-top: 0.35rem;
 }
 
@@ -313,7 +312,7 @@ html.auth-resolving [data-auth-loading] {
   color: #fff;
   font-family: var(--font-display);
   font-size: 1.35rem;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1;
 }
 
@@ -591,7 +590,6 @@ html.auth-resolving [data-auth-loading] {
 
 .admin-console__title {
   font-size: var(--step-3);
-  font-variation-settings: 'opsz' 144, 'WONK' 1;
 }
 
 .admin-console__status {
@@ -639,6 +637,241 @@ html.auth-resolving [data-auth-loading] {
 
 .admin-search__row .btn {
   flex: none;
+}
+
+/* --- the filter (v0.5.6) -----------------------------------------------
+   Search and filter share one block so they can sit side by side once there
+   is room and stack in the order they are used on a phone. The search field
+   is the greedy one (`1 1 22rem`) and the filter never shrinks, because three
+   words squeezed into a segmented control wrap into nonsense long before a
+   search field is too narrow to type in. */
+.admin-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.9rem 1.2rem;
+  margin-top: 1.1rem;
+}
+
+.admin-search {
+  flex: 1 1 22rem;
+  min-width: 0;
+  margin-top: 0;
+}
+
+/* flex:none keeps the three words from being squeezed into nonsense, but on its
+   own it also let this size to its content and hang off the page: measured 25px
+   of horizontal overflow at a 320px viewport, where the legend and the pill
+   together want 325px of a 280px box. max-width caps it at the container and
+   flex-wrap gives it somewhere to go, so the legend takes its own line and the
+   pill drops under it rather than pushing the document sideways. */
+.admin-filter {
+  flex: none;
+  max-width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 44px;
+}
+
+.admin-filter__legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+/* Drawn as strokes rather than fills so the funnel keeps its weight next to
+   the label's letterforms at any size, and so it inherits currentColor with
+   no second declaration. */
+.admin-filter__icon {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+/* A paper island like every other control on this page: a bare outline over a
+   moving mesh reads as a stray rectangle (the v0.4.3 finding). The segments
+   are separated by their own hairlines rather than gaps, so the group reads as
+   one control with three positions and not as three loose buttons. */
+.admin-filter__set {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 100%;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  border-radius: 999px;
+  background: var(--surface);
+  padding: 3px;
+  box-shadow:
+    0 1px 2px rgba(34, 18, 25, 0.05),
+    0 12px 28px -22px rgba(34, 18, 25, 0.5);
+}
+
+/* min-height, not padding, because the tap target is the point rather than the
+   look: at the padding this first shipped with the options measured 29px tall
+   on a phone, which is the same miss v0.4.2 fixed on the nav Account link and
+   for the same reason. 40px of button inside the 3px pill padding puts the
+   group at 48px, which also happens to sit better beside the 54px search
+   field than the squat version did. */
+.admin-filter__opt {
+  appearance: none;
+  border: 0;
+  background: none;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0.42rem 0.9rem;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: var(--step--1);
+  font-weight: 560;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    background-color 0.2s var(--ease-out),
+    color 0.2s var(--ease-out);
+}
+
+.admin-filter__opt:hover:not([aria-pressed='true']) {
+  color: var(--ink);
+}
+
+.admin-filter__opt[aria-pressed='true'] {
+  background: var(--accent);
+  color: #fff;
+}
+
+.admin-filter__opt:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* --- the pager (v0.5.6) ------------------------------------------------
+   Numbers between Previous and Next, wrapping as one group on a phone. Every
+   number stays reachable, which is what the dashboard's own pageList() is for:
+   first, last, and the current page with a neighbour either side. */
+.admin-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.4rem;
+}
+
+.admin-pager__numbers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+.admin-pager__num {
+  appearance: none;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: var(--step--1);
+  font-weight: 560;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    border-color 0.2s var(--ease-out),
+    color 0.2s var(--ease-out);
+}
+
+.admin-pager__num:hover:not(:disabled):not(.is-current) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.admin-pager__num.is-current {
+  background: var(--accent);
+  border-color: transparent;
+  color: #fff;
+  cursor: default;
+}
+
+.admin-pager__num:disabled:not(.is-current) {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.admin-pager__gap {
+  padding: 0 0.15rem;
+  color: var(--ink-soft);
+  user-select: none;
+}
+
+/* --- placeholder rows (v0.5.6) -----------------------------------------
+   The bars pulse on OPACITY and nothing else, which is the § GPU floor rule
+   applied rather than restated: a travelling gradient would animate
+   background-position and repaint every bar on every frame, where opacity is
+   composited and costs the compositor a value. They also live for about a
+   second and are then removed, so nothing here loops on a page at rest. */
+.admin-row--skeleton {
+  pointer-events: none;
+}
+
+.skel {
+  display: block;
+  height: 0.75rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 11%, transparent);
+  animation: skel-pulse 1.3s var(--ease-out) infinite;
+  animation-delay: calc(var(--i, 0) * 0.07s);
+}
+
+.skel--name {
+  width: min(11rem, 62%);
+  height: 0.95rem;
+}
+
+.skel--email {
+  width: min(15rem, 84%);
+  margin-top: 0.5rem;
+}
+
+.skel--pill {
+  width: 8.5rem;
+  height: 1.6rem;
+}
+
+.skel--btn {
+  width: 6.5rem;
+  height: 2.1rem;
+  border-radius: 999px;
+}
+
+.skel--btn-tight {
+  width: 4.2rem;
+}
+
+@keyframes skel-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.42;
+  }
 }
 
 /* padding 0 is load bearing, not tidiness: `list-style: none` removes the
@@ -956,6 +1189,7 @@ html.reduced-motion [data-admin-mount],
 html.reduced-motion .admin-bar .btn,
 html.reduced-motion .admin-row,
 html.reduced-motion .admin-row__confirm,
-html.reduced-motion .admin-warn {
+html.reduced-motion .admin-warn,
+html.reduced-motion .skel {
   animation: none;
 }

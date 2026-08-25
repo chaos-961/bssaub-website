@@ -65,7 +65,7 @@
    The connection is started but NOT awaited at unlock, so a slow round
    trip cannot hold the dashboard shut; the search area waits on it.
    ------------------------------------------------------------------ */
-import '@fontsource-variable/fraunces/full.css';
+import '@fontsource-variable/roboto-condensed';
 import '@fontsource-variable/instrument-sans';
 
 import './styles/tokens.css';
@@ -106,6 +106,14 @@ const THROTTLE_MAX_MS = 4500;
    entitled to see, and a search that quietly hides someone is worse than one
    that says it stopped counting. */
 const SEARCH_LIMIT = 50;
+
+/* How many members a browsed page shows (v0.5.6). It is deliberately a
+   separate number from SEARCH_LIMIT above even though the two are equal today:
+   one is how much of a search is worth showing before asking for a narrower
+   term, the other is a page size, and a reason to change either has nothing to
+   do with the other. It also sets what a page of rows COSTS, at one read a
+   row, which is the only number on this page that scales with use. */
+const PAGE_SIZE = 50;
 
 const encoder = new TextEncoder();
 const bytes = (base64) => Uint8Array.from(atob(base64 || ''), (c) => c.charCodeAt(0));
@@ -149,6 +157,33 @@ async function connect(email, password) {
   const db = dbSdk.getFirestore(app);
   const readRows = (snap) => snap.docs.map((entry) => memberFrom(entry.id, entry.data()));
 
+  /* THREE ORDERINGS AND NOT ONE COMPOSITE INDEX (v0.5.6), which is what lets
+     browsing work the moment the rules are pasted in, with no console step to
+     remember and nothing to keep in sync with this file. Every query below
+     orders by the same field it ranges over, or ranges over nothing at all,
+     and Firestore maintains single field indexes on its own. Sorting the
+     Subscribed view by NAME instead would pair a range on expiresAt with an
+     orderBy on name, and that IS a composite index: a console step, and a
+     filter that returns an error until somebody performs it.
+
+     TOMBSTONES FALL OUT OF ALL THREE FOR FREE, with no `revoked` test
+     anywhere. A document that lacks a field is simply absent from that
+     field's index, and a deleted member's row is replaced by { revoked: true }
+     alone (see remove() below), so orderBy('name') cannot see it and neither
+     expiresAt range can reach it either.
+
+     `now` is passed in rather than read here so that ONE browse pins ONE
+     instant: its count and every one of its pages then answer the same
+     question, and a membership lapsing mid session cannot shuffle rows
+     between pages under the admin's fingers. */
+  const viewOf = (filter, now) => {
+    if (filter === 'live') return [dbSdk.where('expiresAt', '>', now), dbSdk.orderBy('expiresAt')];
+    if (filter === 'off') {
+      return [dbSdk.where('expiresAt', '<=', now), dbSdk.orderBy('expiresAt', 'desc')];
+    }
+    return [dbSdk.orderBy('name')];
+  };
+
   return {
     /* ONE query and NO composite index, which is what lets this work the
        moment the rules are pasted in with no console index step. A name search
@@ -186,6 +221,55 @@ async function connect(email, password) {
         .filter((row) => matchesTerm(row.name, clean))
         .sort((a, b) => a.name.localeCompare(b.name));
       return { rows: found, capped: snap.docs.length >= SEARCH_LIMIT };
+    },
+
+    /* HOW MANY, and the cheap way to get it (v0.5.6). Firestore bills an
+       aggregation at ONE read per thousand index entries matched, so knowing
+       the page count of the whole collection costs a single read at this size.
+       Fetching the rows in order to count them would cost one read each, i.e.
+       the entire collection every time the pager needed a number.
+
+       getCount and NOT getCountFromServer: the lite SDK names it differently
+       from the full one, and getting it wrong is invisible until runtime
+       behind a password gate, where it reads as an undefined function. */
+    async count(filter, now) {
+      const snap = await dbSdk.getCount(
+        dbSdk.query(dbSdk.collection(db, MEMBERS), ...viewOf(filter, now)),
+      );
+      return snap.data().count;
+    },
+
+    /* ONE PAGE, ONE QUERY, and the cursor is what keeps it that way. Firestore
+       has no offset that does not bill for the rows it steps over, so paging
+       forward is startAfter on the last document of the page before, which
+       reads exactly the rows it is about to show and not one more.
+
+       `span` is how many pages to cross in one go. It is 1 for next, for
+       previous, and for any page whose cursor the dashboard already holds from
+       an earlier visit, which is every page behind the furthest one walked. It
+       is larger only when the admin jumps ahead to a page nobody has reached
+       yet. Crossing those in one query costs the same reads as walking them
+       one by one (the skipped rows are billed either way) for a single round
+       trip instead of several, and `marks` hands back the boundary of every
+       page crossed, so the ground is bought once and never again. */
+    async page(filter, now, after, span = 1) {
+      const constraints = viewOf(filter, now);
+      if (after) constraints.push(dbSdk.startAfter(after));
+      constraints.push(dbSdk.limit(PAGE_SIZE * Math.max(1, span)));
+      const docs = (
+        await dbSdk.getDocs(dbSdk.query(dbSdk.collection(db, MEMBERS), ...constraints))
+      ).docs;
+
+      /* The boundary at the end of each WHOLE page crossed. A partial final
+         chunk deliberately gets none: there is no page after it to cut. */
+      const marks = [];
+      for (let i = PAGE_SIZE; i <= docs.length; i += PAGE_SIZE) marks.push(docs[i - 1]);
+
+      /* The chunk asked for, unless the collection shrank between the count
+         and this query, in which case the last one with anything in it. */
+      const chunk = Math.max(0, Math.min(span - 1, Math.ceil(docs.length / PAGE_SIZE) - 1));
+      const rows = docs.slice(chunk * PAGE_SIZE, (chunk + 1) * PAGE_SIZE);
+      return { rows: rows.map((entry) => memberFrom(entry.id, entry.data())), marks, chunk };
     },
 
     setExpiry(uid, expiresAt) {
@@ -434,7 +518,12 @@ function boot() {
           membership: { daysLeft, extend, formatDate, formatLeft, isActive },
           members: {
             ready: () => connection.then(() => true),
+            pageSize: PAGE_SIZE,
             search: live((members, term) => members.search(term)),
+            count: live((members, filter, now) => members.count(filter, now)),
+            page: live((members, filter, now, after, span) =>
+              members.page(filter, now, after, span),
+            ),
             setExpiry: live((members, uid, ms) => members.setExpiry(uid, ms)),
             remove: live((members, uid) => members.remove(uid)),
           },
