@@ -442,9 +442,22 @@
                    old 663x473 grid by ratio: the blank moved within the frame,
                    so a scale factor would have been wrong in both axes. Rule
                    y 551..552, x 362..575, so its centre is 468.5. The printed
-                   "Name:" caps run y 536..551, so the baseline is 551.8 and the
-                   cap height is 16.0, which is what sets the font size in
-                   sections.css. Scanner output is in the commit. -->
+                   "Name:" caps run y 536..551, cap height 16.0, which is what
+                   sets the font size in sections.css. Scanner output is in the
+                   commit.
+
+                   THE BASELINE IS 547.0 AND NOT THE PRINTED LABEL'S 551.8
+                   (v0.5.8, user: the name is clipping the line, lift it). The
+                   two used to share a baseline, which put the type ON the rule
+                   the way ink sits on ruled paper, and descenders through it.
+                   Measured rather than nudged: Instrument Sans at this size
+                   inks 4.0 units below the baseline (canvas actualBounding-
+                   BoxDescent, g/y/p/J), so 547.0 lands the tail of a g exactly
+                   on the rule's top edge at 551 and nothing crosses it. The
+                   caret rides the same 4.8 lift so it keeps its seat against
+                   the cap line. The account card carries the identical pair
+                   (account.html) and the two must move together or not at
+                   all. -->
               <svg
                 class="hero-card__name"
                 viewBox="0 0 874 621"
@@ -452,8 +465,8 @@
                 aria-hidden="true"
                 focusable="false"
               >
-                <text class="hero-card__name-text" x="468.5" y="551.8" data-card-name></text>
-                <rect class="hero-card__name-caret" x="467.53" y="534.2" width="1.94" height="18.5" rx="0.97" data-card-caret></rect>
+                <text class="hero-card__name-text" x="468.5" y="547" data-card-name></text>
+                <rect class="hero-card__name-caret" x="467.53" y="529.4" width="1.94" height="18.5" rx="0.97" data-card-caret></rect>
               </svg>
               <div class="hero-card__glare" aria-hidden="true"></div>
             </div>
@@ -788,7 +801,7 @@
       <div class="site-footer__bottom">
         <div class="site-footer__bottom-inner">
           <p>© Business Student Society, AUB · CRN: 5014</p>
-          <span class="version-badge" data-version-badge>v0.5.7</span>
+          <span class="version-badge" data-version-badge>v0.5.8</span>
         </div>
       </div>
     </footer>

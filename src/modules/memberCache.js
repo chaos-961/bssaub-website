@@ -17,25 +17,33 @@
    fetched, parsed or run at all, and the card paints in the same frame
    as the name with no "checking" beat in between.
 
-   THE TTL IS ASYMMETRIC BECAUSE THE TWO STATES ARE WAITING FOR
-   DIFFERENT THINGS. A member with no membership, or an expired one, is
-   waiting for one to appear and will reload to look, so their answer is
-   held for minutes. A member with a running membership is waiting for
-   nothing, since the only change that can matter to them is a
-   revocation, so theirs is held for hours. And a record that was
-   RUNNING when it was stored and is not running now is never served at
-   all: that is precisely the moment a renewal would be sitting unseen
-   behind an expired card, so it always costs a read.
+   ONLY A RUNNING MEMBERSHIP IS EVER SERVED FROM HERE, and that is the
+   whole shape of the cache (v0.5.8, user report: a year was added and
+   the card did not appear until they signed out and back in, which is
+   exactly what signing out does, it drops this). A member with no
+   membership, or an expired one, is WAITING for one to appear: they are
+   the person refreshing the page to look, so a held answer is not a
+   saving, it is the page lying to the one visitor who is watching. It
+   always costs a read now. v0.5.7 held that state for ten minutes and
+   the ten minutes is what the user hit.
 
-   WHAT THIS TRADES, written down rather than discovered later. An admin
-   action reaches a member's screen within the TTL rather than on their
-   next visit, so a revocation or a deletion can leave a card showing
-   for up to six hours. That card is honoured in person and not by this
-   page, and the clock it is judged against was always the visitor's own
-   (membership.js has the full note), so a stale entry buys exactly what
-   a wound forward clock already bought: a picture. Nothing here is an
-   authorization and nothing here is trusted by Firestore, which checks
-   the signed in identity on every call it answers.
+   A member whose card is already running is waiting for nothing, so
+   theirs is held for hours. Same reason a record that was RUNNING when
+   it was stored and is not running now is never served: that is
+   precisely the moment a renewal would be sitting unseen behind an
+   expired card.
+
+   WHAT THIS STILL TRADES, written down rather than discovered later. A
+   membership EXTENDED while it is already running keeps showing its old
+   date for up to the active TTL. The card itself is there and correct,
+   which is what the page is for; only the count is behind. And a
+   revocation can leave a card showing for the same window. That card is
+   honoured in person and not by this page, and the clock it is judged
+   against was always the visitor's own (membership.js has the full
+   note), so a stale entry buys exactly what a wound forward clock
+   already bought: a picture. Nothing here is an authorization and
+   nothing here is trusted by Firestore, which checks the signed in
+   identity on every call it answers.
 
    IT IS localStorage AND NOT sessionStorage, which is the opposite
    choice to the admin console's and for the opposite reason. The whole
@@ -50,7 +58,6 @@ import { isActive, memberFrom } from '../data/membership.js';
 const PREFIX = 'bss.member.v1.';
 
 export const FRESH_ACTIVE_MS = 21600000; // 6 hours
-export const FRESH_IDLE_MS = 600000; // 10 minutes
 
 export function readCache(uid, now = Date.now()) {
   if (!uid) return null;
@@ -59,10 +66,11 @@ export function readCache(uid, now = Date.now()) {
     if (!held || typeof held.at !== 'number' || !held.record) return null;
     const age = now - held.at;
     if (age < 0) return null; // the clock moved backwards under it
-    const live = isActive(held.record.expiresAt, now);
-    // it was running when this was stored and has since run out: ask again
-    if (held.record.expiresAt > held.at && !live) return null;
-    if (age > (live ? FRESH_ACTIVE_MS : FRESH_IDLE_MS)) return null;
+    /* Not running, by this visitor's clock, at this instant: never served, at
+       any age. Covers both a record stored with nothing on it and one that has
+       run out since, which are the same question to the person looking. */
+    if (!isActive(held.record.expiresAt, now)) return null;
+    if (age > FRESH_ACTIVE_MS) return null;
     /* Through memberFrom, so a hand edited entry cannot reach the panel as
        anything but the five fields it expects. Forging one is worth no more
        than winding the clock forward already was. */

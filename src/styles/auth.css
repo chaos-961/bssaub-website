@@ -617,17 +617,51 @@ html.auth-resolving [data-auth-loading] {
   font-size: var(--step-3);
 }
 
+/* The status popup (v0.5.8, user call: these should be a pop up at the top of
+   the page that then disappears). It is the idle pill's language turned the
+   other way up, deliberately, so the page has one vocabulary for "something
+   transient is talking to you" rather than two.
+
+   IT SITS UNDER THE FIXED BUTTON ROW, NOT BESIDE IT. That row is pinned top
+   right and on a narrow phone its two buttons take most of the width, so a
+   centred toast on the same line would land on top of them. The offset is
+   built from the row's own inset clamp plus its 44px button, the same way
+   .admin-console's top padding is, so the two cannot drift apart when the
+   viewport changes.
+
+   It is out of flow, so the rows below no longer shift by a line when a
+   message arrives and empties, which is what the old in-flow paragraph's
+   min-height was there to stop.
+
+   dashboard.js hides it with `hidden` between messages, and base.css makes
+   that a hard display:none, so the entrance below replays from zero for every
+   message with no class to reset (the v0.4.4 display-keyed pattern). */
 .admin-console__status {
-  min-height: 1.4em;
-  margin-top: 0.9rem;
+  animation: admin-toast-in 0.4s var(--ease-out) backwards;
+  position: fixed;
+  left: 50%;
+  top: calc(clamp(1rem, 3vw, 1.75rem) + 44px + 0.65rem);
+  transform: translateX(-50%);
+  z-index: 12;
+  max-width: calc(100vw - 2rem);
+  margin: 0;
+  padding: 0.62rem 1.05rem;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow:
+    0 1px 2px rgba(34, 18, 25, 0.05),
+    0 18px 42px -22px rgba(34, 18, 25, 0.55);
   color: var(--ink-soft);
   font-size: var(--step--1);
+  text-align: center;
 }
 
 .admin-console__status[data-tone='error'],
 .admin-console__status[data-tone='ok'] {
   color: var(--accent);
   font-weight: 550;
+  border-color: color-mix(in srgb, var(--accent) 32%, transparent);
 }
 
 .admin-search {
@@ -1188,6 +1222,18 @@ html.auth-resolving [data-auth-loading] {
   }
 }
 
+/* centred with translateX(-50%) like the pill below, so every key carries it */
+@keyframes admin-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%);
+  }
+}
+
 /* the pill is centred with translateX(-50%), so every key here has to carry
    it or the entrance would slide it half its own width across the screen */
 @keyframes admin-warn-in {
@@ -1214,6 +1260,7 @@ html.reduced-motion [data-admin-mount],
 html.reduced-motion .admin-bar .btn,
 html.reduced-motion .admin-row,
 html.reduced-motion .admin-row__confirm,
+html.reduced-motion .admin-console__status,
 html.reduced-motion .admin-warn,
 html.reduced-motion .skel {
   animation: none;

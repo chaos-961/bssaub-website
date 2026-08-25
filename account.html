@@ -309,7 +309,10 @@
                inset 0 rather than the hero's 2px, since this card has no
                border. The grid and every coordinate under it changed with the
                artwork on 2026-08-25 and must stay equal to the hero's, which is
-               where the measurements are written up. -->
+               where the measurements are written up. The baseline came off the
+               printed label's 551.8 to 547.0 at v0.5.8 so descenders stop
+               crossing the rule; that number is measured, not nudged, and the
+               reasoning sits beside the hero's copy of it. -->
           <div class="member" data-member>
             <div class="member__card" data-member-card hidden>
               <img
@@ -327,7 +330,7 @@
                 aria-hidden="true"
                 focusable="false"
               >
-                <text class="member__name-text" x="468.5" y="551.8" data-member-cardname></text>
+                <text class="member__name-text" x="468.5" y="547" data-member-cardname></text>
               </svg>
             </div>
             <!-- The AUB ID condition (2026-08-25, user call), under the real
@@ -345,17 +348,6 @@
           </div>
 
           <div class="auth__actions">
-            <a
-              class="btn btn--primary"
-              href="https://forms.cloud.microsoft/r/d5fFFxbKKN"
-              target="_blank"
-              rel="noopener"
-              data-member-join
-              data-auth-always
-              hidden
-            >
-              Get the membership card
-            </a>
             <button class="btn btn--ghost" type="button" data-auth-signout>Sign out</button>
           </div>
         </section>
@@ -369,14 +361,6 @@
         <div>
           <p class="site-footer__wordmark">Business Student Society</p>
           <p class="site-footer__tag">American University of Beirut</p>
-          <a
-            class="btn btn--primary btn--sm site-footer__cta"
-            href="https://forms.cloud.microsoft/r/d5fFFxbKKN"
-            target="_blank"
-            rel="noopener"
-          >
-            Get the membership card
-          </a>
         </div>
         <nav aria-label="Footer">
           <p class="site-footer__heading">Explore</p>
@@ -410,7 +394,7 @@
       <div class="site-footer__bottom">
         <div class="site-footer__bottom-inner">
           <p>© Business Student Society, AUB · CRN: 5014</p>
-          <span class="version-badge" data-version-badge>v0.5.7</span>
+          <span class="version-badge" data-version-badge>v0.5.8</span>
         </div>
       </div>
     </footer>

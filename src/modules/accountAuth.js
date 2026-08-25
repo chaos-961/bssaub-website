@@ -308,10 +308,12 @@ export function initAccount() {
     const email = user.email || '';
 
     /* The cached answer, if there is a fresh one (v0.5.7; memberCache.js has
-       the write up, including what the TTLs trade). It returns before
-       openStore(), so a hit costs no read AND no Firestore download, and the
-       card paints in the same frame as the name with no "checking" beat in
-       between.
+       the write up, including what it trades). It returns before openStore(),
+       so a hit costs no read AND no Firestore download, and the card paints in
+       the same frame as the name with no "checking" beat in between. Only a
+       RUNNING membership is ever served from there (v0.5.8), so somebody
+       waiting for one to be added always gets a real read and sees it on their
+       next load rather than after a TTL.
 
        The name and address are compared rather than assumed because they are
        the only fields this page ever corrects: if either has moved, the cache

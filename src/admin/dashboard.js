@@ -342,10 +342,37 @@ export default function mount(root, api) {
      before it paints anything. */
   let seq = 0;
 
-  const setStatus = (message, tone = '') => {
+  /* The status line is a popup at the top of the page that takes itself away
+     again (v0.5.8, user call). It used to be a paragraph sitting above the
+     rows, which meant "A year came off Mohammad Tabbara." stayed on screen
+     until the next action replaced it, reading as a state of the page rather
+     than as the receipt for a button press.
+
+     WHAT MUST NOT BECOME A TOAST IS PROGRESS. "Loading members." and
+     "Searching." describe something still happening, so a timer that cleared
+     them would claim the work had finished; they pass `sticky` and stay until
+     the answer replaces them. Everything else is a result and goes.
+
+     `hidden` rather than a class, because base.css makes that a hard
+     display:none and auth.css keys the entrance animation to display, so each
+     new message replays it from zero with nothing to reset (the v0.4.4
+     pattern, which is why neither page has class plumbing for its motion). */
+  let statusTimer = 0;
+  const STATUS_MS = 4000;
+
+  const setStatus = (message, tone = '', sticky = false) => {
     if (!status) return;
+    window.clearTimeout(statusTimer);
+    statusTimer = 0;
     status.textContent = message || '';
     status.dataset.tone = message ? tone : '';
+    status.hidden = !message;
+    if (!message || sticky) return;
+    statusTimer = window.setTimeout(() => {
+      status.hidden = true;
+      status.textContent = '';
+      status.dataset.tone = '';
+    }, STATUS_MS);
   };
 
   const setBusy = (value) => {
@@ -641,7 +668,7 @@ export default function mount(root, api) {
     }
 
     showGhosts();
-    setStatus('Loading members.');
+    setStatus('Loading members.', '', true);
 
     /* One read, and it either vouches for every page in the cache or empties
        it. Either way the fetch below is skipped whenever the answer is
@@ -779,7 +806,7 @@ export default function mount(root, api) {
     }
 
     showGhosts();
-    setStatus('Searching.');
+    setStatus('Searching.', '', true);
     try {
       const vouched = await vouch();
       if (token !== seq) return;
@@ -870,7 +897,7 @@ export default function mount(root, api) {
      typing. */
   setBusy(true);
   showGhosts();
-  setStatus('Loading members.');
+  setStatus('Loading members.', '', true);
   api.members
     .ready()
     .then(() => {

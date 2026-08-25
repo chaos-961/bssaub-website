@@ -67,7 +67,11 @@
     </div>
   </div>
 
-  <p class="admin-console__status" data-admin-console-status role="status" aria-live="polite"></p>
+  <!-- A popup at the top of the page rather than a line above the rows since
+       v0.5.8 (user call). It starts hidden so an empty pill never paints
+       before the first message; dashboard.js owns the attribute from then on
+       and auth.css keys the entrance to display, so each message replays it. -->
+  <p class="admin-console__status" data-admin-console-status role="status" aria-live="polite" hidden></p>
 
   <ul class="admin-results" data-admin-results></ul>
 

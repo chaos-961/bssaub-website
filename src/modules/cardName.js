@@ -5,7 +5,9 @@
    WHY THIS IS AN SVG AND NOT A POSITIONED SPAN. The card face is one baked
    874x621 raster, so the blank line sits at fixed IMAGE pixels (measured off
    the asset: rule y=551..552, x=362..575; the "Name:" label's caps run
-   y=536..551, i.e. cap height 16.0 and baseline 551.8). An
+   y=536..551, i.e. cap height 16.0 on a baseline of 551.8, and the typed name
+   sits on 547.0 since v0.5.8 so its descenders clear the rule — index.html
+   carries that measurement). An
    inline <svg viewBox="0 0 874 621"> laid over the image's content box gives a
    coordinate system that IS those image pixels at every rendered size, so the
    alignment is exact by construction rather than by a percentage that has to
