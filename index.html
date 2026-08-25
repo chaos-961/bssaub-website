@@ -396,7 +396,14 @@
                from sponsors.js rather than a sample of it. -->
           <p class="hero__sub">Membership gets you events, opportunities, and discounts across restaurants, clothing, health &amp; beauty, fitness and services.</p>
           <div class="hero__ctas">
-            <a class="btn btn--primary" href="https://forms.cloud.microsoft/r/d5fFFxbKKN" target="_blank" rel="noopener">
+            <!-- 2026-08-25, user call: this CTA opened the membership form
+                 directly. It goes to the account page now, so the funnel is
+                 "make an account, then fill the form" rather than the form
+                 alone, and the form link lives where it is the actual next
+                 step: on the signed in panel of that same page. Internal, so
+                 no target and no rel; extensionless per the clean URL
+                 middleware (see vite.config.js CLEAN_PAGES). -->
+            <a class="btn btn--primary" href="account">
               Get the membership card
             </a>
             <a class="btn btn--ghost" href="#sponsors">See the perks</a>
@@ -418,30 +425,45 @@
               <img
                 src="assets/card/card-front.webp"
                 alt="BSS membership card"
-                width="663"
-                height="473"
+                width="874"
+                height="621"
                 fetchpriority="high"
                 decoding="async"
                 data-preload
               />
               <!-- The NAME blank, written live (v0.3.9). viewBox IS the card
-                   asset's own 663x473 pixel grid, so x/y here are the pixels
+                   asset's own 874x621 pixel grid, so x/y here are the pixels
                    measured off the artwork and the fit is exact at every
                    width with no breakpoint. Sits under the glare on purpose,
-                   so the light washes over the name like it does the print. -->
+                   so the light washes over the name like it does the print.
+
+                   EVERY NUMBER BELOW WAS RE-MEASURED OFF THE SHIPPED WEBP when
+                   the artwork was replaced (2026-08-25), not converted from the
+                   old 663x473 grid by ratio: the blank moved within the frame,
+                   so a scale factor would have been wrong in both axes. Rule
+                   y 551..552, x 362..575, so its centre is 468.5. The printed
+                   "Name:" caps run y 536..551, so the baseline is 551.8 and the
+                   cap height is 16.0, which is what sets the font size in
+                   sections.css. Scanner output is in the commit. -->
               <svg
                 class="hero-card__name"
-                viewBox="0 0 663 473"
+                viewBox="0 0 874 621"
                 preserveAspectRatio="none"
                 aria-hidden="true"
                 focusable="false"
               >
-                <text class="hero-card__name-text" x="362" y="422.8" data-card-name></text>
-                <rect class="hero-card__name-caret" x="361.15" y="407.4" width="1.7" height="16.2" rx="0.85" data-card-caret></rect>
+                <text class="hero-card__name-text" x="468.5" y="551.8" data-card-name></text>
+                <rect class="hero-card__name-caret" x="467.53" y="534.2" width="1.94" height="18.5" rx="0.97" data-card-caret></rect>
               </svg>
               <div class="hero-card__glare" aria-hidden="true"></div>
             </div>
           </div>
+          <!-- The AUB ID condition lived here briefly on 2026-08-25 and moved
+               to the account page the same day on the user's word, under the
+               real card rather than under the shop window one. That is also
+               what gave the hero its fold back: the note cost 43 to 67px on a
+               phone against 11 to 50px of slack, so 360x640 and 375x667 were
+               overrunning while it sat here. See .member__id in auth.css. -->
         </div>
       </section>
 
@@ -583,9 +605,9 @@
                 <figure class="journey-node__media" data-journey-media data-img-io data-img-exit="left" style="--i: 2">
                   <img
                     src="assets/journey/vision.webp"
-                    alt="BSS members at the Suliman S. Olayan School of Business celebrating 125 years of business education"
-                    width="1400"
-                    height="1050"
+                    alt="BSS members gathered for a welcome meeting"
+                    width="1206"
+                    height="1013"
                     loading="lazy"
                     decoding="async"
                   />
@@ -624,9 +646,7 @@
                   <a
                     class="btn btn--primary journey__cta"
                     data-journey-cta
-                    href="https://forms.cloud.microsoft/r/d5fFFxbKKN"
-                    target="_blank"
-                    rel="noopener"
+                    href="account"
                   >
                     Get the membership card
                   </a>
@@ -731,9 +751,7 @@
           <a
             class="btn btn--primary btn--sm site-footer__cta"
             data-pop
-            href="https://forms.cloud.microsoft/r/d5fFFxbKKN"
-            target="_blank"
-            rel="noopener"
+            href="account"
           >
             Get the membership card
           </a>
@@ -770,7 +788,7 @@
       <div class="site-footer__bottom">
         <div class="site-footer__bottom-inner">
           <p>© Business Student Society, AUB · CRN: 5014</p>
-          <span class="version-badge" data-version-badge>v0.5.6</span>
+          <span class="version-badge" data-version-badge>v0.5.7</span>
         </div>
       </div>
     </footer>

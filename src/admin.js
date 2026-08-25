@@ -82,11 +82,14 @@ import { firebaseConfig } from './data/firebase.js';
    exactly one person ever opens. */
 import {
   MEMBERS,
+  META,
+  REVISION,
   daysLeft,
   extend,
   formatDate,
   formatLeft,
   isActive,
+  makeRevision,
   matchesTerm,
   memberFrom,
   queryKeyFor,
@@ -114,6 +117,73 @@ const SEARCH_LIMIT = 50;
    do with the other. It also sets what a page of rows COSTS, at one read a
    row, which is the only number on this page that scales with use. */
 const PAGE_SIZE = 50;
+
+/* ------------------------------------------------------------------
+   THE MEMBER CACHE (v0.5.7, user brief: fewer Firebase reads, with a
+   version so an updated page is fetched again rather than trusted).
+
+   IT IS sessionStorage AND NOT localStorage, which is a security call
+   and not a shrug. This page runs its Firebase session on
+   inMemoryPersistence precisely so that nothing about the admin is ever
+   written to disk and closing the tab is a sign out; parking every
+   member's name and address in localStorage would undo that, on an
+   origin every other project of this GitHub account shares (§Open
+   items). sessionStorage has exactly the lifetime the auth session was
+   given on purpose: per tab, gone when the tab closes. What it buys over
+   plain memory is the one case the user actually described, a RELOAD,
+   which keeps the tab and therefore keeps the cache.
+
+   IT IS OWNED HERE RATHER THAN IN THE DASHBOARD because the two things
+   that have to erase it both live in this file. lock() wipes it, since a
+   locked admin holding a readable member list in storage would undercut
+   the lock it just performed. And a page sitting AT THE GATE wipes it on
+   a timer: a reload leaves the cache behind a password prompt, so
+   without that timer a machine left on the locked page would keep the
+   list readable from devtools by someone who never knew the password.
+   Unlocking cancels the timer, so a reload and a prompt answer normally
+   keeps every byte.
+
+   WHAT IS NOT CLAIMED, so nobody reads more into the two wipes above
+   than they are worth. sessionStorage belongs to the TAB, not to this
+   page, and anyone with devtools open on that tab can read it while it
+   is there. The wipes bound how long "there" is for the cases this page
+   can see: it locks, it goes; it offers a way out to the site, and that
+   button takes it (dashboard.js); it is left sitting at the gate, and
+   the timer takes it. A tab the admin navigates away from by hand keeps
+   it until the tab is closed. Everything in it is a name, an address and
+   a date, none of it is a credential, and none of it is trusted by
+   Firestore, which checks the signed in identity on every call.
+
+   Every access is wrapped: storage throws on a quota and can be absent
+   outright in some privacy modes, and a cache is an optimisation, never
+   a requirement. A failure here costs reads and nothing else.
+   ------------------------------------------------------------------ */
+const CACHE_KEY = 'bss.admin.members.v1';
+const GATE_WIPE_MS = 120000;
+
+const cacheStore = {
+  read() {
+    try {
+      return JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
+    } catch {
+      return null;
+    }
+  },
+  write(value) {
+    try {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify(value));
+    } catch {
+      /* quota, or storage disabled: the console works, it just pays reads */
+    }
+  },
+  clear() {
+    try {
+      sessionStorage.removeItem(CACHE_KEY);
+    } catch {
+      /* nothing to do and nothing to report: there is no cache either way */
+    }
+  },
+};
 
 const encoder = new TextEncoder();
 const bytes = (base64) => Uint8Array.from(atob(base64 || ''), (c) => c.charCodeAt(0));
@@ -156,6 +226,32 @@ async function connect(email, password) {
      weight sitting behind a password gate. */
   const db = dbSdk.getFirestore(app);
   const readRows = (snap) => snap.docs.map((entry) => memberFrom(entry.id, entry.data()));
+
+  /* The revision marker (v0.5.7, membership.js has the full note). Reading it
+     is one read and vouches for every cached page at once; writing it is what
+     tells the next reader, in any tab or on any machine, that the pages it is
+     holding are worth nothing.
+
+     stamp() is folded into both writes below rather than left for the caller,
+     so a write can never ship without its bump and quietly leave a stale list
+     on somebody else's screen. It is best effort and REPORTS ITS FAILURE by
+     returning null, which the dashboard reads as "I can no longer vouch for
+     anything" and answers by dropping its cache. That is also the honest
+     behaviour on the day this deploys, before the new rules are published: the
+     marker is unreadable and unwritable, so the console simply pays the reads
+     it has always paid. */
+  const revRef = dbSdk.doc(db, META, REVISION);
+
+  const stamp = async () => {
+    const rev = makeRevision();
+    try {
+      await dbSdk.setDoc(revRef, { rev });
+      return rev;
+    } catch (error) {
+      console.warn('Revision bump failed', error?.code || error);
+      return null;
+    }
+  };
 
   /* THREE ORDERINGS AND NOT ONE COMPOSITE INDEX (v0.5.6), which is what lets
      browsing work the moment the rules are pasted in, with no console step to
@@ -272,8 +368,31 @@ async function connect(email, password) {
       return { rows: rows.map((entry) => memberFrom(entry.id, entry.data())), marks, chunk };
     },
 
-    setExpiry(uid, expiresAt) {
-      return dbSdk.updateDoc(dbSdk.doc(db, MEMBERS, uid), { expiresAt });
+    /* The marker this returns is what lets the caller keep the cache it has
+       just corrected by hand instead of throwing it away: the dashboard wrote
+       the new expiry into its own rows, so adopting the marker it caused is
+       the difference between "Add 1 year" costing nothing and costing a fresh
+       page. A null means the bump did not land, and the dashboard drops
+       everything rather than vouch for a list it can no longer confirm. */
+    async setExpiry(uid, expiresAt) {
+      await dbSdk.updateDoc(dbSdk.doc(db, MEMBERS, uid), { expiresAt });
+      return stamp();
+    },
+
+    /* Read once per console load and then at most every half minute, which is
+       what turns a page turn from fifty reads into one, or into none. It
+       reports three different things and the difference matters: a string is
+       the live marker, '' is "no write has ever been stamped", and null is "I
+       could not find out", which is the only one that must never be cached
+       against. */
+    async revision() {
+      try {
+        const snap = await dbSdk.getDoc(revRef);
+        return snap.exists() ? String(snap.data()?.rev || '') : '';
+      } catch (error) {
+        console.warn('Revision read failed', error?.code || error);
+        return null;
+      }
     },
 
     /* DELETE MEANS THE PERSON IS GONE, and getting there needs a word of
@@ -296,8 +415,9 @@ async function connect(email, password) {
        Net effect: gone from the admin the instant the button is pressed, and
        locked out permanently from that moment whether or not they ever come
        back to collect the deletion. */
-    remove(uid) {
-      return dbSdk.setDoc(dbSdk.doc(db, MEMBERS, uid), { revoked: true });
+    async remove(uid) {
+      await dbSdk.setDoc(dbSdk.doc(db, MEMBERS, uid), { revoked: true });
+      return stamp();
     },
 
     async close() {
@@ -332,6 +452,7 @@ function boot() {
   let idleTimer = 0;
   let warnTimer = 0;
   let warnTick = 0;
+  let gateWipe = 0; // wipes a cache left sitting behind the password prompt
 
   const setStatus = (message, tone = 'info') => {
     status.textContent = message || '';
@@ -435,6 +556,10 @@ function boot() {
     window.clearTimeout(idleTimer);
     window.clearTimeout(warnTimer);
     clearWarning();
+    /* A locked admin must not leave the member list readable in storage: the
+       whole point of the lock is that this machine is now unattended. */
+    cacheStore.clear();
+    window.clearTimeout(gateWipe);
     mount.hidden = true;
     mount.replaceChildren();
     gate.hidden = false;
@@ -524,9 +649,12 @@ function boot() {
             page: live((members, filter, now, after, span) =>
               members.page(filter, now, after, span),
             ),
+            revision: live((members) => members.revision()),
             setExpiry: live((members, uid, ms) => members.setExpiry(uid, ms)),
             remove: live((members, uid) => members.remove(uid)),
           },
+          // sessionStorage, wrapped and owned out here so lock() can wipe it
+          cache: cacheStore,
         }) || null;
     } finally {
       URL.revokeObjectURL(url);
@@ -535,6 +663,7 @@ function boot() {
     gate.hidden = true;
     mount.hidden = false;
     unlocked = true;
+    window.clearTimeout(gateWipe); // the password arrived, so the cache is earned
     resetIdle();
   }
 
@@ -585,6 +714,13 @@ function boot() {
   });
 
   /* --- load the payload ------------------------------------------------- */
+
+  /* This page has just loaded LOCKED, and a reload is exactly the case the
+     cache exists for, so the member list is sitting in storage in front of a
+     password prompt. Answer the prompt and it is kept; leave the page sitting
+     here and it goes, which bounds how long an abandoned tab keeps a readable
+     list to the two minutes it takes somebody to type a password. */
+  gateWipe = window.setTimeout(cacheStore.clear, GATE_WIPE_MS);
 
   setBusy(false);
 

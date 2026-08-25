@@ -3,9 +3,10 @@
    the next one, forever, aligned perfectly at every width including a phone).
 
    WHY THIS IS AN SVG AND NOT A POSITIONED SPAN. The card face is one baked
-   663x473 raster, so the blank line sits at fixed IMAGE pixels (measured off
-   the asset: rule y=426, x=263..461; the NAME label's caps run y=409..422). An
-   inline <svg viewBox="0 0 663 473"> laid over the image's content box gives a
+   874x621 raster, so the blank line sits at fixed IMAGE pixels (measured off
+   the asset: rule y=551..552, x=362..575; the "Name:" label's caps run
+   y=536..551, i.e. cap height 16.0 and baseline 551.8). An
+   inline <svg viewBox="0 0 874 621"> laid over the image's content box gives a
    coordinate system that IS those image pixels at every rendered size, so the
    alignment is exact by construction rather than by a percentage that has to
    be re-tuned per breakpoint. Nothing here measures the card, nothing here
@@ -24,10 +25,13 @@
    here that would otherwise loop forever. */
 import { FIRST_NAMES } from '../data/names.js';
 
-/* image space, measured off card-front.webp — see the header */
-const CENTER_X = 362; // midpoint of the rule, x 263..461
-const CARET_W = 1.7;
-const CARET_GAP = 1.6;
+/* Image space, measured off card-front.webp — see the header. Re-measured off
+   the shipped webp when the artwork was replaced (2026-08-25) rather than
+   scaled from the old grid: the blank moved inside the frame, so no single
+   factor could have carried these across. */
+const CENTER_X = 468.5; // midpoint of the rule, x 362..575
+const CARET_W = 1.94;
+const CARET_GAP = 1.82;
 
 const TYPE_MS = 62; // per character going on
 const ERASE_MS = 34; // backspace runs faster than typing, as it does in life

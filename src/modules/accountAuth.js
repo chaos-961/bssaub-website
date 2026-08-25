@@ -37,11 +37,19 @@
    sign in form goes live at the same moment it always did and an already
    signed in visitor loses nothing either: the panel paints their name
    first and fills in the membership when it lands.
+
+   AND SINCE v0.5.7 IT OFTEN DOES NOT RIDE AT ALL. The membership record
+   is cached between visits (memberCache.js), so a returning member with
+   a running membership sees their card with no read and without the
+   Firestore chunk being fetched at all. This page also STAMPS the
+   revision marker when it writes, which is what tells the admin console
+   that its cached member list has a new name in it.
    ------------------------------------------------------------------ */
 import { firebaseConfig } from '../data/firebase.js';
-import { MEMBERS, memberFrom, searchKeysFor } from '../data/membership.js';
+import { MEMBERS, META, REVISION, makeRevision, memberFrom, searchKeysFor } from '../data/membership.js';
 import { readSession, sanitizeName, writeSession, clearSession } from './session.js';
 import { initMemberPanel } from './memberPanel.js';
+import { dropCache, readCache, writeCache } from './memberCache.js';
 
 const MIN_PASSWORD = 8;
 
@@ -165,6 +173,17 @@ export function initAccount() {
     return store;
   };
 
+  /* Tell the admin console that its cached member list is out of date
+     (membership.js has the marker's write up). Fired and not awaited: nothing
+     on this page depends on it, and a registration must never be held up, or
+     failed, by a bookkeeping write. It fails harmlessly until the v0.5.7 rules
+     are published, which is the same shape as every other part of this. */
+  const stamp = (sdk) => {
+    Promise.resolve(sdk.setDoc(sdk.doc(db, META, REVISION), { rev: makeRevision() })).catch(
+      (error) => console.warn('Revision bump failed', error?.code || error),
+    );
+  };
+
   /* --- small DOM helpers ------------------------------------------------ */
 
   const setStatus = (message, tone = 'info') => {
@@ -254,6 +273,7 @@ export function initAccount() {
      AFTER the sign out, because signing out repaints the gate underneath it. */
   const removeSelf = async (user) => {
     loadedFor = '';
+    dropCache(user.uid); // never serve a deleted member their own old card
     panel?.clear();
     try {
       await api.deleteUser(user);
@@ -283,10 +303,27 @@ export function initAccount() {
     if (!panel || loadedFor === user.uid) return;
     const uid = user.uid;
     loadedFor = uid;
-    panel.pending();
 
     const name = sanitizeName(user.displayName || pendingName) || 'Member';
     const email = user.email || '';
+
+    /* The cached answer, if there is a fresh one (v0.5.7; memberCache.js has
+       the write up, including what the TTLs trade). It returns before
+       openStore(), so a hit costs no read AND no Firestore download, and the
+       card paints in the same frame as the name with no "checking" beat in
+       between.
+
+       The name and address are compared rather than assumed because they are
+       the only fields this page ever corrects: if either has moved, the cache
+       is skipped so the correction still reaches the record the admin
+       searches on. */
+    const held = readCache(uid);
+    if (held && held.name === name && held.email === email) {
+      panel.show(held);
+      return;
+    }
+
+    panel.pending();
 
     try {
       const sdk = await openStore();
@@ -315,16 +352,20 @@ export function initAccount() {
       if (!snap.exists()) {
         data = { name, email, searchKeys: searchKeysFor(name), expiresAt: 0, createdAt: Date.now() };
         await sdk.setDoc(ref, data);
+        stamp(sdk); // a new member belongs in the admin's list straight away
       } else {
         data = snap.data() || {};
         if (data.name !== name || data.email !== email) {
           await sdk.updateDoc(ref, { name, email, searchKeys: searchKeysFor(name) });
           data = { ...data, name, email };
+          stamp(sdk); // the admin searches on these, so a stale list hides them
         }
       }
       // a sign out (or a different account) landed while this was in flight
       if (loadedFor !== uid) return;
-      panel.show(memberFrom(uid, data));
+      const record = memberFrom(uid, data);
+      writeCache(uid, record);
+      panel.show(record);
     } catch (error) {
       if (loadedFor !== uid) return;
       loadedFor = ''; // a later render may retry; a failed read is not an answer
@@ -353,6 +394,12 @@ export function initAccount() {
 
   const renderSignedOut = () => {
     pendingName = '';
+    /* Signing out takes the cached record with it, the same way it takes the
+       display name cookie. It costs one read on the way back in, on a path
+       nobody walks often, and it means a shared machine keeps nothing about
+       whoever used it last. An ordinary return visit is unaffected: the
+       session survives in Firebase's own store, so this never runs. */
+    if (loadedFor) dropCache(loadedFor);
     loadedFor = '';
     clearSession();
     panel?.clear();

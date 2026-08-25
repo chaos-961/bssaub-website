@@ -20,7 +20,7 @@
 
    WHY THE NAME IS AN SVG OVER THE ARTWORK, same as the hero card
    (cardName.js, which has the full write up): the card face is one baked
-   663x473 raster and the NAME blank sits at fixed IMAGE pixels, so a
+   874x621 raster and the NAME blank sits at fixed IMAGE pixels, so a
    viewBox of exactly those pixels makes the alignment a construction
    rather than a per breakpoint tuning job. This one differs from the hero
    in two ways only. It is at inset 0, because this card carries no
@@ -32,9 +32,9 @@
 import { formatDate, formatLeft, isActive, msLeft } from '../data/membership.js';
 
 /* Image space, measured off card-front.webp — see cardName.js. */
-const NAME_SIZE = 19.5; // cap height 14.04, matching the printed NAME label
-const NAME_MIN = 12; // below this the print stops reading as the card's own
-const NAME_W = 190; // the rule runs x 263..461; leave a hair at each end
+const NAME_SIZE = 22.2; // cap height 15.98, matching the printed "Name:" label
+const NAME_MIN = 13.7; // below this the print stops reading as the card's own
+const NAME_W = 205; // the rule runs x 362..575; leave a hair at each end
 
 const TICK_MS = 60000;
 

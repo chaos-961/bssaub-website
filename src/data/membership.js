@@ -40,6 +40,35 @@ export const MEMBERS = 'members';
 
 export const DAY_MS = 86400000;
 
+/* --- the revision marker (v0.5.7) --------------------------------------- */
+
+/* ONE DOCUMENT, ONE FIELD, AND IT IS THE ONLY THING THAT MAKES A CACHE SAFE
+   on a site with no server. meta/members holds a single opaque string that
+   every write to the members collection replaces. Reading it costs ONE read
+   and answers "has anything changed since I last looked", which is what lets
+   the admin console hold fifty rows a page in storage and spend one read to
+   confirm the lot rather than fifty to fetch it again.
+
+   WHY A RANDOM STRING RATHER THAN A COUNTER OR A SERVER TIMESTAMP. A counter
+   has to be read before it can be incremented, so two writers racing lose a
+   bump between them and leave a stale cache somewhere with nothing to correct
+   it. A server timestamp fixes the race but the writer never learns the value
+   it wrote, so a tab cannot tell its OWN write apart from somebody else's and
+   would throw away a cache it had just corrected by hand. A token the writer
+   generates has neither problem: it needs no prior read, it collides with
+   nothing, and the tab that wrote it knows it. Nothing compares two markers
+   for ORDER, only for equality, so a client with a wrong clock costs an extra
+   refetch and can never cause a stale read.
+
+   It is not a secret and does not need to be: it says that something changed,
+   never what. */
+export const META = 'meta';
+export const REVISION = 'members';
+
+export function makeRevision() {
+  return `${Date.now().toString(36)}.${Math.random().toString(36).slice(2, 10)}`;
+}
+
 /* Prefix search, sized. Every prefix of every word in a name is stored, so
    "khal" finds "Ahmad Khalil" with a single array-contains query and NO
    composite index (which matters: a composite index is a console step, and

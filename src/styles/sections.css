@@ -244,8 +244,8 @@
    park content under a bar that is about to slide back in. dvh would relayout
    the hero every time that bar moved.
 
-   The card is capped by height too, at its own aspect ratio (663/473 =
-   1.4017), because it is the tallest single block in the stack and so the
+   The card is capped by height too, at its own aspect ratio (874/621 =
+   1.4074), because it is the tallest single block in the stack and so the
    first thing that has to give on a short screen. On a phone tall enough it is
    still full width and nothing about it changed.
    ------------------------------------------------------------------ */
@@ -446,7 +446,7 @@
     /* The fold budget's share of the card (v0.4.6): it is the tallest single
        block in the phone stack, so on a screen too short for the whole hero it
        is the first thing that gives height back, capped at the artwork's own
-       663/473 ratio so the picture cannot distort. Inert on a phone with the
+       874/621 ratio so the picture cannot distort. Inert on a phone with the
        room for it, where 100% is still the smaller term. The max() is the
        landscape floor, the same one the headline carries. Mobile only on
        purpose: 27.5svh of a 900px desktop window would shrink a card that has
@@ -537,7 +537,7 @@
    INSET 2px IS THE WHOLE ALIGNMENT STORY. The <img> is border-box with a 2px
    border, so the artwork renders into its content box: the tilt's box less 2px
    a side. Matching that inset here lands the SVG viewport exactly on the
-   picture, and because the viewBox is the asset's own 663x473 grid, every
+   picture, and because the viewBox is the asset's own 874x621 grid, every
    coordinate in the markup is a pixel measured off the artwork. No
    percentages, no breakpoints, nothing to re-tune per width.
 
@@ -563,9 +563,11 @@
 .hero-card__name-text {
   fill: #fff; /* the card band is the deep maroon print, not a token surface */
   font-family: var(--font-body);
-  /* 19.5 user units puts the cap height at 14.04 against the printed NAME
-     label's measured 14, so the typed name shares its baseline AND its size */
-  font-size: 19.5px;
+  /* 22.2 user units puts the cap height at 15.98 against the printed "Name:"
+     label's measured 16.0 (caps y 536..551 on the 2026-08-25 artwork), so the
+     typed name shares its baseline AND its size. It was 19.5 for the old
+     663x473 card, whose label measured 14. */
+  font-size: 22.2px;
   font-weight: 600;
   letter-spacing: -0.01em;
   text-anchor: middle; /* re-centres on the rule as the name grows, per brief */

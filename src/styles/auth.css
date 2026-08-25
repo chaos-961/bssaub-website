@@ -342,7 +342,7 @@ html.auth-resolving [data-auth-loading] {
    62KB image they will never see either.
 
    The name overlay is the hero card's own geometry (see memberPanel.js and
-   cardName.js): the SVG viewBox is the artwork's 663x473 pixel grid, so one
+   cardName.js): the SVG viewBox is the artwork's 874x621 pixel grid, so one
    user unit is one source pixel at every rendered width. inset 0 rather than
    the hero's 2px because this card carries no border, and width/height auto
    to take the size from the insets over base.css's img/svg block rules. */
@@ -375,6 +375,30 @@ html.auth-resolving [data-auth-loading] {
   height: auto;
 }
 
+/* THE AUB ID CONDITION (2026-08-25, user call), under the card it applies to.
+
+   It follows the card's visibility with no JavaScript at all: memberPanel.js
+   already writes exactly one flag, `hidden` on [data-member-card], in five
+   places, and this reads that same flag off the sibling rather than adding a
+   sixth thing to keep in step. A rule that cannot fall out of sync beats a
+   toggle that has to be remembered in every branch.
+
+   It is the last-resort `display: none` rather than a visibility or opacity
+   trick because base.css makes [hidden] a hard display:none and this has to
+   match it: a note left occupying a row under a card that is not there would
+   push the state pill down by its own height on the unsubscribed view, which
+   is the state most visitors to this page are in. */
+.member__card[hidden] ~ .member__id {
+  display: none;
+}
+
+.member__id {
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+  line-height: 1.45;
+  text-wrap: balance;
+}
+
 .member__name {
   position: absolute;
   inset: 0;
@@ -387,9 +411,10 @@ html.auth-resolving [data-auth-loading] {
   /* the card band is the deep maroon print, not a token surface */
   fill: #fff;
   font-family: var(--font-body);
-  /* 19.5 user units matches the printed NAME label's cap height; memberPanel.js
-     only ever shrinks from here, and only for a name too long for the rule */
-  font-size: 19.5px;
+  /* 22.2 user units matches the printed "Name:" label's cap height on the
+     2026-08-25 artwork (16.0); memberPanel.js only ever shrinks from here, and
+     only for a name too long for the rule. Was 19.5 on the old 663x473 card. */
+  font-size: 22.2px;
   font-weight: 600;
   letter-spacing: -0.01em;
   text-anchor: middle;

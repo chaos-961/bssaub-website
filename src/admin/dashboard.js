@@ -1,4 +1,4 @@
-/* Encrypted admin dashboard code (v0.5.6).
+/* Encrypted admin dashboard code (v0.5.7).
 
    Like its markup, this file is never served. It is encrypted into
    public/admin-payload.json and reaches the browser only as an AES-GCM
@@ -39,6 +39,11 @@
    steps over, once, and it hands back every cursor in between so that
    ground can never be bought twice.
 
+   SINCE v0.5.7 THE ROWS THEMSELVES ARE KEPT and a page already seen costs
+   nothing at all, vouched for by a revision marker that is one read for
+   the whole cache. That is the fifth and largest of those levers and it
+   has its own write up at THE CACHE below.
+
    EVERY STRING FROM A MEMBER IS WRITTEN WITH textContent, into a node the
    <template> already declared. Names and email addresses here are whatever
    someone typed into a public registration form, which makes them the one
@@ -56,7 +61,18 @@
    every listener below is delegated onto the mount's own subtree. */
 export default function mount(root, api) {
   const home = root.querySelector('[data-admin-home]');
-  if (home) home.href = api.homeUrl;
+  if (home) {
+    home.href = api.homeUrl;
+    /* Leaving for the site takes the cached member list with it. sessionStorage
+       belongs to the TAB and not to this page, so a cache left behind here
+       would outlive the admin and sit in the same store the site is now using,
+       with nothing left running to clear it: the gate's wipe timer dies with
+       the page that set it. Sign out already goes through lock(), which clears
+       it; this is the other way out of the console that the page itself
+       offers. What is left after both is a tab the admin navigated away from
+       by hand, which is bounded by closing it. */
+    home.addEventListener('click', () => api.cache?.clear());
+  }
 
   root.querySelector('[data-admin-signout]')?.addEventListener('click', () => {
     api.lock('Signed out.');
@@ -103,6 +119,203 @@ export default function mount(root, api) {
      rather than a day early: addMonths() moves the month and keeps the day, so
      29 February plus twelve months resolves to 28 February, not 1 March. */
   const YEAR = 12;
+
+  /* ------------------------------------------------------------------
+     THE CACHE (v0.5.7, user brief: fewer reads, with a version so an
+     updated page comes back from Firebase rather than being trusted).
+
+     THE ONE IDEA. Every page this console shows is fifty document reads,
+     and until now it paid them again for every page turn, every filter
+     change and every reload, so an admin looking through the membership
+     could spend several hundred reads to look at the same rows twice.
+     The rows are now kept (src/admin.js owns the storage and says why it
+     is sessionStorage), and ONE read of the revision marker vouches for
+     all of them at once: a page served from the cache costs nothing, and
+     the marker itself is asked for at most twice a minute.
+
+     WHY A MARKER RATHER THAN A TIMER. A timer can only trade freshness
+     for reads: however short it is, there is a window where this screen
+     is confidently wrong, and however long it is, most of the reads are
+     still paid for nothing. The marker changes when, and only when, a
+     member record does, so the cache is exact rather than probable, and
+     a quiet afternoon costs one read no matter how much browsing happens
+     in it. Any write bumps it: this console's own (src/admin.js folds
+     the bump into setExpiry and remove so one can never ship without it)
+     and the account page's, so a member registering shows up here too.
+
+     WHAT A LOCAL WRITE DOES, and it is the part worth reading twice. The
+     tab that made a write already knows the new value of the row, so
+     throwing the whole cache away would be paying to be told something
+     it just said. It adopts the marker it caused instead and corrects
+     the one row in place. That is only sound because of what the
+     orderings are: the All view orders by NAME, so moving an expiry
+     cannot move a member within it and cannot change how many there are,
+     while Subscribed and Unsubscribed order by the very field that
+     changed, so the row can have moved page or left the view outright
+     and those are dropped. A delete drops everything, because removing a
+     row moves every page boundary behind it.
+
+     WHAT IS DELIBERATELY NOT CACHED: the cursors. A Firestore cursor is
+     a document snapshot and does not survive being written to storage,
+     and the value based form needs a tiebreak on the document id to be
+     exact, which a duplicate name would otherwise silently skip past.
+     Losing a member out of a listing is the one failure nobody notices
+     (§ no silent caps), so it is not a trade worth making for a saving
+     that is already there: a page whose rows are cached is served
+     without a cursor at all, and a page that has never been visited
+     costs exactly what it costs today. The cache is upside on a revisit
+     and neutral on a first visit, never a regression.
+     ------------------------------------------------------------------ */
+
+  /* How long a confirmed marker is trusted before it is re-read. Half a
+     minute keeps a page turn at one read instead of fifty while keeping this
+     screen honest about a change made somewhere else. */
+  const REV_TTL_MS = 30000;
+
+  /* How long an entry may be served when the marker cannot be READ at all,
+     which is the state on the day this deploys, before the new rules are
+     published. Nothing can be vouched for then, so the cache falls back to
+     being merely recent, and one minute is short enough that the only writer
+     who could have gone unnoticed is one on another machine. */
+  const BLIND_TTL_MS = 60000;
+
+  /* A filtered view's rows were selected against ONE instant pinned when the
+     view was built, so its pages cannot be reused forever: a membership that
+     lapsed since would still be sitting in Subscribed. The row itself would
+     read correctly (paint() asks the live clock, not the pinned one), so this
+     bounds a wrong BUCKET rather than a wrong date. The All view does not
+     range over the clock at all and is not bound by this. */
+  const VIEW_TTL_MS = 900000;
+
+  const CACHE_PAGES = 12; // per view, oldest dropped first
+  const CACHE_SEARCHES = 8;
+
+  const blank = () => ({ rev: null, views: {}, searches: {} });
+
+  let cache = api.cache?.read() || null;
+  if (cache && !(cache.views && cache.searches)) cache = null; // an older shape
+  let revAt = 0; // when cache.rev was last confirmed against the server
+  let confirmed = false; // the last check reached the marker at all
+
+  const saveCache = () => {
+    if (cache) api.cache?.write(cache);
+    else api.cache?.clear();
+  };
+
+  const dropCache = (rev) => {
+    cache = blank();
+    cache.rev = rev ?? null;
+    saveCache();
+  };
+
+  /* An entry may be served if the marker vouches for it, or, when the marker
+     could not be reached, if it is merely recent. */
+  const usable = (entry) => !!entry && (confirmed || Date.now() - entry.at < BLIND_TTL_MS);
+
+  /* Leaves `cache` safe to WRITE into either way, so a miss still fills it.
+     The boolean is only about whether it may be READ from. */
+  const vouch = async () => {
+    if (Date.now() - revAt < REV_TTL_MS) return !!cache;
+    let current = null;
+    try {
+      current = await api.members.revision();
+    } catch {
+      current = null;
+    }
+    revAt = Date.now();
+    if (current === null) {
+      // unreadable: keep what is held, but every entry now ages out fast
+      confirmed = false;
+      if (!cache) cache = blank();
+      return true;
+    }
+    confirmed = true;
+    if (!cache || cache.rev !== current) {
+      dropCache(current);
+      return false;
+    }
+    return true;
+  };
+
+  const cachedPage = (want, now, page) => {
+    const store = cache?.views?.[want];
+    if (!store || typeof store.total !== 'number' || !usable(store)) return null;
+    if (want !== 'all' && (store.now !== now || Date.now() - store.now > VIEW_TTL_MS)) return null;
+    const entry = store.pages?.[page];
+    if (!usable(entry)) return null;
+    return { total: store.total, rows: entry.rows };
+  };
+
+  const trim = (bag, max) => {
+    const keys = Object.keys(bag);
+    if (keys.length <= max) return;
+    keys
+      .sort((a, b) => bag[a].at - bag[b].at)
+      .slice(0, keys.length - max)
+      .forEach((key) => delete bag[key]);
+  };
+
+  const keepPage = (want, now, page, total, found) => {
+    if (!cache) return;
+    const at = Date.now();
+    /* The All view is merged across pinned instants because it does not use
+       one; a filtered view starts over whenever its instant does, since its
+       old pages were cut from a different question. */
+    const store =
+      cache.views[want] && (want === 'all' || cache.views[want].now === now)
+        ? cache.views[want]
+        : { now, pages: {} };
+    store.now = now;
+    store.total = total;
+    store.at = at;
+    store.pages[page] = { at, rows: found };
+    trim(store.pages, CACHE_PAGES);
+    cache.views[want] = store;
+    saveCache();
+  };
+
+  const keepSearch = (term, found, capped) => {
+    if (!cache) return;
+    cache.searches[term] = { at: Date.now(), rows: found, capped };
+    trim(cache.searches, CACHE_SEARCHES);
+    saveCache();
+  };
+
+  /* One row changed and its new value is already known here, so every copy of
+     it the cache holds is corrected rather than thrown away. */
+  const patch = (uid, expiresAt) => {
+    const fix = (list) => {
+      const found = list?.find((record) => record.uid === uid);
+      if (found) found.expiresAt = expiresAt;
+    };
+    Object.values(cache?.views?.all?.pages || {}).forEach((entry) => fix(entry.rows));
+    Object.values(cache?.searches || {}).forEach((entry) => fix(entry.rows));
+  };
+
+  /* `expiresAt` null means the member was deleted. */
+  const afterWrite = (rev, uid, expiresAt) => {
+    if (!rev) {
+      /* The bump did not land, so this tab can no longer tell anyone else's
+         writes from its own and has nothing worth keeping. */
+      dropCache(null);
+      revAt = 0;
+      confirmed = false;
+      return;
+    }
+    if (!cache) cache = blank();
+    cache.rev = rev;
+    revAt = Date.now();
+    confirmed = true;
+    if (expiresAt === null) {
+      cache.views = {};
+      cache.searches = {};
+    } else {
+      delete cache.views.live;
+      delete cache.views.off;
+      patch(uid, expiresAt);
+    }
+    saveCache();
+  };
 
   /* uid to { record, el, busy }. The map is what lets a click on any button
      find the row it belongs to without the DOM carrying the record itself. */
@@ -191,16 +404,21 @@ export default function mount(root, api) {
        FROM: now for a lapsed member, their existing expiry for a live one. */
     const next = api.membership.extend(entry.record.expiresAt, months);
     try {
-      await api.members.setExpiry(entry.record.uid, next);
+      const rev = await api.members.setExpiry(entry.record.uid, next);
       entry.record = { ...entry.record, expiresAt: next };
       paint(entry);
+      afterWrite(rev, entry.record.uid, next);
       /* THE ROW STAYS PUT even when this has just moved it out of the filter
          being looked at, and that is deliberate: the admin pressed the button
          to see what it did, and a row that vanishes on being subscribed hides
-         its own result. Dropping `counted` is the whole correction needed:
-         the page it sits on is unchanged, only the total can have moved, and
-         the next page turn re-asks for it. */
-      if (view) view.counted = false;
+         its own result.
+
+         The All view counts MEMBERS and this moved nobody in or out of the
+         collection, so its total still stands and re-asking for it would be a
+         read spent to be told the same number. The filtered views count by the
+         field that just changed, so theirs does not: the next page turn
+         re-asks and the pager corrects itself. */
+      if (view && filter !== 'all') view.counted = false;
       setStatus(
         months > 0
           ? `${name} now has ${plural(api.membership.daysLeft(next), 'day', 'days')}.`
@@ -221,9 +439,12 @@ export default function mount(root, api) {
     setRowBusy(entry, true);
     const name = entry.record.name || 'That member';
     try {
-      await api.members.remove(entry.record.uid);
+      const rev = await api.members.remove(entry.record.uid);
       rows.delete(entry.record.uid);
       entry.el.remove();
+      /* Nothing cached survives a delete: every page boundary behind the row
+         moves up by one and every count is one out. */
+      afterWrite(rev, entry.record.uid, null);
       if (view) {
         /* Corrected locally so the pager is right immediately, and `counted`
            dropped anyway so the next page turn confirms it from the server
@@ -373,14 +594,66 @@ export default function mount(root, api) {
         ? 'Every member has a running subscription.'
         : 'No members yet. Somebody appears here once they have signed in at least once.';
 
+  /* A filtered view adopts the instant its cached pages were cut at, so a page
+     restored from storage and a page fetched later in the same view are
+     answers to the same question rather than two. Past the view TTL it takes a
+     fresh instant, which is what retires the old pages. The All view does not
+     range over the clock, so it simply takes now. */
+  const newView = (want) => {
+    const store = cache?.views?.[want];
+    const now =
+      want !== 'all' && store && Date.now() - store.now <= VIEW_TTL_MS ? store.now : Date.now();
+    return { now, cursors: [null], page: 0, total: 0, counted: false };
+  };
+
+  const settle = (target, total, found) => {
+    view.total = total;
+    view.counted = true;
+    view.page = target;
+    render(found);
+    paintPager();
+    setStatus(
+      found.length
+        ? `${plural(total, 'member', 'members')} · page ${view.page + 1} of ${pageCount()}.`
+        : emptyLine(),
+      found.length ? 'ok' : '',
+    );
+  };
+
   const loadPage = async (target) => {
-    if (!view) view = { now: Date.now(), cursors: [null], page: 0, total: 0, counted: false };
+    if (!view) view = newView(filter);
     const token = ++seq;
     mode = 'browse';
     setBusy(true);
     paintPager();
+
+    /* The fast path: the marker was confirmed moments ago, so this page can be
+       answered with no round trip at all and no placeholder rows in between.
+       Turning pages inside half a minute costs literally nothing. */
+    if (Date.now() - revAt < REV_TTL_MS) {
+      const held = cachedPage(filter, view.now, target);
+      if (held) {
+        settle(target, held.total, held.rows);
+        setBusy(false);
+        paintPager();
+        return;
+      }
+    }
+
     showGhosts();
     setStatus('Loading members.');
+
+    /* One read, and it either vouches for every page in the cache or empties
+       it. Either way the fetch below is skipped whenever the answer is
+       already here, which is what turns fifty reads into one. */
+    const held = (await vouch()) ? cachedPage(filter, view.now, target) : null;
+    if (token !== seq) return;
+    if (held) {
+      settle(target, held.total, held.rows);
+      setBusy(false);
+      paintPager();
+      return;
+    }
 
     /* The nearest cursor at or before the page asked for. Next, previous and
        anything already visited are all exact: span 1, fifty rows read, fifty
@@ -410,18 +683,8 @@ export default function mount(root, api) {
       result.marks.forEach((mark, i) => {
         view.cursors[from + i + 1] = mark;
       });
-      view.total = total;
-      view.counted = true;
-      view.page = from + result.chunk;
-
-      render(result.rows);
-      paintPager();
-      setStatus(
-        result.rows.length
-          ? `${plural(total, 'member', 'members')} · page ${view.page + 1} of ${pageCount()}.`
-          : emptyLine(),
-        result.rows.length ? 'ok' : '',
-      );
+      settle(from + result.chunk, total, result.rows);
+      keepPage(filter, view.now, view.page, total, result.rows);
     } catch (error) {
       if (token !== seq) return;
       render([]);
@@ -494,14 +757,42 @@ export default function mount(root, api) {
 
   const runSearch = async (term) => {
     const token = ++seq;
+    /* Cached under the typed term rather than the query key membership.js
+       derives from it, because two terms sharing a first word are narrowed
+       differently and would answer for each other. */
+    const key = term.toLowerCase();
     mode = 'search';
     setBusy(true);
     paintPager();
+
+    /* Looking the same person up twice is the shape of this screen's use: find
+       them, subscribe them, look again to check. The second look is free. */
+    if (Date.now() - revAt < REV_TTL_MS) {
+      const held = cache?.searches?.[key];
+      if (usable(held)) {
+        searchRows = held.rows;
+        searchCapped = held.capped;
+        paintSearch();
+        setBusy(false);
+        return;
+      }
+    }
+
     showGhosts();
     setStatus('Searching.');
     try {
-      const { rows: found, capped } = await api.members.search(term);
+      const vouched = await vouch();
       if (token !== seq) return;
+      const held = vouched ? cache?.searches?.[key] : null;
+      let found;
+      let capped;
+      if (usable(held)) {
+        ({ rows: found, capped } = held);
+      } else {
+        ({ rows: found, capped } = await api.members.search(term));
+        if (token !== seq) return;
+        keepSearch(key, found, capped);
+      }
       searchRows = found;
       searchCapped = capped;
       paintSearch();
@@ -520,8 +811,9 @@ export default function mount(root, api) {
   function backToBrowse() {
     searchRows = [];
     searchCapped = false;
-    /* A fresh view, so the pinned instant and the count are both current again
-       after however long the search was on screen. */
+    /* A fresh view, so the pinned instant is current again after however long
+       the search was on screen. newView() decides whether that means a new
+       instant or the one the cached pages were cut at. */
     view = null;
     loadPage(0);
   }
