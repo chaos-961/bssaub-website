@@ -113,191 +113,245 @@
           </p>
         </section>
 
+        <!-- TWO COLUMNS ON A DESKTOP, ONE FLOW ON A PHONE (v0.5.9, user call).
+             The two wrappers are plain blocks below the 62rem breakpoint, so
+             the phone keeps the exact sequence of rows it already had, and they
+             are the grid's two children above it. They exist as elements rather
+             than as grid-area placements of the section's own children because
+             a two column layout of two INDEPENDENT flows needs two boxes:
+             placing eyebrow/title/note in one column and tabs/form/status in
+             the other ties the two columns' ROW heights together, so the row
+             holding the eyebrow would be as tall as the tab strip beside it.
+             data-auth-col is the hook the entrance stagger walks (see auth.css
+             §MOTION); it carries no styling of its own. -->
         <section data-auth-gate>
-          <p class="eyebrow">Business Student Society</p>
-          <h1 class="auth__title">Member access</h1>
-          <p class="auth__note">Sign in to your account, or create one in a few seconds.</p>
+          <div class="auth__col auth__col--pitch" data-auth-col>
+            <p class="eyebrow">Business Student Society</p>
+            <h1 class="auth__title">Member access</h1>
+            <p class="auth__note">Sign in to your account, or create one in a few seconds.</p>
 
-          <div class="auth__tabs" role="tablist" aria-label="Account">
-            <button
-              class="auth__tab is-active"
-              type="button"
-              role="tab"
-              id="tab-signin"
-              aria-selected="true"
-              aria-controls="panel-signin"
-              data-auth-tab="signin"
-              data-auth-always
-            >
-              Sign in
-            </button>
-            <button
-              class="auth__tab"
-              type="button"
-              role="tab"
-              id="tab-register"
-              aria-selected="false"
-              aria-controls="panel-register"
-              tabindex="-1"
-              data-auth-tab="register"
-              data-auth-always
-            >
-              Create account
-            </button>
+            <!-- Desktop only, and every line of it is copy this site already
+                 carries: the sentence is index.html's hero sub verbatim, the
+                 five chips are the perk field's own zone names, and the three
+                 facts are the hero trust row. Nothing here is a new claim
+                 (§ rule 3). It is display:none on a phone rather than absent
+                 from the markup because it is the desktop column's content and
+                 the phone layout was already finished; a phone reaches all of
+                 it on the home page this button came from. -->
+            <div class="auth__pitch">
+              <p class="auth__pitch-line">
+                Membership gets you events, opportunities, and discounts across restaurants,
+                clothing, health &amp; beauty, fitness and services.
+              </p>
+              <ul class="auth__chips" role="list">
+                <li>Restaurants</li>
+                <li>Clothing</li>
+                <li>Health &amp; Beauty</li>
+                <li>Fitness</li>
+                <li>Services</li>
+              </ul>
+              <p class="auth__facts">
+                <span>+400 Active Members</span>
+                <span>+50 Industry Partners</span>
+                <span>Exclusive Member Benefits</span>
+              </p>
+            </div>
           </div>
 
-          <form
-            class="auth__form"
-            id="panel-signin"
-            role="tabpanel"
-            aria-labelledby="tab-signin"
-            data-auth-form="signin"
-            novalidate
-          >
-            <label class="auth__field">
-              <span>Email</span>
-              <input
-                class="auth__input"
-                id="si-email"
-                type="email"
-                inputmode="email"
-                autocomplete="username"
-                spellcheck="false"
-                placeholder="you@email.com"
-                required
-              />
-            </label>
-            <label class="auth__field">
-              <span>Password</span>
-              <span class="auth__wrap">
-                <input
-                  class="auth__input"
-                  id="si-pass"
-                  type="password"
-                  autocomplete="current-password"
-                  placeholder="Your password"
-                  required
-                />
-                <button
-                  class="auth__reveal"
-                  type="button"
-                  data-auth-reveal="si-pass"
-                  data-auth-always
-                  aria-pressed="false"
-                  aria-label="Show password"
-                >
-                  Show
-                </button>
-              </span>
-            </label>
-            <button class="btn btn--primary auth__submit" type="submit">Sign in</button>
-            <p class="auth__aux">
-              <button class="auth__link" type="button" data-auth-reset>Forgot your password?</button>
-            </p>
-          </form>
+          <div class="auth__col auth__col--panel" data-auth-col>
+            <div class="auth__tabs" role="tablist" aria-label="Account">
+              <button
+                class="auth__tab is-active"
+                type="button"
+                role="tab"
+                id="tab-signin"
+                aria-selected="true"
+                aria-controls="panel-signin"
+                data-auth-tab="signin"
+                data-auth-always
+              >
+                Sign in
+              </button>
+              <button
+                class="auth__tab"
+                type="button"
+                role="tab"
+                id="tab-register"
+                aria-selected="false"
+                aria-controls="panel-register"
+                tabindex="-1"
+                data-auth-tab="register"
+                data-auth-always
+              >
+                Create account
+              </button>
+            </div>
 
-          <form
-            class="auth__form"
-            id="panel-register"
-            role="tabpanel"
-            aria-labelledby="tab-register"
-            data-auth-form="register"
-            novalidate
-            hidden
-          >
-            <label class="auth__field">
-              <span>Name</span>
-              <input
-                class="auth__input"
-                id="re-name"
-                type="text"
-                autocomplete="name"
-                maxlength="40"
-                placeholder="The name on your card"
-                required
-              />
-            </label>
-            <label class="auth__field">
-              <span>Email</span>
-              <input
-                class="auth__input"
-                id="re-email"
-                type="email"
-                inputmode="email"
-                autocomplete="username"
-                spellcheck="false"
-                placeholder="you@email.com"
-                required
-              />
-            </label>
-            <label class="auth__field">
-              <span>Password</span>
-              <span class="auth__wrap">
+            <form
+              class="auth__form"
+              id="panel-signin"
+              role="tabpanel"
+              aria-labelledby="tab-signin"
+              data-auth-form="signin"
+              novalidate
+            >
+              <label class="auth__field">
+                <span>Email</span>
                 <input
                   class="auth__input"
-                  id="re-pass"
-                  type="password"
-                  autocomplete="new-password"
-                  minlength="8"
-                  placeholder="At least 8 characters"
+                  id="si-email"
+                  type="email"
+                  inputmode="email"
+                  autocomplete="username"
+                  spellcheck="false"
+                  placeholder="you@email.com"
                   required
                 />
-                <button
-                  class="auth__reveal"
-                  type="button"
-                  data-auth-reveal="re-pass"
-                  data-auth-always
-                  aria-pressed="false"
-                  aria-label="Show password"
-                >
-                  Show
-                </button>
-              </span>
-            </label>
-            <label class="auth__field">
-              <span>Confirm password</span>
-              <span class="auth__wrap">
-                <input
-                  class="auth__input"
-                  id="re-pass2"
-                  type="password"
-                  autocomplete="new-password"
-                  minlength="8"
-                  placeholder="Type it again"
-                  required
-                />
-                <button
-                  class="auth__reveal"
-                  type="button"
-                  data-auth-reveal="re-pass2"
-                  data-auth-always
-                  aria-pressed="false"
-                  aria-label="Show password"
-                >
-                  Show
-                </button>
-              </span>
-            </label>
-            <p class="auth__hint">
-              Use at least 8 characters. Any email address works. Something you do not use
-              anywhere else is best.
-            </p>
-            <button class="btn btn--primary auth__submit" type="submit">Create account</button>
-          </form>
+              </label>
+              <label class="auth__field">
+                <span>Password</span>
+                <span class="auth__wrap">
+                  <input
+                    class="auth__input"
+                    id="si-pass"
+                    type="password"
+                    autocomplete="current-password"
+                    placeholder="Your password"
+                    required
+                  />
+                  <button
+                    class="auth__reveal"
+                    type="button"
+                    data-auth-reveal="si-pass"
+                    data-auth-always
+                    aria-pressed="false"
+                    aria-label="Show password"
+                  >
+                    Show
+                  </button>
+                </span>
+              </label>
+              <button class="btn btn--primary auth__submit" type="submit">Sign in</button>
+              <p class="auth__aux">
+                <button class="auth__link" type="button" data-auth-reset>Forgot your password?</button>
+              </p>
+            </form>
 
-          <p class="auth__status" data-auth-status role="status" aria-live="polite"></p>
+            <form
+              class="auth__form"
+              id="panel-register"
+              role="tabpanel"
+              aria-labelledby="tab-register"
+              data-auth-form="register"
+              novalidate
+              hidden
+            >
+              <label class="auth__field">
+                <span>Name</span>
+                <input
+                  class="auth__input"
+                  id="re-name"
+                  type="text"
+                  autocomplete="name"
+                  maxlength="40"
+                  placeholder="The name on your card"
+                  required
+                />
+              </label>
+              <label class="auth__field">
+                <span>Email</span>
+                <input
+                  class="auth__input"
+                  id="re-email"
+                  type="email"
+                  inputmode="email"
+                  autocomplete="username"
+                  spellcheck="false"
+                  placeholder="you@email.com"
+                  required
+                />
+              </label>
+              <label class="auth__field">
+                <span>Password</span>
+                <span class="auth__wrap">
+                  <input
+                    class="auth__input"
+                    id="re-pass"
+                    type="password"
+                    autocomplete="new-password"
+                    minlength="8"
+                    placeholder="At least 8 characters"
+                    required
+                  />
+                  <button
+                    class="auth__reveal"
+                    type="button"
+                    data-auth-reveal="re-pass"
+                    data-auth-always
+                    aria-pressed="false"
+                    aria-label="Show password"
+                  >
+                    Show
+                  </button>
+                </span>
+              </label>
+              <label class="auth__field">
+                <span>Confirm password</span>
+                <span class="auth__wrap">
+                  <input
+                    class="auth__input"
+                    id="re-pass2"
+                    type="password"
+                    autocomplete="new-password"
+                    minlength="8"
+                    placeholder="Type it again"
+                    required
+                  />
+                  <button
+                    class="auth__reveal"
+                    type="button"
+                    data-auth-reveal="re-pass2"
+                    data-auth-always
+                    aria-pressed="false"
+                    aria-label="Show password"
+                  >
+                    Show
+                  </button>
+                </span>
+              </label>
+              <p class="auth__hint">
+                Use at least 8 characters. Any email address works. Something you do not use
+                anywhere else is best.
+              </p>
+              <button class="btn btn--primary auth__submit" type="submit">Create account</button>
+            </form>
+
+            <p class="auth__status" data-auth-status role="status" aria-live="polite"></p>
+          </div>
         </section>
 
         <section data-auth-member hidden>
-          <p class="eyebrow">Business Student Society</p>
-          <h1 class="auth__title">You are in.</h1>
+          <!-- ONE wrapper here and not two (v0.5.9). On a desktop this section
+               is the membership card on the left with everything about the
+               account on the right, and the right hand side is TWO rows: who
+               you are at the top, sign out at the bottom, with the card
+               spanning both. Wrapping only the identity rows keeps the phone's
+               order exactly as it was, eyebrow through sign out, which putting
+               .auth__actions inside a second wrapper would not: it would have
+               to sit above the card on a phone to sit beside it on a desktop.
+               So the actions stay a direct child and take their desktop seat
+               from a grid-row instead. -->
+          <div class="auth__col auth__col--info" data-auth-col>
+            <p class="eyebrow">Business Student Society</p>
+            <h1 class="auth__title">You are in.</h1>
 
-          <div class="auth__identity">
-            <span class="auth__mark" data-auth-mark aria-hidden="true"></span>
-            <span class="auth__who">
-              <strong class="auth__name" data-auth-name></strong>
-              <span class="auth__email" data-auth-email></span>
-            </span>
+            <div class="auth__identity">
+              <span class="auth__mark" data-auth-mark aria-hidden="true"></span>
+              <span class="auth__who">
+                <strong class="auth__name" data-auth-name></strong>
+                <span class="auth__email" data-auth-email></span>
+              </span>
+            </div>
           </div>
 
           <!-- The membership block (v0.4.8, black outline at v0.4.9). The card is hidden until the
@@ -394,7 +448,7 @@
       <div class="site-footer__bottom">
         <div class="site-footer__bottom-inner">
           <p>© Business Student Society, AUB · CRN: 5014</p>
-          <span class="version-badge" data-version-badge>v0.5.8</span>
+          <span class="version-badge" data-version-badge>v0.5.9</span>
         </div>
       </div>
     </footer>

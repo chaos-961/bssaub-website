@@ -498,6 +498,206 @@ html.auth-resolving [data-auth-loading] {
   color: var(--accent);
 }
 
+/* --- the pitch column (v0.5.9) ---------------------------------------
+   Desktop only, and every line of it is copy this site already carries (see
+   the markup for the provenance of each). It is display:none rather than
+   absent because it is the desktop column's content: on a phone the card is
+   a single column that was already finished, and the same three blocks are
+   one tap away on the page the visitor arrived from. */
+.auth__pitch {
+  display: none;
+}
+
+.auth__pitch-line {
+  color: var(--ink-soft);
+  font-size: var(--step-0);
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+/* list-style: none takes the marker and LEAVES the UA's padding-inline-start,
+   which is what indented every admin result row by 40px at v0.4.8. Zero it. */
+.auth__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.auth__chips li {
+  padding: 0.34em 0.8em;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  color: var(--accent);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.auth__facts {
+  display: grid;
+  gap: 0.55rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+}
+
+.auth__facts span {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+}
+
+.auth__facts span::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.75;
+}
+
+/* --- desktop (v0.5.9) -------------------------------------------------
+   User call: the page was built for a phone, is right on a phone, and on a
+   desktop was a 27rem column parked in the middle of 80rem of empty room.
+
+   NOTHING BELOW 62rem IS TOUCHED BY ANY OF THIS. The two column wrappers in
+   account.html are plain blocks at that width, the pitch block above is
+   display:none, and the rows fall in exactly the order and with exactly the
+   delays they always did. The phone layout is the one that shipped.
+
+   62rem (992px) is where BOTH columns can hold their content, not merely
+   where the screen is wide: the form column needs about 26rem before the
+   password field's Show button starts crowding the text in it, and the pitch
+   column wants the same again to keep a display sized "Member access" off a
+   third line. Under that a single column is genuinely the better layout,
+   which is why this is one honest breakpoint and not a fluid squeeze.
+
+   IT IS SCOPED OFF .auth--admin RATHER THAN ONTO A PAGE CLASS. The admin gate
+   shares every primitive in this file and is deliberately a narrow card with
+   one field in it; widening it would hand a password box a 68rem sheet to sit
+   on, and it has no second column to put there.
+
+   The block sits below every rule it overrides, per the tie break this
+   codebase has now been bitten by three times: a media query adds no
+   specificity, so .auth__card here and .auth__card above are a tie that only
+   source order breaks. Written above, the whole block measures as no change
+   at all.
+   ------------------------------------------------------------------ */
+@media (min-width: 62rem) {
+  .auth:not(.auth--admin) .auth__card {
+    width: min(68rem, 100%);
+    padding: clamp(2.2rem, 2.6vw, 3.2rem);
+  }
+
+  .auth__pitch {
+    display: grid;
+    gap: 1.15rem;
+    margin-top: 1.75rem;
+  }
+
+  .auth:not(.auth--admin) .auth__title {
+    font-size: var(--step-4);
+    text-wrap: balance;
+  }
+
+  /* --- the signed out gate: pitch left, form right ------------------- */
+  /* 0.92fr is not a round number by accident: it is what leaves the form
+     column at roughly 27rem, i.e. the width the whole card used to be, so the
+     half of this page that has a job to do is not made smaller by the half
+     that is only framing it.
+
+     align-items is left at its stretch default ON PURPOSE. The divider below
+     is a border on the second column rather than an element, so the two
+     columns have to be the full height of the row or the rule stops short
+     wherever the shorter column ends. */
+  [data-auth-gate] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.92fr);
+  }
+
+  .auth__col--pitch {
+    padding-right: clamp(2.25rem, 3.6vw, 3.5rem);
+  }
+
+  .auth__col--panel {
+    padding-left: clamp(2.25rem, 3.6vw, 3.5rem);
+    border-left: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  }
+
+  /* The tab strip is the first thing in its own column now, so the margin
+     that used to separate it from the note above it would push it out of line
+     with the eyebrow across the divider. */
+  .auth__col--panel > .auth__tabs {
+    margin-top: 0;
+  }
+
+  /* --- the signed in panel: the card, big, and the account beside it -- */
+  /* THE CARD IS THE POINT OF THIS HALF, so it takes the wide track: 1.6fr of a
+     68rem sheet renders it at ~579px against the 368px it had here and the
+     284px it has on a phone, which is the "make sure the card is big" half of
+     the brief. The right hand column only ever holds a name, an address and
+     one button, so it loses nothing by being the narrow one.
+
+     Rows are `auto 1fr` and not `auto auto`. The card column spans both, and a
+     spanning item taller than its tracks distributes the surplus EVENLY across
+     auto tracks, which would open a gap under the identity block and drop the
+     sign out button into the middle of nowhere. One flexible track takes the
+     whole surplus instead, so sign out stays directly under the account it
+     signs out of.
+
+     THE DIVIDER RIDES ON .member, not on the column beside it, and that is
+     what makes it work in all three states of this panel. It is the tall
+     child, it is the one that spans both rows, and it is the only element here
+     that is present whether or not there is a card to show, so the rule is
+     full height with a live membership and short with none, instead of
+     stopping wherever the identity block happens to end. It needs the explicit
+     stretch because align-items above is start, which the sign out button does
+     need (a stretched .auth__actions is a grid whose one button grows to the
+     height of the card). align-content keeps .member's own rows at the top of
+     the box that stretch just gave it. */
+  [data-auth-member] {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    align-items: start;
+  }
+
+  [data-auth-member] > .member {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: stretch;
+    align-content: start;
+    margin-top: 0.4rem;
+    padding-right: clamp(2.25rem, 3.6vw, 3.5rem);
+    border-right: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  }
+
+  .auth__col--info {
+    grid-column: 2;
+    grid-row: 1;
+    padding-left: clamp(2.25rem, 3.6vw, 3.5rem);
+  }
+
+  [data-auth-member] > .auth__actions {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+    padding-left: clamp(2.25rem, 3.6vw, 3.5rem);
+  }
+
+  /* The resolving state is one short line and has no second column to fill,
+     so it keeps a readable measure instead of being stretched across 68rem. */
+  [data-auth-loading] {
+    max-width: 34rem;
+  }
+}
+
 /* --- admin variant ---------------------------------------------------- */
 /* The admin gate reuses every primitive above; it only needs a narrower
    card, a lock chip, and no tabs. Nothing here duplicates a rule. */
@@ -1091,25 +1291,70 @@ html.auth-resolving [data-auth-loading] {
 /* --d cascades to whichever animation the child actually runs, so the stagger
    is declared once and neither rule below has to repeat it. Everything past
    the fourth row shares a delay: a form is long and the eye has stopped
-   counting by then. */
-.auth__card section > * {
+   counting by then.
+
+   IT WALKS ONE LEVEL DEEPER SINCE v0.5.9, because the gate and the member
+   panel are two columns on a desktop and the rows that rise are a COLUMN's
+   children, not the section's. The delays still describe the phone's single
+   flow, which is the order the rows actually arrive in, and a column's own
+   :nth-child says nothing about that: the panel column's first child is the
+   tab strip, which lands fourth. So the three early delays are written
+   against whichever column holds the first three rows and the rest keep the
+   shared 0.3s. */
+.auth__card section > *,
+.auth__card [data-auth-col] > * {
   --d: 0.3s;
 }
 
-.auth__card section > :nth-child(1) {
+.auth__card section > :nth-child(1),
+.auth__card [data-auth-col]:first-child > :nth-child(1) {
   --d: 0.06s;
 }
 
-.auth__card section > :nth-child(2) {
+.auth__card section > :nth-child(2),
+.auth__card [data-auth-col]:first-child > :nth-child(2) {
   --d: 0.14s;
 }
 
-.auth__card section > :nth-child(3) {
+.auth__card section > :nth-child(3),
+.auth__card [data-auth-col]:first-child > :nth-child(3) {
   --d: 0.22s;
 }
 
-.auth__card section > :not(.auth__form) {
+/* Anything AFTER a column wrapper is a later row than its own index says: the
+   membership card and the sign out button follow three identity rows.
+
+   IT HAS TO CARRY THE `section` TYPE SELECTOR, and measuring is what said so.
+   Written as `.auth__card [data-auth-col] ~ *` this is (0,2,0) against the
+   (0,2,1) of the :nth-child rules above, which the bare element name in them
+   is worth, so it lost outright and no source order could have saved it: the
+   membership card came in at 0.14s and the sign out button at 0.22s instead of
+   the 0.3s both have had since v0.4.4. With the type selector it is a genuine
+   tie at (0,2,1) and sitting below them is what breaks it, which is the rule
+   this codebase has now been bitten by four times. */
+.auth__card section > [data-auth-col] ~ * {
+  --d: 0.3s;
+}
+
+.auth__card section > :not(.auth__form),
+.auth__card [data-auth-col] > :not(.auth__form) {
   animation: auth-rise 0.6s var(--ease-out) var(--d) backwards;
+}
+
+/* The wrapper is not a row: only its children rise, because nesting one rise
+   inside another reads as a stumble rather than as a deeper stagger.
+
+   IT IS A SEPARATE RULE AND NOT A :not() ON THE ONE ABOVE, and measuring the
+   ?reduced-motion path is what forced that. Written as
+   `section > :not(.auth__form):not([data-auth-col])` the selector climbs to
+   (0,3,1), which OUT-SPECIFIES the html.reduced-motion kill at the bottom of
+   this file (0,2,2) — so the membership card and the sign out button went on
+   animating for a visitor who had asked for no motion, while every other row
+   on the page correctly stopped. Split out like this the rule above stays at
+   (0,2,1) and loses to the kill as it always did, and this one is a tie with
+   it that source order settles the right way. */
+.auth__card section > [data-auth-col] {
+  animation: none;
 }
 
 .auth__card > .auth__foot {
@@ -1252,6 +1497,7 @@ html.auth-resolving [data-auth-loading] {
 html.reduced-motion .auth__card,
 html.reduced-motion .auth__card::before,
 html.reduced-motion .auth__card section > *,
+html.reduced-motion .auth__card [data-auth-col] > *,
 html.reduced-motion .auth__card > .auth__foot,
 html.reduced-motion .auth__form,
 html.reduced-motion .auth__status,
