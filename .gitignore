@@ -20,3 +20,20 @@ firestore.rules
 # Local tooling
 .claude/
 run-local.bat
+
+# The admin secret (v0.5.6, user call). BSS_ADMIN_PASSWORD and BSS_ADMIN_EMAIL
+# for scripts/build-admin-payload.mjs and scripts/check-admin-password.mjs, so
+# the two admin commands can be run without typing a live credential onto a
+# command line every time. Loaded by node's own --env-file-if-exists, which is
+# why no dotenv dependency appears anywhere for it.
+#
+# NOT named .env.anything on purpose: Vite loads .env, .env.local, .env.<mode>
+# and .env.<mode>.local from this directory, and while it only ever exposes
+# VITE_ prefixed values to client code, the safest file is the one its env
+# loader has no pattern for at all.
+#
+# It is a plaintext secret on one machine. Rule 8 is unchanged by it: this
+# never gets committed, and the password still lives nowhere in the tracked
+# repo. If the machine is shared or the file is ever copied off it, rotate the
+# password and re-run npm run admin:payload.
+.admin.env
