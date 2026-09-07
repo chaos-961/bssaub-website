@@ -488,6 +488,12 @@ html.auth-resolving [data-auth-loading] {
 }
 
 .auth__foot a {
+  /* 18px of type: under the 24px target floor, so the box grows and the type
+     does not. text-align: center on the parent still centres an inline-flex. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding-block: 3px;
   color: var(--ink);
   text-decoration: underline;
   text-underline-offset: 3px;

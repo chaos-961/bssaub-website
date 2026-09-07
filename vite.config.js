@@ -136,7 +136,7 @@ const contentSecurityPolicy = () => ({
    extensionless link adds itself to CLEAN_PAGES, or it will 404 in dev while
    working fine on Pages. */
 const BASE = '/bssaub-website/';
-const CLEAN_PAGES = ['account', 'admin'];
+const CLEAN_PAGES = ['account', 'admin', 'privacy', 'cookies', 'terms'];
 const cleanUrls = () => {
   const rewrite = (req, _res, next) => {
     const [path, query] = req.url.split('?');
@@ -174,6 +174,9 @@ export default defineConfig({
         index: fileURLToPath(new URL('./index.html', import.meta.url)),
         account: fileURLToPath(new URL('./account.html', import.meta.url)),
         admin: fileURLToPath(new URL('./admin.html', import.meta.url)),
+        privacy: fileURLToPath(new URL('./privacy.html', import.meta.url)),
+        cookies: fileURLToPath(new URL('./cookies.html', import.meta.url)),
+        terms: fileURLToPath(new URL('./terms.html', import.meta.url)),
         notFound: fileURLToPath(new URL('./404.html', import.meta.url)),
       },
     },

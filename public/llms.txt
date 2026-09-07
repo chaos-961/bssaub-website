@@ -84,3 +84,16 @@ Instagram.
 - Members: 400+ active. Partners: 50+.
 - Email: aubbusinesssociety@gmail.com
 - CRN: 5014
+
+## Policies
+
+- Privacy: https://chaos-961.github.io/bssaub-website/privacy . A member account holds a name, an
+  email address, a search index built from the name, a membership expiry and a created date. The
+  password is held by Firebase Authentication and never reaches the society. No analytics of any
+  kind runs on the site. No sponsor receives member details.
+- Cookies: https://chaos-961.github.io/bssaub-website/cookies . One cookie, bss_member, written
+  only after a sign in, holding a display name for the greeting and nothing else. No consent
+  banner, because everything stored is needed to run the account the visitor asked for.
+- Terms: https://chaos-961.github.io/bssaub-website/terms . Nothing is sold on the site and no
+  payment is taken through it, so there is nothing on it to refund. The card is honoured in
+  person by the sponsor. Governed by Lebanese law.

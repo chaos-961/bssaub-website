@@ -47,3 +47,21 @@ body.stub {
   color: var(--ink-soft);
   font-size: var(--step--1);
 }
+
+/* The three policy pages, in the middle of the 404's footer row. This page has
+   no link list of its own, so they sit between the copyright and the badge. */
+.stub__legal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.1rem;
+}
+
+.stub__legal a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.stub__legal a:hover { color: var(--accent); }

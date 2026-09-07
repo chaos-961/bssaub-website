@@ -1,0 +1,247 @@
+/* ------------------------------------------------------------------
+   The policy pages: privacy, cookies, terms.
+
+   They sit on the same low poly mesh ground as everything else and take the
+   site's own two faces, but they are laid out as a document rather than as a
+   scroll: no GSAP, no Lenis, no physics field, no preloader curtain. The
+   entry is src/legal.js, which is page.js plus this sheet.
+
+   COPY ON A CARD, NOT ON THE MESH. Everywhere else on this site the binding
+   contrast number is the darkest rendered facet, because the copy sits
+   directly on the animated background. A policy is long, so every clause is
+   set on an opaque white card instead: --ink-soft on white is 7.2:1 rather
+   than the 4.76:1 it measures on the mesh, and a reader is not asked to hold
+   a paragraph of legal text against a moving ground.
+   ------------------------------------------------------------------ */
+
+.legal-page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.legal-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.5rem;
+  padding: 1.1rem var(--gutter);
+}
+
+.legal-top a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: var(--step--1);
+  text-decoration: none;
+}
+
+.legal-top a:hover { color: var(--accent); }
+.legal-top a[aria-current] { color: var(--ink); }
+
+.legal-main {
+  flex: 1;
+  width: min(100%, 68rem);
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 3.5rem) var(--gutter) clamp(3rem, 7vw, 5.5rem);
+}
+
+.legal-head { max-width: 44ch; }
+
+.legal-head h1 {
+  margin: 0.4rem 0 0;
+  font-family: var(--font-display);
+  font-size: var(--step-4);
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.legal-lead {
+  margin: 0.9rem 0 0;
+  color: var(--ink-soft);
+  font-size: var(--step-0);
+  line-height: 1.6;
+}
+
+.legal-stamp {
+  margin: 0.9rem 0 0;
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: var(--step--1);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.legal-short {
+  margin: clamp(1.75rem, 4vw, 2.75rem) 0 0;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  box-shadow: 0 18px 40px rgba(34, 18, 25, 0.07);
+}
+
+.legal-short h2 {
+  margin: 0 0 0.65rem;
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.legal-short p {
+  margin: 0.7rem 0 0;
+  color: var(--ink-soft);
+  line-height: 1.7;
+}
+
+.legal-short p:first-of-type { margin-top: 0; }
+
+/* The jump list. Chips rather than a rail: this site's own vocabulary for a
+   set of small choices is the perk pill, and a policy's contents is one. */
+.legal-jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: clamp(1.25rem, 3vw, 1.75rem) 0 0;
+}
+
+.legal-jump a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-glass);
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+  line-height: 1.3;
+  text-decoration: none;
+  transition: border-color var(--dur-quick) var(--ease-out), color var(--dur-quick) var(--ease-out);
+}
+
+.legal-jump a:hover { border-color: var(--accent); color: var(--accent); }
+
+.legal-clause {
+  margin-top: clamp(1rem, 2.5vw, 1.5rem);
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  scroll-margin-top: 1.5rem;
+}
+
+.legal-clause__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.85rem;
+}
+
+.legal-num {
+  flex: none;
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.legal-clause h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.legal-clause h3 {
+  margin: 1.4rem 0 0.2rem;
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.legal-clause p,
+.legal-clause li {
+  color: var(--ink-soft);
+  line-height: 1.72;
+}
+
+.legal-clause p { margin: 0.85rem 0 0; max-width: 68ch; }
+
+.legal-clause ul {
+  margin: 0.85rem 0 0;
+  padding: 0;
+  max-width: 68ch;
+  list-style: none;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.legal-clause li { position: relative; padding-left: 1.3rem; }
+
+.legal-clause li::before {
+  content: "";
+  position: absolute;
+  left: 0.15rem;
+  top: 0.72em;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-2);
+}
+
+.legal-clause strong { color: var(--ink); font-weight: 700; }
+
+.legal-clause a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.legal-more {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: clamp(1.75rem, 4vw, 2.5rem);
+}
+
+.legal-footer {
+  padding: 1.5rem var(--gutter) calc(1.5rem + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+  text-align: center;
+}
+
+.legal-footer p { margin: 0; }
+
+.legal-footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 1.1rem;
+  margin-top: 0.35rem;
+}
+
+.legal-footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.legal-footer a:hover { color: var(--accent); }
+
+@media (max-width: 520px) {
+  /* At 320px the numeral and the heading on one line leave three words a row. */
+  .legal-clause__head { flex-direction: column; gap: 0.15rem; }
+}

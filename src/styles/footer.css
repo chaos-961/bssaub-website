@@ -57,6 +57,12 @@
 }
 
 .site-footer__links a {
+  /* 21px of type is under the 24px WCAG 2.2 asks of a target. inline-flex with
+     a min-height grows the box a thumb lands in; the grid gap above already
+     keeps the rows apart, so nothing moves. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
   opacity: 0.85;
   transition: color 0.25s, opacity 0.25s;
 }

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cookies · BSS AUB</title>
+    <meta name="description" content="The one cookie this site sets, what the account page keeps in your browser, and why there is no consent banner." />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+    <meta name="theme-color" content="#f8f3f5" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <script>
+      if (new URLSearchParams(location.search).has('reduced-motion'))
+        document.documentElement.classList.add('reduced-motion');
+    </script>
+    <link rel="canonical" href="https://chaos-961.github.io/bssaub-website/cookies" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Business Student Society, AUB" />
+    <meta property="og:title" content="Cookies · BSS AUB" />
+    <meta property="og:description" content="The one cookie this site sets, what the account page keeps in your browser, and why there is no consent banner." />
+    <meta property="og:url" content="https://chaos-961.github.io/bssaub-website/cookies" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="icon" type="image/png" sizes="96x96" href="assets/brand/favicon-96.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/favicon-48.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/favicon-16.png" />
+    <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png" />
+    <script type="module" src="/src/legal.js"></script>
+  </head>
+  <body class="legal-page">
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <div class="site-bg" aria-hidden="true"></div>
+
+    <nav class="legal-top" aria-label="This site">
+      <a data-home-link href="./">Home</a>
+      <a href="privacy">Privacy</a>
+      <a href="cookies" aria-current="page">Cookies</a>
+      <a href="terms">Terms</a>
+      <a href="account">Account</a>
+    </nav>
+
+    <main class="legal-main" id="main">
+      <div class="legal-head">
+        <p class="eyebrow">Business Student Society</p>
+        <h1>Cookies</h1>
+        <p class="legal-lead">One cookie, and only after you sign in. It holds a name to greet you with and nothing else.</p>
+        <p class="legal-stamp">Last updated 7 September 2026</p>
+      </div>
+
+      <div class="legal-short">
+        <h2>In short</h2>
+        <p><strong>Nothing is set until you sign in.</strong> Browse the site without an account and your browser leaves with exactly what it arrived with.</p>
+                <p>Signing in writes one cookie holding the display name to greet you with. It is never used to decide whether you are signed in, and it is never sent to a server.</p>
+                <p>Because everything stored here exists to run the account you asked for, there is no consent banner in your way.</p>
+      </div>
+
+      <nav class="legal-jump" aria-label="Sections of this page">
+        <a href="#s1">The one cookie</a>
+        <a href="#s2">What else the account page keeps</a>
+        <a href="#s3">Why there is no consent banner</a>
+        <a href="#s4">No analytics, no advertising</a>
+        <a href="#s5">What loads from somewhere else</a>
+        <a href="#s6">Clearing it</a>
+      </nav>
+
+      <section class="legal-clause" id="s1" aria-labelledby="h1">
+        <div class="legal-clause__head"><span class="legal-num" aria-hidden="true">01</span><h2 id="h1">The one cookie</h2></div>
+        <p>Name <strong>bss_member</strong>, written by the account page after a successful sign in.</p>
+        <ul>
+          <li><strong>What it holds:</strong> your display name, cleaned of anything that is not plain text, and nothing else.</li>
+          <li><strong>What it is for:</strong> greeting you by name on the home page without that page having to load the whole authentication library, which is about 45KB and a network round trip on a page whose job is a hero card.</li>
+          <li><strong>How long:</strong> 30 days, then it expires by itself. Signing out clears it immediately.</li>
+          <li><strong>Where:</strong> this site's own path, so nothing else hosted on the same domain can read it, and it is marked SameSite Lax so it does not travel with a request another site starts.</li>
+        </ul>
+        <p>It is <strong>never</strong> consulted to decide whether somebody is signed in. The real session is a signed token held by Firebase in its own storage. Forging this cookie by hand buys you a wrong name in a greeting on your own screen.</p>
+      </section>
+
+      <section class="legal-clause" id="s2" aria-labelledby="h2">
+        <div class="legal-clause__head"><span class="legal-num" aria-hidden="true">02</span><h2 id="h2">What else the account page keeps</h2></div>
+        <p>Two things, both in your browser and neither sent anywhere by us:</p>
+        <ul>
+          <li><strong>The Firebase session.</strong> A signed token in Firebase's own storage, which is what actually keeps you signed in between visits. Signing out removes it.</li>
+          <li><strong>A copy of your own card.</strong> Your name and the expiry date, held so the card paints immediately on your next visit instead of waiting on the database. It is your own record, on your own machine, and it is the same thing already on the screen in front of you.</li>
+        </ul>
+        <p>The committee console keeps its own working list only for as long as its tab is open, and never writes it to disk, because that list is everybody else's names rather than the reader's own.</p>
+      </section>
+
+      <section class="legal-clause" id="s3" aria-labelledby="h3">
+        <div class="legal-clause__head"><span class="legal-num" aria-hidden="true">03</span><h2 id="h3">Why there is no consent banner</h2></div>
+        <p>Consent is what a site needs before storing something on your device for its own purposes, above all for advertising or for following you between sites. This site does neither.</p>
+        <p>Everything above exists to run a member account that you asked for by creating one. Storage that is strictly necessary for a service the user requested does not need a banner, and putting one in front of every visitor to ask about a greeting would be theatre.</p>
+        <p>If that ever changes, a banner will appear before the thing it is asking about loads, and refusing will be one click and will work.</p>
+      </section>
+
+      <section class="legal-clause" id="s4" aria-labelledby="h4">
+        <div class="legal-clause__head"><span class="legal-num" aria-hidden="true">04</span><h2 id="h4">No analytics, no advertising</h2></div>
+        <p>There is no Google Analytics on this site, no Meta pixel, no TikTok pixel, no heatmap and no session recorder.</p>
+        <p>Nobody is counting visits here, not even anonymously. Nothing on any page can follow you to another website.</p>
+      </section>
+
+      <section class="legal-clause" id="s5" aria-labelledby="h5">
+        <div class="legal-clause__head"><span class="legal-num" aria-hidden="true">05</span><h2 id="h5">What loads from somewhere else</h2></div>
+        <p>Almost nothing. Every typeface, script, stylesheet and image is served from this site's own address. The exceptions are:</p>
+        <ul>
+          <li><strong>Firebase</strong>, on the account and committee pages only, and only once you use them. It is what checks a password and reads a member record.</li>
+          <li><strong>reCAPTCHA</strong>, which Firebase can fall back to if it suspects abuse during a sign up or a password reset. It is loaded by Google in that moment, not on every visit, and it is Google's own protection rather than something we chose to add.</li>
+        </ul>
+        <p>The home page loads none of it. There is no embedded video, no social widget and no typeface fetched from a font service anywhere on the site: the two faces are served from here.</p>
+      </section>
+
+      <section class="legal-clause" id="s6" aria-labelledby="h6">
+        <div class="legal-clause__head"><span class="legal-num" aria-hidden="true">06</span><h2 id="h6">Clearing it</h2></div>
+        <p>Your browser's Clear browsing data control removes the cookie, the session and the cached card. Signing out removes the cookie and the session on its own.</p>
+        <p>A private window keeps none of it between sessions. A content blocker changes nothing on the home page, because there is nothing there for it to block.</p>
+      </section>
+
+
+      <nav class="legal-more" aria-label="Our other pages">
+        <a class="btn btn--ghost btn--sm" href="privacy">Privacy</a>
+        <a class="btn btn--ghost btn--sm" href="terms">Terms</a>
+        <a class="btn btn--primary btn--sm" href="account">Get the membership card</a>
+      </nav>
+    </main>
+
+    <footer class="legal-footer">
+      <p>© Business Student Society, AUB · CRN: 5014</p>
+      <nav aria-label="Legal">
+        <a data-home-link href="./">Home</a>
+        <a href="privacy">Privacy</a>
+        <a href="cookies">Cookies</a>
+        <a href="terms">Terms</a>
+      </nav>
+      <span class="version-badge" data-version-badge>v0.6.0</span>
+    </footer>
+  </body>
+</html>
