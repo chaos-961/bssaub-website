@@ -1,122 +1,182 @@
 # BSS AUB Website
 
-Rebuild of bssaub.com for the AUB Business Student Society. One goal drives every decision: get an AUB student to grab the membership card. Everything else (sponsors, story, animations) exists to make that decision feel obvious.
+Rebuild of bssaub.com for the AUB Business Student Society. One goal: get an AUB student to grab
+the membership card; sponsors, story and animations all serve that.
 
-Repo: `https://github.com/chaos-961/bssaub-website.git` · Live: `https://chaos-961.github.io/bssaub-website/` (GitHub Pages via Actions; custom domain later).
-Current version: **0.6.0**.
+Repo `github.com/chaos-961/bssaub-website` (branch `main`) · Live
+`https://chaos-961.github.io/bssaub-website/` (Pages via Actions, custom domain not yet flipped) ·
+Version in `version.json`, currently 0.6.0.
 
-**Deep notes live in `docs/HISTORY.md`** (the old CLAUDE.md, verbatim): the v0.3.6 to v0.5.9 changelog, the full design system narrative, and the reasoning behind every value here. Grep it when you need the why, a rejected approach, or the history of a number. Do not read it wholesale.
+## Stack
 
-## Rules (standing, no exceptions)
+Vanilla JS on Vite 6, seven pages (index, account, admin, privacy, cookies, terms, 404). GSAP +
+ScrollTrigger, Lenis, Matter.js. Firebase Auth + Firestore Lite on account and admin only, every
+piece behind a dynamic import. Self hosted `@fontsource-variable` Roboto Condensed (display) +
+Instrument Sans (body). No other runtime deps, zero third party scripts.
 
-1. **Git gate.** Never commit or push unless the user says commit or push in that session. "Looks good" is not authorization. Every push to `main` auto deploys, so push authorization is deploy authorization. Say so.
-2. **Version contract.** Bump `version.json` by +0.0.1 per authorized push (carry: 0.0.9 to 0.1.0). Keep the three static badge fallbacks in sync (index / 404 / account footers; `admin.html` deliberately has none). Commit message: `v0.1.3: short description`.
-3. **No invented data.** Discounts, Instagram links, redemption steps are never guessed. Unknown means blocked and listed. Nothing marked "?" ships.
-4. **No hyphens or dashes in user visible copy.** Em dashes become commas, colons, periods; titles join with "·"; compounds get rephrased ("hub led by students", not "student-led hub"). Applies to text nodes, aria-labels, alt text, titles, meta.
-5. **File edits via the Edit/Write tools only.** PowerShell 5.1 text operations mojibake UTF-8.
-6. **Feel checks on real hardware are the user's.** Headless covers logic, geometry, colour. 60fps judgment is theirs.
-7. **Session protocol.** Read this file, state version + open items in a line or two, await instruction. A user request is its own authorization; the rules stop AI initiative, not user freedom. Keep the version line and Open items current as work ships.
-8. **Admin re-encrypt on every push.** If `src/admin/dashboard.html` or `dashboard.js` changed at any point in the session, run `npm run admin:payload` as part of the authorized push so shipped ciphertext matches shipped source. **`BSS_ADMIN_PASSWORD` and `BSS_ADMIN_EMAIL` are both required**; the encryptor refuses without either. Credentials live in **`.admin.env` (gitignored)**, loaded via node's `--env-file-if-exists`, deliberately not named `.env.*` (Vite's loader would claim it). Check that file before asking the user. `scripts/check-admin-payload.mjs` gates the build, but **the rule is on the push**: a forgotten re-encrypt deploys an admin that unlocks into the previous build with no error anywhere. The build gate cannot catch a changed EMAIL.
-9. **Check a password BEFORE encrypting with it.** `npm run admin:check` with `BSS_ADMIN_PASSWORD` set (read only, writes nothing). Re-encrypting with a misremembered password is **silent**: the payload opens for the wrong secret, the build gate passes (it hashes sources, not the key), and it surfaces only as a deployed admin that unlocks then cannot reach Firestore. The shipped payload is a free offline oracle for any candidate. It also reports staleness. Deliberately not wired into `npm run build`, which stays password free for CI.
+## Layout
 
-## Stack and shape
+- Entries, one per page, all standalone: `main.js` (index), `account.js`, `admin.js`, `page.js`
+  (404 only), `legal.js` (the three policy pages, no GSAP/Lenis/Matter, the one entry that imports
+  `page.js`).
+- `src/modules/*` one file per concern · `src/styles/*` with `tokens.css` first · `src/data/`
+  sponsors, names, membership, firebase config (public by design) · `src/admin/dashboard.{html,js}`
+  plaintext, shipped only as ciphertext.
+- `firestore.rules` is gitignored (it names the admin address; the console is where rules live), as
+  is root `/assets/`, the raw uploads.
 
-- **Three policy pages since v0.6.0**: `privacy.html`, `cookies.html`, `terms.html`, entry
-  `src/legal.js` (page.js plus `src/styles/legal.css`, no GSAP, no Lenis, no Matter). Each one
-  is registered twice, in `rollupOptions.input` **and** in `CLEAN_PAGES`, or its extensionless
-  link 404s in dev while working on Pages. Copy on those pages sits on white cards rather than
-  on the mesh, which is what lets `--ink-soft` run at 7.2:1 instead of the 4.76:1 it measures on
-  the darkest facet.
+## Commands
 
-Vanilla JS + Vite 6 (`index.html` + `account.html` + `admin.html` + `404.html`, multi-page) · GSAP + ScrollTrigger · Lenis · Matter.js · **Firebase Auth + Firestore Lite, on account and admin only, every piece behind a dynamic import** · Fraunces + Instrument Sans (self-hosted variable woff2). No other runtime deps, zero third-party scripts.
+```
+npm run dev              # vite, port 5173 strict, at /bssaub-website/
+npm run build            # admin payload gate, then vite build to dist/  (also: preview)
+npm run admin:check      # verify a password against the shipped payload, writes nothing
+npm run admin:payload    # re-encrypt the dashboard into public/admin-payload.json
+node scripts/generate-bg-mesh.mjs [#hex]   # regen mesh.svg (seeded, refuses on contrast fail)
+node scripts/check-swell.mjs               # motion gate, 240s sweep desktop + capped mobile
+```
 
-- `src/main.js` **init order matters**: scroll → oceanMesh → nav → heroCard → cardName → modal → perkField → journey → sponsorCta → agencyCredit → reveal → footerVersion → `scroll.refresh()` → preloader last. `initPerkField` is async (Matter.js is its own chunk) and the order still holds: the `await` sits after the DOM build, layout, and the reduced-motion return, so only the physics resumes late. Preloader `onComplete` fires `heroCard.enter()`. `reveal` goes after field and journey because its triggers measure what those just laid out.
-- `src/data/sponsors.js` single source of truth for sponsors · `src/data/names.js` the 100 names the hero card types · `src/data/membership.js` **imports nothing**, so all three consumers share it including the blob-module dashboard · `src/data/firebase.js` project config (public by design).
-- `src/modules/*` one per concern · `src/styles/*` tokens.css first, then per section. `auth.css` is shared by the account page and the admin gate, so its primitives are named card/field/tab.
-- `firestore.rules` is **gitignored** (user call): it names the admin address, and the console is where rules actually live.
-- `src/assets/bg/mesh.svg` is generated, lives in `src/` not `public/` so Vite resolves, hashes and base-rewrites the `url()` (a `public/` file would hardcode `/bssaub-website/` and break on the custom-domain flip). Regenerate with `node scripts/generate-bg-mesh.mjs [#hex]` (seeded, byte identical unless the base changes). **Never hand edit it.**
-- **`src/lib/mesh.js` is the single source of truth for the mesh**: geometry, palette ramp, drift cycle, swell field, contrast maths. Imported by the generator, by `scripts/check-swell.mjs`, and by `src/modules/oceanMesh.js`. **Never reimplement or approximate it in a second place**: the static SVG is the animation's rest state, and if the two drifted the background would visibly jump as the canvas fades in. `DEFAULT_BASE` must equal `PALETTE_CYCLE[0]`; the build hard fails otherwise. Recolouring is one edit plus a rerun.
-  - The swell is **data, not code**: `SWELL` is a table of sum-of-sines terms, `swellGlsl()` generates the shader's `swell()` from it, `swellAt()` evaluates the same table in JS. Harness and shipped shader are the same numbers by construction, not by careful copying. **Never hand edit `swell()` inside oceanMesh.js.**
-  - **Two gates, both must re-run after touching `AMP`, `SWELL`, `MESH`, or `PALETTE_CYCLE`:** colour (in the generator, which **refuses to write** on failure so an illegible colour cannot reach the repo; `--ink-soft` on the darkest facet is the binding number, floor 4.5:1) and motion (`scripts/check-swell.mjs`, a 240s sweep at both desktop and capped mobile amplitude, failing on any inverted facet, any facet under half its rest area, or too thin an overscan margin). Not ceremony: the motion gate rejected a shipped-looking attempt once already.
-- Deploy: `.github/workflows/static.yml` (push to main → build → Pages). `vite.config.js` has `base: '/bssaub-website/'`. **Custom-domain flip checklist:** CNAME in public/, base to `/`, 404.html's absolute icon paths, and the absolute origin in `public/robots.txt`, `public/sitemap.xml`, index.html's JSON-LD, plus the canonical and og:url tags. The flip is also what makes robots.txt start working at all, since a Pages project site cannot serve one crawlers will read.
-- **Clean URLs**: internal links are extensionless (`account`, never `account.html`), with a `cleanUrls` middleware in `vite.config.js` giving dev and preview what Pages does natively. `CLEAN_PAGES` holds `account` and `admin`; **a new page wanting an extensionless link adds itself there**, or it 404s in dev while working fine on Pages, and its canonical and og:url use the extensionless form.
-- **CSP on account and admin only, injected at BUILD time** by a `vite.config.js` plugin, not written into the HTML: Vite's dev server serves an inline module script (its HMR client), so a `script-src 'self'` meta tag in the source file would break `npm run dev` while looking perfect in production. `ctx.bundle` (present in build, absent in dev) is the switch. **Neither gated page carries any inline `<script>`** for this reason; their `js` and `reduced-motion` root classes are set at the top of the entry module instead. Index keeps its inline version because there the class gates the preloader curtain, which must be up before the bundle arrives. `style-src` keeps `'unsafe-inline'` on purpose, since GSAP writes element styles and CSS injection is not the surface worth a rewrite once script execution is locked. `frame-ancestors` is **ignored in a meta CSP by spec** and Pages cannot set headers, so clickjacking is covered by the frame bust at the bottom of `src/admin.js`.
-- Local run: `run-local.bat` (untracked, gitignored, user helper): opens the already-running server if 5173 is busy, else installs deps if needed and starts `vite --open`.
-- **Repo weight is not a problem.** 207MB of the 228MB on disk is gitignored `node_modules` (134MB of that is Firebase, which ships every product in one package). **The tracked repo is 1.4MB** and an audit found exactly one dead thing in it. Do not go hunting bytes in `src/` on the strength of the folder size.
+`run-local.bat` (untracked) reuses 5173 if busy, else installs and opens.
 
-## Design system (low poly mesh ground, white, dark ink)
+## Architecture
 
-The theme has swung four times, always on the user's word, so **treat the ground as a setting, not an assumption**. Every colour lives in `tokens.css`, a nav-scoped mirror of it, or the mesh generator's palette block. **No module carries a literal colour in JS.**
+- The init order in `main.js` is load bearing: `reveal` follows perkField and journey because its
+  triggers measure what those laid out, then `scroll.refresh()`, preloader last. `initPerkField`
+  is async (Matter.js is a lazy chunk) but its `await` sits after the DOM build, layout and the
+  reduced motion return, so only physics resumes late.
+- The background is one mesh in two forms: the static SVG is the animation's rest state, the WebGL
+  canvas (`oceanMesh.js`) animates the same lattice on top and crossfades in only after frame zero,
+  so any drift between them shows as a jump. `src/lib/mesh.js` owns geometry, palette, drift, swell
+  and contrast maths for generator, harness and runtime. `mesh.svg` lives in `src/`, not `public/`,
+  so Vite hashes it and rewrites the `url()` base; a `public/` copy would hardcode the base and
+  break the domain flip.
+- CSP is injected at build time by a `vite.config.js` plugin, account and admin only, switched on
+  `ctx.bundle`: Vite's dev server serves an inline HMR script a source `script-src 'self'` meta tag
+  would kill. Neither gated page carries an inline `<script>`, and since a meta CSP ignores
+  `frame-ancestors`, clickjacking is the frame bust in `src/admin.js`.
+- Internal links are extensionless; `cleanUrls` in `vite.config.js` gives dev and preview what
+  Pages does natively. A new page registers twice, in `rollupOptions.input` and in `CLEAN_PAGES`,
+  or its link 404s in dev while working on Pages.
+- Sponsors: one object in `src/data/sponsors.js` plus one image is a new sponsor. Filename equals
+  the id at `assets/sponsors/<category>/<id>.webp`, ~320px square, 25KB or under. A `details`
+  object turns a bubble into a popup instead of a direct link.
 
-**Do not reintroduce without a fresh brief** (all removed on the user's word, all recoverable from history): the aurora background (`div.site-bg` + `aurora.css` + `auroraSky.js`), the generative starfield (pull it from `C:\Development\Website Templates\Background Constellation` if ever asked, do not rebuild it), the hero-only WebGL caustic background (`heroBackground.js` + `hero-bg.css`), the dev-only `COLORS` picker panel.
+## Deploy
 
-- **Tokens** (`src/styles/tokens.css`, `color-scheme: light`): `--bg #ffffff` · `--surface #f8f3f5` · `--surface-glass rgba(255,255,255,0.78)` · `--ink #221219` · `--ink-soft #5f4a54` · `--line rgba(34,18,25,0.16)` · `--accent #881532` (brand maroon sampled from `assets/logo.png`) · `--accent-strong #a31a3c` · `--accent-2 #b04a67`. Glow rgbs are the brand pair `136,21,50` and `176,74,103`. Dark ink shadows `34,18,25` are depth pools and stay correct on either ground.
-- **Background**: `div.site-bg` first in `<body>` on every page, styled by `src/styles/site-bg.css`, imported by all four entries. One fixed viewport-sized layer at `z-index -1`; `body` is transparent so it shows through, and `html` keeps the flat `--bg` for the overscroll gutter and as the load-failure fallback. **Fixed rather than document-tall**: stretching the mesh down a 10x-viewport page smears the facets into ribbons, and a fixed layer that never moves is the cheapest thing the compositor can hold. The grain rides as a second background layer at `background-blend-mode: multiply`, its noise tile pre-compressed into `[0.94, 1.0]` by an `feComponentTransfer` in the data URI, because the old "dilute with a flat `--bg` layer on top" trick only works over a flat ground and would wash the mesh 86% toward white. Square 1400x1400 source with `cover` so it crops gently in both orientations (a landscape source would double the facet size on portrait phones). `height: 100lvh` so a retracting mobile URL bar cannot expose a strip. ~8.5KB gz, vector so one file is exact at every DPR. No JS, no animation, no blend mode, no backdrop-filter on this layer.
-- **Legibility is the binding constraint, not taste.** Body copy sits directly on the mesh on every page, so the palette is capped by the **darkest rendered facet**, which is not the darkest gradient stop: per-facet scatter pushes triangles below their sampled colour. **Re-measure against rendered pixels if you retune; the stop values alone do not tell you.** Current, by GPU read back across the whole animated cycle at 1440x900, 390x844 and 844x390: `--ink-soft` **4.76:1**, `--ink` 10.57:1, `--accent` 5.61:1.
-- **The ocean layer** (`src/modules/oceanMesh.js`): `canvas.site-bg__canvas` inside `div.site-bg`, animating the same lattice in WebGL. The static SVG **stays underneath as the floor** and is what paints pre-bundle, with JS off, under `prefers-reduced-motion`, when WebGL is missing, and on context loss. The canvas only gets `is-live` after frame zero is drawn, so there is no flash and the crossfade is between two states of one mesh, not two designs.
-  - **WebGL is the cheap option here, not the expensive one.** Canvas 2D would mean 800 `fill()` calls per frame on the main thread, competing with Lenis, GSAP and Matter.js; SVG/CSS cannot move vertices at all. This is one draw call of 2400 vertices with displacement in the vertex shader.
-  - **Load bearing, all of it**: one draw call, buffers uploaded once (only uniforms change per frame), a 30fps cap, backing store pinned to **DPR 1** (adjacent facets differ by a few levels so there is nothing for extra resolution to sharpen, and it is a 4x fragment saving on 2x displays), fully parked on `visibilitychange` and on context loss. **Never add a per-frame `getBoundingClientRect`**; sizing is a debounced `ResizeObserver`. It must be a ResizeObserver and not a window `resize` listener, because this fixed layer changes width by the scrollbar once the perk field grows the page past one screen, which no window event reports.
-  - **Amplitude is a verified property, not a hope**, and `scripts/check-swell.mjs` is where it is verified: 13.5 mesh units against a 70 unit cell, peak vertex displacement 52.9% of a cell, zero inverted facets, smallest facet holding 0.799x its rest area (0.771x at the mobile cap). Drawn at `OVERSCAN` 1.08, verified empirically at zero edge-gap pixels over 150 frame sweeps.
-  - **The lever that made the motion 3x stronger was WAVELENGTH, not amplitude.** Facets tangle on the local shear of the displacement field, not on how far it travels, so long waves let neighbouring vertices move together and the surface heaves as one body. Raising amplitude alone failed the gate at 0.36x rest area, which reads as a crease; stretching every wavenumber by 1/0.7 at the same amplitude reached 0.74x. **If more power is ever wanted again, lengthen the waves first.**
-  - Colour drift walks `PALETTE_CYCLE` over 64s across **four stops spread round the wheel** (rose, cool lavender, warm apricot, soft mauve), all within ~0.01 relative luminance of each other. **Equal luminance is the whole trick**: it is what lets the hue travel this far without moving the contrast budget. The stop order is chosen so every crossfade midpoint lands back in the rose family, so the extremes read as the page leaning warm or cool and the crossings read as home. Plus a ±0.15 slide of the ramp itself so light appears to move across the surface; it is bounded and the ramp clamps, so the deep end still resolves to the same stop.
-  - **Mobile.** Context loss is routine on mobile GPUs when you leave the tab, so `webglcontextrestored` must rebuild the program and buffers, re-fit, and ease the swell back up from flat. That was the actual bug behind "none of this happens on a phone", not the amplitude. `FRAME_SLACK` (2ms) exists because Low Power Mode caps rAF at 30fps, landing just under this module's own 30fps gate once timer coarsening applies, so every second frame was being rejected. Amplitude compensates for the `cover` fit scale (~0.60 on a phone against ~1.03 on desktop), capped at `AMP_SCALE_MAX` 1.15 because the no-inversion proof is written in mesh units and this is what inflates them. Net motion in CSS pixels: **41px desktop, 28px phone**.
-  - The swell **eases up from flat over 1.6s** (`WAKE_S`), which makes frame zero pixel identical to the static SVG underneath, so the 0.7s reveal is a true crossfade with nothing to jump. Re-run on context restore for the same reason.
-- **Navbar** is a paper sheet carrying the page grain via `mix-blend-mode: multiply` at opacity 0.14, with dark ink drawn from nav-scoped tokens (`--nav-paper #f8f3f5`, `--nav-ink #221219`, `--nav-ink-soft`, `--nav-accent #881532`, `--nav-line`) set on `.site-nav, .nav-menu` so the bar and its dropdown flip together. Those duplicate the globals almost exactly and **stay on purpose**: declaring the bar's palette independently is what carried it through two ground flips without a rewrite. Separation from a white page is three things, none heavy alone: paper off pure white onto the warm raised-panel tone, a 24% hairline, and an always-on two-layer lift shadow; `.is-scrolled` deepens the last two. `.is-hidden` is 24px so the deeper shadow cannot peek at the top edge. The bar hides on scroll down and reveals on scroll up, stays put near the top and while the menu is open, and `focusin` brings it back for keyboard users. The maroon logo reads on the paper with no filter. Sponsor bubble tiles are opaque coins whose marks contrast with their own baked field, so they read on either ground.
-- Type: Fraunces (display, `opsz 144`, WONK on hero and stub titles) + Instrument Sans (UI/body). Fluid clamp() scale in tokens.
-- **Section rhythm**: `--section-pad` is `clamp(2.25rem, 5vw, 4.25rem)`. One token drives every boundary (hero bottom, perk field, journey, sponsor CTA, agency credit), so it is the only knob. Note the hero is `min-height: 100svh` with `align-items: center`, so shrinking its bottom padding by X only lowers the space under the facts row by X/2, the rest redistributes above. The residual ~81px under the hero content is centering slack, not padding, and no `--section-pad` value can reach it.
-- Motion: power2/power3-out reveals; elastic feel only inside the Perk Field; scrub where scroll is the mechanic. The background swell runs at 0.75x and its clock is coupled to scroll velocity, while the colour keeps its own pace. `prefers-reduced-motion` strips physics, tilt, scroll effects, the bubble lifecycle, and the background canvas sitewide; `?reduced-motion` is the QA hook.
+Push to `main` runs `.github/workflows/static.yml`: npm ci, build, upload `dist/`, deploy to Pages.
+Push authorization is deploy authorization, say so before pushing.
 
-## The page (scroll order)
+Per authorized push:
+1. Bump `version.json` by +0.0.1 (carry 0.0.9 to 0.1.0).
+2. Sync the three static badge fallbacks: index, 404, account footers (`admin.html` has none).
+3. If `src/admin/dashboard.html` or `dashboard.js` changed at any point in the session, run
+   `npm run admin:payload` before committing.
+4. Commit message `v0.6.1: short description`.
 
-1. **Preloader** honest progress (both font families + every `[data-preload]` image, which is the first screen only: the card art and the nav lockup), 400ms floor, 4s hard cap, curtain wipe into the hero entrance. The 25 sponsor photos are deliberately not in the manifest.
-2. **Navbar** the logo lockup top left (`assets/brand/logo.webp`, trimmed with white knocked to alpha, 42px tall, 34px under 360px), with **"CRN: 5014" beside it behind a hairline rule** on index and account: a `.site-nav__left` group holds the two so the bar's `space-between` keeps exactly two children, and the number sits **outside** the wordmark link, since it is a fact about the society rather than part of the "home" target. It is the first thing in the bar to give ground on a phone, shrinking at its own 26rem breakpoint rather than the logo's. Hamburger right with the Account link beside it (44px tap target). The hamburger opens a compact dropdown anchored under the button, not a full panel: ESC, outside press, scroll movement, or tab-out closes it, and there is no scroll lock. It reads 01 to 04.
-3. **Hero** eyebrow "Welcome to" and headline "AUB's Business Society", word split on the entrance timeline with each `.line` keeping its own mask, and a permanent swell on the headline. **Set on two lines in the markup** ("AUB's Business" over "Society") rather than left to wrap, and sized so the longer line cannot wrap at any width. The whole section fits the first screen, eyebrow through trust row, on svh scaled spacing with the card capped by height on a phone.
-4. **The Perk Field** the signature section. 5 category zones, all 25 sponsors as physical DOM bubbles (real links and buttons, aria-labeled) in a zero-gravity Matter world: home springs, collisions, Lenis scroll impulses, a pointer repulsor with stir currents, grab-and-glide-home, jelly squash-stretch, impact sparks, displacement clamps ("mixed but not too much").
-   - **Arrival is purely visual**: it writes classes and nothing else, no body, no force, no velocity, so the tuned feel of the field is bit for bit what it was before arrival existed. Driven by each bubble's **own centre in viewport space**, not by its zone, so a tall zone materialises as a wave rising from the bottom. **The stagger is the physics layout itself**, not a hand written delay list, which is why it never looks mechanical and never needs retuning when a sponsor is added. The band is `LIFE.inTop`/`inBot`. Arrival only: a bubble that has arrived stays.
-   - **Three nested layers, and JS owns exactly one.** `renderItem()` owns `.perk-bubble`'s transform every frame, so **every arrival animation lives on `.perk-bubble__scale`**, which JS never writes, and the photo's own clip plus its develop/sweep live on `.perk-bubble__lens` inside that, which JS never writes either. Break that and the two fight 60 times a second.
-   - Position comes from the section's **document** offset minus the current scroll, so the per-frame path reads no layout at all (the ocean mesh lesson: a `getBoundingClientRect` inside a ticker that also writes styles is a forced synchronous layout every frame). `measure()` re-runs on every ScrollTrigger refresh, since fonts swapping in move the section.
-   - Guards: a keyboard user tabbing to a bubble that has not arrived brings it in rather than landing on nothing; returning to the section after it was parked arrives **instantly** (`warm`), so nobody gets a late wave for bubbles that crossed the line while the ticker slept; `resize` re-measures and goes cold, since every bubble just teleported to a new seat.
-   - Default state is **alive and unstyled**, so no-JS and reduced-motion visitors get the plain field with none of this attached. Idle guardrail: a hard travel ceiling (clampRadius + throwRange) projects collision-runaway bodies back so nothing slides under later sections; released bodies never reach it because they home on a timed glide. `setTarget()` clamps a held bubble to the **section box**, which is full bleed, not to the zone canvas, which is the 1200px container minus its gutter.
-5. **Our Journey** one SVG path scrub-drawn through Story, Mission, Vision, Join. Desktop: chaotic bows and overshoot curls between checkpoints, guaranteed never over an image or text column (wander is index-hashed so geometry is stable across rebuilds and ignition prefixes cannot drift). Mobile: a left rail that wanders ±12px between checkpoints while every dot stays exactly on it (JS sets dot y inline, CSS owns rail x). A glowing orb rides the draw front. Ignition (`.is-lit`) drives decorative state only; content reveals are once-only ScrollTriggers (`.is-in`) and can never un-reveal.
-6. **Become a Sponsor** eyebrow, title, CTA, nothing else. The computed stat row was removed on the user's word and `sponsorCta.js` no longer reads sponsors.js at all. CTA is a mailto until the Google Form URL arrives.
-7. **Agency credit** the "Brought to you by" Nerve Media block, its own quiet section between the sponsor CTA and the footer, last child of `<main>` on index, and index is its only home. The account page could carry the compact footer-bar variant, but that variant's CSS would need recovering from the v0.4.0 tree first. Say the word if it should ride there too.
-8. **Footer** anchors, socials, mini CTA, version badge read from version.json. Bottom bar: "© Business Student Society, AUB · CRN: 5014".
+Custom domain flip: CNAME in `public/`, `base` to `/` in `vite.config.js`, 404.html's absolute icon
+paths, then every absolute origin a grep for `chaos-961.github.io` finds: `public/robots.txt`,
+`sitemap.xml`, `llms.txt` (5), index.html's JSON-LD, canonical, og:url, og:image and its
+`rel="alternate"` llms.txt link, account.html's canonical, og:url and og:image, plus canonical and
+og:url on privacy, cookies, terms.
 
-`404.html`: one line of personality + home button, ~1KB JS, served automatically by Pages.
+## Project rules
 
-`account.html` (`/account`): the member page. **Two columns above 62rem** (a pitch column beside the form when signed out; the membership card at 569px beside the account when signed in, with a hairline dividing them), one flow below, and the phone layout is measurably unchanged. Nav, mesh background and footer around one auth card that flips between a signed out gate (sign in · create account on segmented tabs, plus a password reset that **never reveals whether an address exists**) and a signed in panel.
+- Git gate: never commit or push unless the user says so this session. "Looks good" is not it.
+- No invented data. Discounts, Instagram links, redemption steps are never guessed. Unknown means
+  blocked and listed.
+- No hyphens or dashes in user visible copy. Em dashes become commas, colons or periods; titles
+  join with "·"; compounds get rephrased. Applies to text, aria-labels, alt, titles, meta.
+- File edits go through the Edit/Write tools only. PowerShell 5.1 text operations mojibake UTF-8.
+- Headless covers logic, geometry and colour. Feel checks on real hardware are the user's.
+- Never hand edit `src/assets/bg/mesh.svg` or `swell()` inside `oceanMesh.js`; both are generated
+  from `src/lib/mesh.js`.
+- After touching `AMP`, `SWELL`, `MESH` or `PALETTE_CYCLE`, re-run both gates: the generator (which
+  refuses to write on a contrast failure) and `scripts/check-swell.mjs`. `DEFAULT_BASE` must equal
+  `PALETTE_CYCLE[0]`, but that is checked only inside `generate-bg-mesh.mjs`, never at build time:
+  skip the rerun and the drift ships silently.
+- Contrast is measured against the darkest facet rendered anywhere in the animated cycle, not
+  against white and not against the still: per facet scatter pushes triangles below the gradient
+  stops. `--ink-soft` is binding, floor 4.5:1.
+- JS budget 256KB gz on index, quoting total and blocking separately (v0.5.7 baseline: 96.1 total,
+  69.1 blocking). Do not read a changed chunk filename or a moved number as a regression; measure
+  the page.
+- The old bssaub.com is down. Verify anything missing via the user or a search, never by scraping.
+- Design Lab stays excluded (user lock, zero credits on the site).
+- Do not reintroduce without a fresh brief, all removed on the user's word, all in history: the
+  aurora background, the generative starfield (pull it from
+  `C:\Development\Website Templates\Background Constellation` if asked, do not rebuild it), the
+  hero only WebGL caustic background, the dev only `COLORS` picker panel.
+- No cookie consent banner. Measured, not assumed: the only cookie is `bss_member`, a display name
+  hint written after sign in, exempt as strictly necessary. The cookies page states why.
 
-`admin.html` (`/admin`): the encrypted gate. No nav, no footer, no OG tags, no manifest, `noindex`, linked from nowhere. Entry `src/admin.js`; the dashboard it unlocks lives in `src/admin/dashboard.{html,js}` and reaches the browser **only as ciphertext** in `public/admin-payload.json`. Locked is a centred card. Unlocked is Sign out then View site top right, with the members console below: a search field with its button on the right, and a result row per member.
+## Gotchas
 
-## Sponsor data
+- A forgotten `npm run admin:payload` ships a gate that unlocks into the previous dashboard with no
+  error anywhere. `check-admin-payload.mjs` hashes sources, so it catches changed code but never a
+  changed `BSS_ADMIN_EMAIL`: that is why re-encrypting is a push rule and not just a build gate.
+- Run `npm run admin:check` before encrypting with a password you are not certain of. A
+  misremembered one is silent: the payload opens for that secret, the build gate passes, and it
+  surfaces only as a deployed admin that unlocks then cannot reach Firestore. Not wired into
+  `npm run build`, which stays password free for CI.
+- Admin credentials (`BSS_ADMIN_PASSWORD`, `BSS_ADMIN_EMAIL`) live in gitignored `.admin.env`,
+  loaded by node's `--env-file-if-exists`. Check it before asking the user. Not named `.env.*` on
+  purpose: Vite's env loader would claim it.
+- Never add a per frame `getBoundingClientRect` to `oceanMesh.js` or `perkField.js`. Sizing is a
+  debounced `ResizeObserver` and must be: the fixed layer changes width by the scrollbar once the
+  perk field grows the page, and no window `resize` event reports that.
 
-One object in `src/data/sponsors.js` + one image = a new sponsor. Fields: `id`, `name`, `category` (restaurants | clothing | health-beauty | fitness | services), `discount` (string, or null to render badge-less with no % in the aria-label), `instagram`, `image`, `size` (relative bubble scale), and optional `details { summary, notes, steps, links }`. **The presence of `details` is what turns a bubble into a popup instead of a direct link.** Image filename equals the id: `assets/sponsors/<category>/<id>.webp`, about 320px square, ≤25KB.
+## Open items owed by the user (none doable from here)
 
-## Budgets and floors
+- Firebase console, before `/account` works in production: Authentication, Settings, Authorized
+  domains, add `chaos-961.github.io` plus the custom domain the day it lands. Providers not in
+  deliberate use stay disabled. The first real account is the user's to create.
+- Firestore console: create the database, create the admin account in Authentication > Users with
+  the address in `BSS_ADMIN_EMAIL` **and the same password that encrypts the payload** (`admin.js`
+  feeds the string that unlocked the gate into `signInWithEmailAndPassword`: any other password
+  unlocks the dashboard then cannot reach Firestore), publish the local `firestore.rules` with
+  `ADMIN_EMAIL` replaced. **Re-paste the rules for v0.5.7**: the file gained a `match /meta/members`
+  block the read cache hangs off, and until it is pasted that marker is permission denied with no
+  error anywhere on screen.
+- `salon-beyrouth`: the live site reportedly shows 10% OFF, sponsors.js carries 15%. 15% ships
+  pending a user call.
+- Become a Sponsor Google Form URL. The CTA runs on a mailto until it arrives.
+- A LinkedIn page for the society, if one exists (index.html JSON-LD `sameAs` plus the footer
+  Connect column; a guessed URL is a claim, not a link), and a vector master for the logo (the
+  only master is a raster, so brand assets are capped at the size someone exported once).
+- Submit the sitemap in Google Search Console (only the user can sign in).
+- Email verification is not enforced: nothing is gated on sign in yet. The moment member only
+  content lands, `sendEmailVerification` plus an `emailVerified` gate is first.
 
-- LCP under 2.5s on throttled 4G (live median 1.91s measured) · CLS ~0 (all media has reserved dimensions).
-- **JS ≤ 256KB gz, measured on index**, which is the page the ceiling was ever about. At v0.5.7: **96.1 total / 69.1 blocking**. **Quote both halves always**; a total alone hides whether a feature landed in front of the hero or behind it. Matter.js is a lazy 27.7KB gz chunk fetched after the entry has run, and a reduced-motion visitor never downloads it at all.
-- The other pages load in three parts and have to be quoted that way: **account 60.9KB gz of shell, plus 48.9 once the Firebase Auth SDK lands, plus 33.8 of Firestore Lite ONLY for a signed in visitor whose membership cache misses** (143.6 all in; the shell's ~52KB is the GSAP/Lenis vendor chunk index has already cached for anyone arriving through the nav link, which is the normal path). **Admin is 9.1KB gz locked** and 91.8 all in, every byte of Firebase arriving after the password. The Firestore chunk being conditional is the point of that work, not a rounding detail: the account page is the sign-in page, so most of its traffic is signed out and never touches it.
-- **Do not read a changed chunk filename or a moved number as a regression; measure the page.** A new shared consumer moves a chunk boundary and index stops paying for parts of a vendor chunk it never used. This has looked like a regression three separate times and never was one.
-- **~86% of the blocking bytes are libraries, not this site**: GSAP + ScrollTrigger + Lenis are a 142.4KB raw chunk, Matter.js is ~84KB, and every module in `src/` together is roughly 36KB raw. A feature costing a kilobyte was never the thing worth worrying about. **Spend the headroom on features.** If the LCP measurement starts slipping, the first move is another lazy chunk, not shaving a data file.
-- Card art ≤ 120KB · bubbles ≤ 25KB each · background mesh ≤ 15KB gz (currently 8.5; one vector file serves every DPR, so that is the whole background budget).
-- Accessibility: semantic landmarks, skip link, focus traps, visible focus everywhere, every bubble labeled ("Name, 20% OFF, opens Instagram"). **The binding contrast measurement is against the darkest pixel rendered anywhere in the animated mesh cycle**, not against white and not against the still. Any change to the mesh palette or to `--ink-soft` has to be re-measured there, and the generator's gate is what enforces it.
+## Reference
 
-## Open items owed by the user
+Membership form `https://forms.cloud.microsoft/r/d5fFFxbKKN` · IG `@businessstudentsociety` ·
+`aubbusinesssociety@gmail.com`. `docs/HISTORY.md` (194KB) holds the v0.3.6 to v0.5.9 changelog and
+the design system reasoning: grep it for a why, never read it whole.
 
-- **salon-beyrouth discount conflict**: the live site reportedly shows 10% OFF but sponsors.js carries 15%. Left at 15% pending a user call, so 15% is what currently ships.
-- **Become-a-Sponsor Google Form URL** (the CTA runs on the mailto until then).
-- **A LinkedIn page for the society, if one exists.** A search on 2026-08-03 found member profiles naming BSS and no page for the society itself, so nothing was added: a guessed URL inside `sameAs` is a claim, not a link. If one exists it belongs in two places, index.html's JSON-LD `sameAs` array and the footer's Connect column, and it is a genuinely useful signal for a business society.
-- **A vector master for the logo.** The master in the gitignored `/assets` folder is a 375x375 raster with only 233x108 of ink, which is why the structured data logo ships at 257x132: that is the honest ceiling and everything above it is upscaling. An SVG would let every brand asset here be regenerated crisply instead of being stuck at the size somebody exported once.
-- **Submit the sitemap in Google Search Console** (needs the user's Google account, so it cannot be done from here). Until the custom domain lands, robots.txt cannot be served at the origin root, so the sitemap has no automatic discovery path. Verifying the property also turns on the only feedback loop this site has for whether the reach work landed.
-- **Firebase console, owed before `/account` works in production** (none of it can be done from this repo). Authentication → Settings → Authorized domains: add `chaos-961.github.io`, and add the custom domain the day it goes live or sign in stops working there. Email/Password and email enumeration protection are already on, confirmed live against the real project. **Every provider not deliberately in use stays disabled**, since an enabled provider is an open door whether or not this site has a button for it. **The first real account is the user's to create**, not this repo's.
-- **Firestore console, owed before the members console does anything** (same rule; until it is done the admin unlocks and reports it cannot reach the database). Three steps in order: **create the database** (Firestore Database → Create, production mode, nearest region); **create the admin account** in Authentication → Users with the address that goes in `BSS_ADMIN_EMAIL` and the same password used to encrypt the payload; **publish the rules** from the local `firestore.rules` with `ADMIN_EMAIL` replaced by that address. No index step: the search is one `array-contains` and one range, both single field, which Firestore indexes automatically.
-  - **Re-paste the rules for v0.5.7.** The local `firestore.rules` gained a `match /meta/members` block for the revision marker that the whole read cache hangs off. **Nothing breaks until it is pasted**, which is deliberate and was measured: the marker is simply permission denied, the console pays the reads it always paid, and no error appears anywhere on screen. But none of the saving arrives either, so this is the one step between the deploy and the point of it.
-- **Email verification is not enforced**, deliberately: nothing on the site is gated on being signed in yet, so requiring it would promise a check that does not exist. The moment member-only content lands, `sendEmailVerification` plus a `user.emailVerified` gate is the first thing to add.
-- **Origin sharing on GitHub Pages project sites** (not a bug, worth knowing). Every repo under `chaos-961.github.io` shares one origin, so Firebase's auth store in IndexedDB is reachable by any other project of that account. The session cookie is path scoped to dodge this; the Firebase store cannot be. Every one of those projects is the user's own, so there is no external exposure, and the custom domain flip resolves it outright.
+## The admin
 
-Design Lab stays excluded entirely (user lock, zero credits anywhere on the site). **The old bssaub.com is down. Verify anything missing via web search or the user, never by scraping it.**
+`/admin`, no trailing slash, and the same URL, the same sign-in card, the same top bar, the same
+tab strip and the same footer on all eight sites in this family. The page is ONE file with its
+stylesheet inline, so the gate paints in a single response; the dashboard, its styles and whatever
+back end it speaks to are fetched only after the password is accepted, which means a visitor who
+cannot sign in downloads the door and nothing behind it.
 
-## Key links
+**Nothing is remembered.** No storage is written, no session is resumed, and signing out reloads
+the page rather than tearing it down, so opening `/admin` always asks for the password. Any back
+end that would restore itself is asked for in-memory persistence.
 
-Membership form `https://forms.cloud.microsoft/r/d5fFFxbKKN` · McDonald's activation `https://forms.office.com/r/NDXGRbdcBs` · IG `@businessstudentsociety` · `aubbusinesssociety@gmail.com`
+The page and its shell script are GENERATED from one source shared across the estate: editing
+either by hand puts this site out of step with its siblings and is overwritten on the next run.
+What belongs to this site is its adapter (`signIn`, `mount`, `signOut`) and whatever the adapter
+mounts into the tabs. The first tab is Overview, everywhere.
+
+BSS's two tabs are Overview (the register in three numbers, three counts and no more) and Members.
+`src/admin.js` is the entry and is three things: the faces, the ground, and the shared shell.
+Everything else - `public/admin-payload.json`, the crypto, Firebase, the member console - lives in
+`src/admin-boot.js`, which the shell imports on the first submit, so Vite splits it into its own
+chunk and a visitor who cannot sign in downloads none of it.
+
+`admin.html` is a Vite build input and is generated from the shared template, so Vite rewrites its
+asset URLs for the project base and injects the built CSP. The clickjacking guard moved into the
+shell with everything else: a meta CSP cannot express `frame-ancestors`, so the page refuses to
+render inside a frame and tries to break out.

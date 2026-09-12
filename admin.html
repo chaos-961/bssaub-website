@@ -1,84 +1,285 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin · BSS AUB</title>
-    <meta name="robots" content="noindex, nofollow, noarchive" />
-    <meta name="theme-color" content="#f8f3f5" />
-    <meta name="referrer" content="no-referrer" />
-    <link rel="icon" type="image/png" sizes="96x96" href="assets/brand/favicon-96.png" />
-    <link rel="icon" type="image/png" sizes="48x48" href="assets/brand/favicon-48.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="assets/brand/favicon-16.png" />
-    <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png" />
-    <!-- No canonical, no OG tags and no manifest on purpose: this page is not
-         meant to be found, shared or installed. It is also linked from nowhere
-         on the site. That is obscurity, not security, and it is not what
-         protects it: see src/admin.js and scripts/build-admin-payload.mjs.
-         No inline <script> either, so the built CSP can run script-src
-         'self' blob: with no 'unsafe-inline'. -->
-    <script type="module" src="/src/admin.js"></script>
-  </head>
-  <body>
-    <div class="site-bg" aria-hidden="true"></div>
+<!-- The admin. One template across every site in this family: the sign-in card,
+     the top bar, the tab strip and the footer are the same markup everywhere,
+     and only the token block in the <style> below, the skin under it and the
+     adapter named in data-boot are this site's own.
 
-    <!-- Two states, SIBLINGS rather than nested (v0.4.3, user call): locked is
-         the centred card, unlocked is a bare background with a button row. The
-         unlocked stage sits outside the card so it cannot inherit its width,
-         padding or centring. -->
-    <div data-admin>
-      <main class="auth auth--admin" id="main" data-admin-gate>
-        <div class="auth__card">
-          <section>
-            <p class="eyebrow">Business Student Society</p>
-            <h1 class="auth__title">Admin</h1>
-            <p class="auth__note">
-              <span class="auth__lock">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <rect x="4" y="11" width="16" height="9" rx="2" />
-                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-                </svg>
-                Encrypted
-              </span>
-            </p>
+     The stylesheet is inline on purpose. The gate has to paint in one response,
+     and a stylesheet request is the one thing that would stop it; everything
+     heavy - the dashboard, its styles, whatever back end it speaks to - is
+     fetched by the adapter AFTER the password has been accepted, so a visitor
+     who cannot sign in downloads nothing but this file.
 
-            <form class="auth__form" data-admin-form autocomplete="off" novalidate>
-              <label class="auth__field">
-                <span>Password</span>
-                <span class="auth__wrap">
-                  <input
-                    class="auth__input"
-                    id="admin-pass"
-                    type="password"
-                    autocomplete="current-password"
-                    placeholder="Admin password"
-                    required
-                  />
-                  <button
-                    class="auth__reveal"
-                    type="button"
-                    data-admin-reveal="admin-pass"
-                    aria-pressed="false"
-                    aria-label="Show password"
-                  >
-                    Show
-                  </button>
-                </span>
-              </label>
-              <button class="btn btn--primary auth__submit" type="submit" data-admin-submit>Unlock</button>
-            </form>
+     Nothing about a sign-in is remembered. No storage, no cookie, no resumed
+     session: opening this page always asks for the password. -->
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#f8f3f5">
+<title>BSS AUB • Admin</title>
+<link rel="icon" type="image/png" sizes="96x96" href="/assets/brand/favicon-96.png"><link rel="icon" type="image/png" sizes="32x32" href="/assets/brand/favicon-32.png"><link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png">
+<style>:root{
+  --bg:#ffffff; --panel:rgba(255,255,255,.82); --ink:#221219; --muted:#5f4a54;
+  --line:rgba(34,18,25,.18); --edge:1px; --radius:12px;
+  --accent:#881532; --accent-ink:#ffffff; --bad:#a31a3c; --good:#2f6b3d;
+  --font:'Instrument Sans Variable',system-ui,'Segoe UI',sans-serif;
+  --font-display:'Roboto Condensed Variable','Arial Narrow',Arial,sans-serif;
+  --font-ui:'Instrument Sans Variable',system-ui,'Segoe UI',sans-serif;
+  --track:0; --track-wide:0.14em; --case:uppercase;
+  --bar-track:rgba(34,18,25,.14); --wide:1160px;
+}
+/* The admin template. One stylesheet, eight sites: everything below is
+   identical everywhere and every colour, face and edge it draws with comes
+   from the token block above it, which is the only part that differs. The
+   shape is the Pyxole sign-in: a bordered card on the site's own ground, the
+   site's mark beside its own name, one password field, one button.
 
-            <p class="auth__status" data-admin-status role="status" aria-live="polite"></p>
-          </section>
+   Nothing here is loaded from a second file. The gate has to paint before
+   anything else is fetched, and a stylesheet request is the one thing that
+   would stop it. */
 
-          <p class="auth__foot"><a data-home-link href="./">Back to the site</a></p>
-        </div>
-      </main>
+*{box-sizing:border-box}
+/* THE CLASSES ARE ALL PREFIXED AND EVERY ELEMENT SELECTOR IS SCOPED, and that
+   is not tidiness. A site's own admin stylesheet is fetched AFTER this one and
+   styles the inside of a tab; an unscoped `input {}` or a bare `.btn` here
+   would reach into it and restyle a dashboard this file knows nothing about.
+   The ground is `body.adm-body` for the mirror of that reason: the site's own
+   `body {}` loads later and would otherwise repaint the admin as the shop. */
+body.adm-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);
+  font-size:15px;line-height:1.55;letter-spacing:var(--track)}
+#gate :focus-visible,#app>.adm-wrap>.adm-topbar :focus-visible,
+#app>.adm-wrap>.adm-tabs :focus-visible,#app>.adm-wrap>.adm-foot :focus-visible{
+  outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
 
-      <!-- Unlocked stage. Empty in the served page on purpose: everything that
-           goes here arrives from the encrypted payload. -->
-      <div data-admin-mount hidden></div>
-    </div>
-  </body>
+/* ------------------------------------------------------------- the gate */
+
+.adm-shell{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:24px;gap:18px}
+.adm-card{width:100%;max-width:400px;background:var(--panel);
+  border:var(--edge) solid var(--line);border-radius:var(--radius);padding:30px 28px}
+
+/* The site's own mark, beside its own name. A skin without one renders no
+   element at all, so nothing here has to cope with a gap where a mark was. */
+.adm-mark{flex:none;display:block;object-fit:contain}
+.adm-brand{display:flex;align-items:center;gap:11px;margin:0 0 14px}
+.adm-card .adm-mark{width:38px;height:38px}
+.adm-topbar .adm-mark{width:22px;height:22px}
+
+#gate .adm-eyebrow,#app .adm-eyebrow{margin:0;font-family:var(--font-ui);font-size:.62rem;letter-spacing:var(--track-wide);
+  text-transform:uppercase;color:var(--muted)}
+#gate h1{font-family:var(--font-display);font-size:1.3rem;font-weight:600;margin:0 0 22px;
+  text-transform:var(--case);letter-spacing:var(--track)}
+
+#gate label{display:block;font-family:var(--font-ui);font-size:.58rem;letter-spacing:var(--track-wide);
+  text-transform:uppercase;color:var(--muted);margin:0 0 7px}
+.adm-field{margin-bottom:16px}
+#gate input{width:100%;padding:11px 12px;border:var(--edge) solid var(--line);
+  border-radius:var(--radius);background:var(--bg);color:var(--ink);
+  font-family:var(--font-ui);font-size:.9rem;letter-spacing:var(--track)}
+#gate input:focus{outline:none;border-color:var(--accent)}
+
+/* The reveal. It sits INSIDE the field's border rather than beside it, so the
+   row is still one control; the input's right padding is what keeps the dots
+   from running under it. Its hit area is the full height of the field, which
+   is 42px, because a 17px icon is not a tap target. */
+.adm-pw{position:relative;display:block}
+.adm-pw input{padding-right:46px}
+.adm-eye{position:absolute;top:var(--edge);right:var(--edge);bottom:var(--edge);width:44px;
+  display:grid;place-items:center;border:0;background:none;padding:0;
+  color:var(--muted);cursor:pointer;border-radius:var(--radius)}
+.adm-eye:hover{color:var(--ink)}
+.adm-eye svg{width:17px;height:17px;display:block;
+  fill:none;stroke:currentColor;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round}
+
+.adm-btn{width:100%;padding:12px 14px;border:var(--edge) solid var(--accent);
+  border-radius:var(--radius);background:var(--accent);color:var(--accent-ink);
+  font-family:var(--font-ui);font-size:.74rem;letter-spacing:var(--track-wide);
+  text-transform:uppercase;cursor:pointer}
+.adm-btn:disabled{opacity:.55;cursor:progress}
+
+.adm-msg{padding:10px 12px;border:var(--edge) solid var(--line);border-radius:var(--radius);
+  font-size:.72rem;margin-bottom:16px;line-height:1.6}
+.adm-msg.bad{border-color:var(--bad);color:var(--bad)}
+.adm-msg.good{border-color:var(--good);color:var(--good)}
+
+/* Track, not rule. --line is a BORDER colour and on the pixel skins it is
+   solid ink, which at 3px tall reads as a heavy line struck under the button
+   rather than an empty progress trough. Hence its own token. */
+.adm-bar{height:3px;background:var(--bar-track);border-radius:999px;overflow:hidden;margin-top:14px}
+.adm-bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s}
+
+/* A wrong password says so by shaking, once. */
+@keyframes admin-shake{
+  10%,90%{transform:translateX(-1px)} 20%,80%{transform:translateX(2px)}
+  30%,50%,70%{transform:translateX(-4px)} 40%,60%{transform:translateX(4px)}}
+.adm-card.adm-is-wrong{animation:admin-shake .5s cubic-bezier(.36,.07,.19,.97) both}
+
+.adm-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* -------------------------------------------------------- the dashboard */
+
+.adm-app{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:0 20px}
+.adm-wrap{width:100%;max-width:var(--wide);margin:0 auto;flex:1;
+  display:flex;flex-direction:column}
+
+/* Three zones, and the middle one is centred against the VIEWPORT rather than
+   against what is left over, which is what the 1fr on both sides buys. */
+.adm-topbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+  gap:12px;padding:18px 0 14px}
+.adm-topbar__brand{display:flex;align-items:center;gap:10px;min-width:0}
+.adm-topbar__name{font-family:var(--font-ui);font-size:.62rem;letter-spacing:var(--track-wide);
+  text-transform:uppercase;color:var(--muted);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.adm-topbar__tag{justify-self:center;margin:0;font-family:var(--font-ui);
+  font-size:.66rem;letter-spacing:var(--track-wide);text-transform:uppercase;
+  color:var(--ink);white-space:nowrap}
+.adm-topbar__acts{justify-self:end;display:flex;align-items:center;gap:8px}
+
+.adm-linkbtn{background:none;border:var(--edge) solid var(--line);color:var(--muted);
+  border-radius:var(--radius);padding:5px 11px;font-family:var(--font-ui);
+  font-size:.58rem;letter-spacing:var(--track-wide);text-transform:uppercase;
+  cursor:pointer;white-space:nowrap;flex:none;text-decoration:none;display:inline-block}
+.adm-linkbtn:hover:not(:disabled){border-color:var(--accent);color:var(--ink)}
+.adm-linkbtn:disabled{opacity:.5;cursor:progress}
+
+/* One row, scrolled rather than wrapped: a tab bar that reflows to two lines
+   moves the panel under it every time a count changes. */
+.adm-tabs{display:flex;align-items:stretch;gap:2px;overflow-x:auto;
+  scrollbar-width:none;border-bottom:var(--edge) solid var(--line)}
+.adm-tabs::-webkit-scrollbar{display:none}
+.adm-tab{position:relative;flex:none;background:none;border:0;
+  padding:11px 14px;color:var(--muted);font-family:var(--font-ui);
+  font-size:.64rem;letter-spacing:var(--track-wide);text-transform:uppercase;
+  cursor:pointer;white-space:nowrap}
+.adm-tab:hover{color:var(--ink)}
+/* An inset shadow, not a bottom border pulled down over the strip's own rule:
+   overflow-x on .adm-tabs makes it a scroll container, and a scroll container
+   CLIPS its content to the padding box, so a border that hung into the border
+   area was simply not painted. This one is inside the tab and cannot be. */
+.adm-tab[aria-selected="true"]{color:var(--ink);
+  box-shadow:inset 0 calc(var(--edge) * -1) 0 var(--accent)}
+.adm-tab__n{margin-left:7px;font-variant-numeric:tabular-nums;opacity:.7}
+
+.adm-panels{flex:1 0 auto;padding:22px 0 32px}
+.adm-panel:focus{outline:none}
+
+.adm-foot{margin-top:auto;padding:14px 0 16px;border-top:var(--edge) solid var(--line);
+  font-family:var(--font-ui);font-size:.58rem;letter-spacing:var(--track-wide);text-transform:uppercase;
+  color:var(--muted);display:flex;align-items:center}
+.adm-foot__v{font-variant-numeric:tabular-nums;text-transform:none}
+/* The right half of the footer, empty on most sites. It is where a dashboard
+   that has a connection to lose says so, because "Live" belongs on every tab
+   and the top bar is already three things wide. */
+.adm-foot__s{margin-left:auto;display:flex;align-items:center;gap:8px}
+.adm-foot__s:empty{display:none}
+
+/* ------------------------------------------------------- overview tiles */
+
+/* The one piece of dashboard furniture the template owns, because every site
+   has an Overview and they should all count things the same way. */
+.adm-tiles{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+.adm-tile{background:var(--panel);border:var(--edge) solid var(--line);
+  border-radius:var(--radius);padding:16px 16px 14px;text-align:left;min-width:0}
+.adm-tile__l{margin:0;font-family:var(--font-ui);font-size:.55rem;letter-spacing:var(--track-wide);
+  text-transform:uppercase;color:var(--muted)}
+.adm-tile__n{margin:6px 0 0;font-family:var(--font-display);font-size:1.9rem;
+  line-height:1.05;font-weight:700;font-variant-numeric:tabular-nums;
+  letter-spacing:var(--track)}
+.adm-tile__s{margin:5px 0 0;font-family:var(--font-ui);font-size:.58rem;letter-spacing:var(--track-wide);
+  text-transform:uppercase;color:var(--muted)}
+.adm-block{margin-top:26px}
+/* A row of secondary controls under a panel's main figure. */
+.adm-acts{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px}
+.adm-block__h{margin:0 0 12px;font-family:var(--font-display);font-size:.72rem;
+  font-weight:600;letter-spacing:var(--track-wide);text-transform:uppercase}
+.adm-note{margin:0;font-family:var(--font-ui);font-size:.72rem;color:var(--muted);line-height:1.7}
+
+/* The single figure a visitors panel exists to show. */
+.adm-count{display:block;font-family:var(--font-display);
+  font-size:clamp(3.2rem,15vw,7rem);line-height:1;font-weight:700;
+  font-variant-numeric:tabular-nums;margin:0}
+.adm-count-label{display:block;margin-top:14px;font-family:var(--font-ui);font-size:.62rem;
+  letter-spacing:var(--track-wide);text-transform:uppercase;color:var(--muted)}
+.adm-stage{text-align:center;padding:30px 0 26px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:2px;background:var(--panel);
+  border:var(--edge) solid var(--line);border-radius:var(--radius)}
+
+@media (max-width:560px){
+  .adm-app{padding:0 14px}
+  .adm-shell{padding:16px;gap:14px}
+  /* Wide tracking is what makes these skins look like their sites, and it is
+     also what overflows a 360px screen. Give it back only here. */
+  .adm-topbar,.adm-foot,.adm-tab,.adm-linkbtn{letter-spacing:.06em}
+  .adm-topbar{gap:8px;padding:14px 0 12px}
+}
+@media (max-width:400px){
+  /* The name is the first thing that gives way: the mark still says whose
+     admin this is, and the two buttons must not wrap. */
+  .adm-topbar__name{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+html{background:var(--bg)}
+body.adm-body{background:transparent}
+#gate h1{font-weight:700;letter-spacing:.01em}
+.adm-tile__n,.adm-count{font-weight:700}
+.adm-card{box-shadow:0 18px 48px rgba(34,18,25,.12)}
+.adm-tile,.adm-stage{box-shadow:0 6px 20px rgba(34,18,25,.07)}
+.adm-btn{font-weight:600}</style>
+</head>
+<body class="adm-body" data-idle="15" data-version="0.6.1">
+<div class="site-bg" aria-hidden="true"></div>
+<div class="adm-shell" id="gate">
+  <main class="adm-card" id="card">
+    <div class="adm-brand"><img class="adm-mark" src="/assets/brand/icon-192.png" alt="" width="38" height="38" decoding="async"><p class="adm-eyebrow">BSS AUB</p></div>
+    <h1>Admin</h1>
+    <div class="adm-msg" id="msg" hidden></div>
+    <form id="f" autocomplete="off">
+      <!-- Password only. One admin per site, and the address bar already said
+           which site this is, so a name field is a second thing to type that
+           identifies nobody. -->
+      <div class="adm-field">
+        <label for="password">Password</label>
+        <span class="adm-pw">
+          <input id="password" name="password" type="password" required autofocus
+                 autocomplete="current-password" spellcheck="false">
+          <button type="button" class="adm-eye" id="eye" aria-controls="password"
+                  aria-pressed="false" aria-label="Show password">
+            <svg id="eye-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.3 12S6 5.5 12 5.5 21.7 12 21.7 12 18 18.5 12 18.5 2.3 12 2.3 12Z"/><circle cx="12" cy="12" r="3.1"/></svg>
+            <svg id="eye-off" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M3.2 3.2 20.8 20.8"/><path d="M10.6 6.2A10.7 10.7 0 0 1 12 6.1c6 0 9.7 5.9 9.7 5.9a19 19 0 0 1-3.5 4.1"/><path d="M6.6 7.9A18.7 18.7 0 0 0 2.3 12S6 17.9 12 17.9a10 10 0 0 0 3.8-.8"/><path d="M10 10a2.9 2.9 0 0 0 4 4"/></svg>
+          </button>
+        </span>
+      </div>
+      <button class="adm-btn" id="go" type="submit" data-idle="Sign in">Sign in</button>
+      <div class="adm-bar"><i id="bar"></i></div>
+    </form>
+  </main>
+</div>
+
+<div class="adm-app" id="app" hidden>
+  <div class="adm-wrap">
+    <header class="adm-topbar">
+      <div class="adm-topbar__brand"><img class="adm-mark" src="/assets/brand/icon-192.png" alt="" width="22" height="22" decoding="async"><span class="adm-topbar__name">BSS AUB</span></div>
+      <p class="adm-topbar__tag">Admin</p>
+      <div class="adm-topbar__acts">
+        <a class="adm-linkbtn" href="./">View site</a>
+        <button class="adm-linkbtn" id="signout" type="button">Sign out</button>
+      </div>
+    </header>
+    <nav class="adm-tabs" id="tabs" role="tablist" aria-label="Admin sections"></nav>
+    <div class="adm-panels" id="panels"></div>
+    <footer class="adm-foot">
+      <span class="adm-foot__v" id="version"></span>
+      <span class="adm-foot__s" id="status"></span>
+    </footer>
+  </div>
+</div>
+<script type="module" src="/src/admin.js"></script>
+</body>
 </html>

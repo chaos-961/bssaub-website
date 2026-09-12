@@ -21,15 +21,35 @@
      screen reader is told what is happening by the status line instead, and
      eight announcements of nothing would be worse than silence.
 
-     The v0.4.3 stage (a bare background with Sign out and View site) is
-     unchanged and still first; the console sits under it in normal flow. -->
-<div class="admin-bar">
-  <button class="btn btn--sm" type="button" data-admin-signout>Sign out</button>
-  <a class="btn btn--sm" data-admin-home href="./">View site</a>
+     THERE IS NO BAR HERE ANY MORE. Sign out and View site are the admin
+     template's top bar, and the two lids below are its tabs: an Overview that
+     counts the society, and the member console itself. -->
+
+<div data-bss="overview">
+  <!-- Three reads, once, when the tab opens. The same count() the pager uses,
+       so the figures here and the pages there can never disagree. -->
+  <div class="adm-tiles">
+    <div class="adm-tile">
+      <p class="adm-tile__l">Members</p>
+      <p class="adm-tile__n" data-admin-total-all>&mdash;</p>
+      <p class="adm-tile__s">on the register</p>
+    </div>
+    <div class="adm-tile">
+      <p class="adm-tile__l">Subscribed</p>
+      <p class="adm-tile__n" data-admin-total-live>&mdash;</p>
+      <p class="adm-tile__s">membership running</p>
+    </div>
+    <div class="adm-tile">
+      <p class="adm-tile__l">Unsubscribed</p>
+      <p class="adm-tile__n" data-admin-total-off>&mdash;</p>
+      <p class="adm-tile__s">lapsed or never started</p>
+    </div>
+  </div>
+  <p class="adm-note" data-admin-total-note></p>
 </div>
 
+<div data-bss="members">
 <main class="admin-console">
-  <h1 class="admin-console__title">Members</h1>
 
   <div class="admin-tools">
     <form class="admin-search" data-admin-search novalidate>
@@ -81,6 +101,7 @@
     <button class="btn btn--sm btn--ghost" type="button" data-page="next">Next</button>
   </nav>
 </main>
+</div>
 
 <template data-admin-row>
   <li class="admin-row">

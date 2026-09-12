@@ -60,23 +60,18 @@
    window or a timer. Nothing here needs one, which is itself deliberate:
    every listener below is delegated onto the mount's own subtree. */
 export default function mount(root, api) {
-  const home = root.querySelector('[data-admin-home]');
-  if (home) {
-    home.href = api.homeUrl;
-    /* Leaving for the site takes the cached member list with it. sessionStorage
-       belongs to the TAB and not to this page, so a cache left behind here
-       would outlive the admin and sit in the same store the site is now using,
-       with nothing left running to clear it: the gate's wipe timer dies with
-       the page that set it. Sign out already goes through lock(), which clears
-       it; this is the other way out of the console that the page itself
-       offers. What is left after both is a tab the admin navigated away from
-       by hand, which is bounded by closing it. */
-    home.addEventListener('click', () => api.cache?.clear());
-  }
+  /* Leaving for the site takes the cached member list with it. sessionStorage
+     belongs to the TAB and not to this page, so a cache left behind here would
+     outlive the admin and sit in the same store the site is now using, with
+     nothing left running to clear it: the gate's wipe timer dies with the page
+     that set it. Sign out already goes through lock(), which clears it; this
+     is the other way out of the console that the page itself offers. What is
+     left after both is a tab the admin navigated away from by hand, which is
+     bounded by closing it.
 
-  root.querySelector('[data-admin-signout]')?.addEventListener('click', () => {
-    api.lock('Signed out.');
-  });
+     Both buttons are the admin template's top bar now, so this reaches out of
+     its own subtree to find View site. */
+  document.querySelector('.adm-topbar__acts a')?.addEventListener('click', () => api.cache?.clear());
 
   const form = root.querySelector('[data-admin-search]');
   const input = root.querySelector('[data-admin-query]');
@@ -91,6 +86,39 @@ export default function mount(root, api) {
   if (!form || !input || !list || !template) return () => {};
 
   const PAGE = api.members.pageSize || 50;
+
+  /* The Overview tab: the society in three numbers, read once when the console
+     opens. Three counts is three reads, against a page of rows which is fifty,
+     so this is the cheapest screen in the admin. */
+  const totals = {
+    all: root.querySelector('[data-admin-total-all]'),
+    live: root.querySelector('[data-admin-total-live]'),
+    off: root.querySelector('[data-admin-total-off]'),
+  };
+  const totalsNote = root.querySelector('[data-admin-total-note]');
+  if (totals.all) {
+    const now = Date.now();
+    Promise.all([
+      api.members.count('all', now),
+      api.members.count('live', now),
+      api.members.count('off', now),
+    ]).then(
+      ([all, live, off]) => {
+        totals.all.textContent = String(all);
+        totals.live.textContent = String(live);
+        totals.off.textContent = String(off);
+        if (totalsNote) {
+          totalsNote.textContent =
+            all === 0
+              ? 'No members yet. The first registration appears here on its own.'
+              : 'Open the Members tab to search the register, extend a membership or remove a record.';
+        }
+      },
+      () => {
+        if (totalsNote) totalsNote.textContent = 'The register could not be reached. Try the Members tab.';
+      },
+    );
+  }
 
   /* Enough placeholder rows to fill a screen and no more. Fifty would match a
      full page exactly and would also be six hundred nodes built and thrown
