@@ -5,7 +5,7 @@ the membership card; sponsors, story and animations all serve that.
 
 Repo `github.com/chaos-961/bssaub-website` (branch `main`) · Live
 `https://chaos-961.github.io/bssaub-website/` (Pages via Actions, custom domain not yet flipped) ·
-Version in `version.json`, currently 0.6.0.
+Version in `version.json`, currently 0.6.2.
 
 ## Stack
 
@@ -54,9 +54,12 @@ node scripts/check-swell.mjs               # motion gate, 240s sweep desktop + c
   `ctx.bundle`: Vite's dev server serves an inline HMR script a source `script-src 'self'` meta tag
   would kill. Neither gated page carries an inline `<script>`, and since a meta CSP ignores
   `frame-ancestors`, clickjacking is the frame bust in `src/admin.js`.
-- Internal links are extensionless; `cleanUrls` in `vite.config.js` gives dev and preview what
-  Pages does natively. A new page registers twice, in `rollupOptions.input` and in `CLEAN_PAGES`,
-  or its link 404s in dev while working on Pages.
+- Internal links are extensionless and never end in a slash (`privacy`, not `privacy/`); only the
+  root keeps its `/`. `cleanUrls` in `vite.config.js` gives dev and preview what Pages does
+  natively. A new page registers once, in `INPUT`, which feeds `rollupOptions.input`, the
+  `CLEAN_PAGES` dev rewrite, and the slash redirect that is the first script in `404.html`
+  (GitHub Pages cannot redirect server side, so `/privacy/` lands on 404.html and is swapped
+  for `/privacy` there). Pages stay flat `name.html`; never add a `dir/index.html` page.
 - Sponsors: one object in `src/data/sponsors.js` plus one image is a new sponsor. Filename equals
   the id at `assets/sponsors/<category>/<id>.webp`, ~320px square, 25KB or under. A `details`
   object turns a bubble into a popup instead of a direct link.
@@ -68,7 +71,8 @@ Push authorization is deploy authorization, say so before pushing.
 
 Per authorized push:
 1. Bump `version.json` by +0.0.1 (carry 0.0.9 to 0.1.0).
-2. Sync the three static badge fallbacks: index, 404, account footers (`admin.html` has none).
+2. Sync the six static badge fallbacks: index, 404, account, privacy, cookies and terms footers
+   (`admin.html` has none).
 3. If `src/admin/dashboard.html` or `dashboard.js` changed at any point in the session, run
    `npm run admin:payload` before committing.
 4. Commit message `v0.6.1: short description`.

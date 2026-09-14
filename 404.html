@@ -2,6 +2,26 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Trailing slash to clean URL, before anything renders. GitHub Pages answers
+         /bssaub-website/privacy/ with this page and cannot redirect server side, so
+         it happens here: strip the trailing slashes, and if what is left is a real
+         page sitting directly in the site root, replace it with the clean URL,
+         keeping query and hash. Anything else falls through to the 404 below, so a
+         bad link never becomes a redirect. The root is the configured base or bare
+         "/" (the custom domain), and requiring it is also what stops
+         //other.host/privacy/ from becoming an open redirect. Both percent tokens
+         are filled at build time: the base by Vite itself (BASE_URL), the page
+         names (every INPUT except index and 404) by the bss-slash-redirect plugin
+         in vite.config.js. -->
+    <script>
+      (function (l, base, pages) {
+        var path = l.pathname, bare = path.replace(/\/+$/, ''), cut = bare.lastIndexOf('/') + 1;
+        if (!bare || bare === path) return;
+        var dir = bare.slice(0, cut);
+        if ((dir === base || dir === '/') && pages.indexOf(bare.slice(cut)) !== -1)
+          l.replace(bare + l.search + l.hash);
+      })(location, '%BASE_URL%', '%BSS_CLEAN_PAGES%'.split(','));
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>404 · BSS AUB</title>
     <meta name="description" content="Page not found." />
@@ -29,17 +49,19 @@
       <h1 class="stub__title">404. This page took a 100% discount.</h1>
       <p class="stub__note">Nothing lives at this address.</p>
       <div class="stub__actions">
-        <a class="btn btn--primary" data-home-link href="./">Back home</a>
+        <a class="btn btn--primary" data-home-link href="%BASE_URL%">Back home</a>
       </div>
     </main>
     <footer class="stub__footer">
       <p>© Business Student Society, AUB</p>
+      <!-- Base prefixed by Vite at build (BASE_URL), not relative: this page is served
+           at arbitrary depths, where a bare "privacy" resolves to a path that 404s. -->
       <nav class="stub__legal" aria-label="Legal">
-        <a href="privacy">Privacy</a>
-        <a href="cookies">Cookies</a>
-        <a href="terms">Terms</a>
+        <a href="%BASE_URL%privacy">Privacy</a>
+        <a href="%BASE_URL%cookies">Cookies</a>
+        <a href="%BASE_URL%terms">Terms</a>
       </nav>
-      <span class="version-badge" data-version-badge>v0.6.0</span>
+      <span class="version-badge" data-version-badge>v0.6.2</span>
     </footer>
   </body>
 </html>

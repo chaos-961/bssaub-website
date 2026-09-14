@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import { fileURLToPath } from 'node:url';
+import { basename } from 'node:path';
 
 /* Build-time font preloads — the gated pages ONLY, by measurement (2026-07-22,
    local Lighthouse, 3-run medians): on index the §6.1 curtain already hides the
@@ -132,18 +133,44 @@ const contentSecurityPolicy = () => ({
    work identically in all three environments. Bare paths only (no trailing
    slash) to match what Pages actually serves. Index and 404 need no rewrite.
 
-   Recovered from the v0.4.0 tree at v0.4.2. A new page that wants an
-   extensionless link adds itself to CLEAN_PAGES, or it will 404 in dev while
-   working fine on Pages. */
+   Recovered from the v0.4.0 tree at v0.4.2. Since v0.6.2 CLEAN_PAGES is not
+   typed out: it is every entry in INPUT except index and 404, so a new page
+   registers once, in INPUT, and gets its dev rewrite and its 404.html slash
+   redirect with no second list to forget.
+
+   A slash variant (/bssaub-website/privacy/) is redirected to the bare path.
+   Pages answers that URL with 404.html, whose first script does the same swap
+   (see slashRedirect below); without this, dev and preview would fall through
+   to Vite's SPA fallback and render index.html there instead. */
 const BASE = '/bssaub-website/';
-const CLEAN_PAGES = ['account', 'admin', 'privacy', 'cookies', 'terms'];
+const html = (name) => fileURLToPath(new URL(`./${name}.html`, import.meta.url));
+const INPUT = {
+  index: html('index'),
+  account: html('account'),
+  admin: html('admin'),
+  privacy: html('privacy'),
+  cookies: html('cookies'),
+  terms: html('terms'),
+  notFound: html('404'),
+};
+const CLEAN_PAGES = Object.values(INPUT)
+  .map((file) => basename(file, '.html'))
+  .filter((name) => name !== 'index' && name !== '404');
 const cleanUrls = () => {
-  const rewrite = (req, _res, next) => {
+  const rewrite = (req, res, next) => {
     const [path, query] = req.url.split('?');
+    const search = query ? `?${query}` : '';
     for (const page of CLEAN_PAGES) {
-      if (path === `${BASE}${page}`) {
-        req.url = `${BASE}${page}.html${query ? `?${query}` : ''}`;
+      const clean = `${BASE}${page}`;
+      if (path === clean) {
+        req.url = `${clean}.html${search}`;
         break;
+      }
+      if (path.startsWith(`${clean}/`) && /^\/+$/.test(path.slice(clean.length))) {
+        res.statusCode = 302;
+        res.setHeader('Location', `${clean}${search}`);
+        res.end();
+        return;
       }
     }
     next();
@@ -159,6 +186,23 @@ const cleanUrls = () => {
   };
 };
 
+/* Trailing slash to clean URL, for the one host that cannot redirect: GitHub
+   Pages serves 404.html for /bssaub-website/privacy/, so the swap happens in
+   the first <script> of 404.html's head. That script needs the page names, and
+   they are written in here from CLEAN_PAGES (so from INPUT) by replacing the
+   %BSS_CLEAN_PAGES% token. The root it checks against is Vite's own
+   %BASE_URL%, which follows `base` through the custom domain flip untouched.
+   'pre' so the token is gone before Vite's env hook scans the page. The script
+   carries no CSP of its own to satisfy: bss-csp above injects a policy on
+   account and admin only, never on 404.html. */
+const slashRedirect = () => ({
+  name: 'bss-slash-redirect',
+  transformIndexHtml: {
+    order: 'pre',
+    handler: (source) => source.replaceAll('%BSS_CLEAN_PAGES%', CLEAN_PAGES.join(',')),
+  },
+});
+
 // base matches the GitHub Pages project path (CLAUDE.md §11).
 // Custom domain later: flip base to '/' and add public/CNAME.
 export default defineConfig({
@@ -167,18 +211,10 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
   },
-  plugins: [preloadGatedAssets(), contentSecurityPolicy(), cleanUrls()],
+  plugins: [preloadGatedAssets(), contentSecurityPolicy(), cleanUrls(), slashRedirect()],
   build: {
     rollupOptions: {
-      input: {
-        index: fileURLToPath(new URL('./index.html', import.meta.url)),
-        account: fileURLToPath(new URL('./account.html', import.meta.url)),
-        admin: fileURLToPath(new URL('./admin.html', import.meta.url)),
-        privacy: fileURLToPath(new URL('./privacy.html', import.meta.url)),
-        cookies: fileURLToPath(new URL('./cookies.html', import.meta.url)),
-        terms: fileURLToPath(new URL('./terms.html', import.meta.url)),
-        notFound: fileURLToPath(new URL('./404.html', import.meta.url)),
-      },
+      input: INPUT,
     },
   },
 });
